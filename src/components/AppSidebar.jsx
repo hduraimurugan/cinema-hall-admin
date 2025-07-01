@@ -19,10 +19,10 @@ import { Button } from "@/components/ui/button"
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
+  { title: "Screens", url: "/screens", icon: Monitor },
   { title: "Movies", url: "/movies", icon: Film },
   { title: "Showtimes", url: "/shows", icon: Calendar },
   { title: "Bookings", url: "/bookings", icon: Ticket },
-  { title: "Screens", url: "/screens", icon: Monitor },
 ]
 
 const managementItems = [
