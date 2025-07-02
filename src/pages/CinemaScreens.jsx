@@ -36,15 +36,15 @@ const CinemaScreenDesigner = () => {
   const [screenName, setScreenName] = useState("")
   const [editingScreen, setEditingScreen] = useState(null)
   const [layout, setLayout] = useState({
-    rows: 10,
-    columns: 15,
+    rows: 0,
+    columns: 0,
     seats: [],
     screenPosition: "top",
   })
   const [pricing, setPricing] = useState({
-    premium: 25,
-    gold: 20,
-    silver: 15,
+    premium: 100,
+    gold: 90,
+    silver: 70,
   })
   const [selectedTool, setSelectedTool] = useState("silver")
   const [selectedSeats, setSelectedSeats] = useState(new Set())
@@ -56,6 +56,9 @@ const CinemaScreenDesigner = () => {
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [screenToDelete, setScreenToDelete] = useState(null)
   const [saveMessage, setSaveMessage] = useState("")
+  const [showViewDialog, setShowViewDialog] = useState(false)
+  const [viewingScreen, setViewingScreen] = useState(null)
+
 
   const layoutRef = useRef(null)
 
@@ -228,9 +231,9 @@ const CinemaScreenDesigner = () => {
       screenPosition: "top",
     })
     setPricing({
-      premium: 25,
-      gold: 20,
-      silver: 15,
+      premium: 100,
+      gold: 90,
+      silver: 70,
     })
     setRowLabels({})
     setSelectedSeats(new Set())
@@ -329,6 +332,11 @@ const CinemaScreenDesigner = () => {
     setScreenToDelete(null)
   }
 
+  const viewScreen = (screen) => {
+    setViewingScreen(screen)
+    setShowViewDialog(true)
+  }
+
   const tools = [
     { id: "premium", label: "Premium", color: "bg-gradient-to-r from-yellow-400 to-yellow-500", icon: "💎" },
     { id: "gold", label: "Gold", color: "bg-gradient-to-r from-blue-400 to-blue-500", icon: "🥇" },
@@ -396,17 +404,17 @@ const CinemaScreenDesigner = () => {
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
                       <div className="font-bold text-yellow-800 dark:text-yellow-200">{screen.premiumSeats}</div>
                       <div className="text-yellow-600 dark:text-yellow-300 text-xs">Premium</div>
-                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">${screen.premiumPrice}</div>
+                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">Rs.{screen.premiumPrice}</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
                       <div className="font-bold text-blue-800 dark:text-blue-200">{screen.goldSeats}</div>
                       <div className="text-blue-600 dark:text-blue-300 text-xs">Gold</div>
-                      <div className="text-blue-700 dark:text-blue-200 text-xs">${screen.goldPrice}</div>
+                      <div className="text-blue-700 dark:text-blue-200 text-xs">Rs.{screen.goldPrice}</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-700">
                       <div className="font-bold text-gray-800 dark:text-zinc-200">{screen.silverSeats}</div>
                       <div className="text-gray-600 dark:text-zinc-400 text-xs">Silver</div>
-                      <div className="text-gray-700 dark:text-zinc-200 text-xs">${screen.silverPrice}</div>
+                      <div className="text-gray-700 dark:text-zinc-200 text-xs">Rs.{screen.silverPrice}</div>
                     </div>
                   </div>
 
@@ -431,6 +439,7 @@ const CinemaScreenDesigner = () => {
                       variant="outline"
                       size="sm"
                       className="flex-1 hover:bg-green-50 hover:border-green-300 bg-transparent dark:hover:bg-green-900 dark:hover:border-green-700"
+                      onClick={() => viewScreen(screen)}
                     >
                       <Eye className="h-4 w-4 mr-1" />
                       View
@@ -466,6 +475,168 @@ const CinemaScreenDesigner = () => {
               <Button variant="destructive" onClick={confirmDelete}>
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Screen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Screen Dialog */}
+        <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+          <DialogContent className="md:min-w-[100vh] max-h-[90vh] overflow-auto" style={{ scrollBarWidth: "none" }}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Monitor className="h-5 w-5 text-blue-600" />
+                {viewingScreen?.name} - Seat Selection
+              </DialogTitle>
+              <DialogDescription>Choose your preferred seats for the best movie experience</DialogDescription>
+            </DialogHeader>
+
+            {viewingScreen && (
+              <div className="space-y-6 py-4">
+                {/* Screen Display */}
+                {viewingScreen.layout.screenPosition === "top" && (
+                  <div className="flex justify-center">
+                    <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-16 py-4 rounded-lg shadow-2xl flex items-center gap-3 transform perspective-1000 rotateX-10">
+                      <Monitor className="h-6 w-6" />
+                      <span className="font-bold tracking-widest text-lg">SCREEN</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Seating Layout */}
+                <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-8 rounded-xl">
+                  <div className="flex justify-center">
+                    <div className="inline-block">
+                      {/* Column numbers */}
+                      <div className="flex items-center gap-1 mb-4 ml-8">
+                        {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => (
+                          <div key={colIndex} className="w-12 text-center text-xs font-medium text-gray-500">
+                            {colIndex + 1}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Rows with seats */}
+                      {Array.from({ length: viewingScreen.layout.rows }, (_, rowIndex) => {
+                        const rowSeats = viewingScreen.layout.seats.filter((seat) => seat.id.startsWith(`${rowIndex}-`))
+                        const hasValidSeats = rowSeats.some((seat) => seat.type !== "passage" && !seat.isBlocked)
+
+                        if (!hasValidSeats) return null
+
+                        return (
+                          <div key={rowIndex} className="flex items-center gap-1 mb-2">
+                            {/* Row label */}
+                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
+                              {String.fromCharCode(65 + rowIndex)}
+                            </div>
+
+                            {/* Seats */}
+                            {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
+                              const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
+                              if (!seat) return <div key={colIndex} className="w-12 h-12" />
+
+                              if (seat.type === "passage") {
+                                return <div key={colIndex} className="w-12 h-12" />
+                              }
+
+                              if (seat.isBlocked || seat.type === "entrance" || seat.type === "door") {
+                                return <div key={colIndex} className="w-12 h-12" />
+                              }
+
+                              const seatColor =
+                                seat.type === "premium"
+                                  ? "bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 text-yellow-900 shadow-lg hover:shadow-xl"
+                                  : seat.type === "gold"
+                                    ? "bg-gradient-to-br from-blue-400 to-blue-500 border-blue-600 text-blue-900 shadow-lg hover:shadow-xl"
+                                    : "bg-gradient-to-br from-gray-300 to-gray-400 border-gray-500 text-gray-800 shadow-md hover:shadow-lg"
+
+                              return (
+                                <button
+                                  key={colIndex}
+                                  className={`w-12 h-12 rounded-lg border-2 transition-all duration-200 hover:scale-105 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
+                                  title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - $${seat.price}`}
+                                >
+                                  {seat.column}
+                                </button>
+                              )
+                            })}
+
+                            {/* Row label (right side) */}
+                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
+                              {String.fromCharCode(65 + rowIndex)}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Screen Display Bottom */}
+                {viewingScreen.layout.screenPosition === "bottom" && (
+                  <div className="flex justify-center">
+                    <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-16 py-4 rounded-lg shadow-2xl flex items-center gap-3">
+                      <Monitor className="h-6 w-6" />
+                      <span className="font-bold tracking-widest text-lg">SCREEN</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Legend and Pricing */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Seat Types</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-yellow-400 to-yellow-500 border-2 border-yellow-600"></div>
+                        <span className="font-medium">Premium</span>
+                        <Badge className="ml-auto">${viewingScreen.premiumPrice}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-blue-500 border-2 border-blue-600"></div>
+                        <span className="font-medium">Gold</span>
+                        <Badge className="ml-auto">${viewingScreen.goldPrice}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-gray-500"></div>
+                        <span className="font-medium">Silver</span>
+                        <Badge className="ml-auto">${viewingScreen.silverPrice}</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Screen Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Total Seats:</span>
+                        <span className="font-bold">{viewingScreen.totalSeats}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Premium Seats:</span>
+                        <span className="font-bold text-yellow-600">{viewingScreen.premiumSeats}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Gold Seats:</span>
+                        <span className="font-bold text-blue-600">{viewingScreen.goldSeats}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Silver Seats:</span>
+                        <span className="font-bold text-gray-600">{viewingScreen.silverSeats}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+                Close
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -561,7 +732,7 @@ const CinemaScreenDesigner = () => {
             <CardContent className="space-y-3">
               {Object.entries(pricing).map(([type, price]) => (
                 <div key={type}>
-                  <Label className="text-sm font-medium capitalize">{type} ($)</Label>
+                  <Label className="text-sm font-medium capitalize">{type} (Rs.)</Label>
                   <Input
                     type="number"
                     value={price}
@@ -616,7 +787,7 @@ const CinemaScreenDesigner = () => {
                   <span className="flex-1">{tool.label}</span>
                   {tool.id in pricing && (
                     <Badge variant="secondary" className="ml-2">
-                      ${pricing[tool.id]}
+                      Rs.{pricing[tool.id]}
                     </Badge>
                   )}
                 </Button>
@@ -761,7 +932,7 @@ const CinemaScreenDesigner = () => {
                         </div>
                         <span className="text-sm font-medium">{tool.label}</span>
                         {tool.id in pricing && (
-                          <span className="text-xs text-muted-foreground">(${pricing[tool.id]})</span>
+                          <span className="text-xs text-muted-foreground">(Rs.{pricing[tool.id]})</span>
                         )}
                       </div>
                     ))}
@@ -828,6 +999,8 @@ const CinemaScreenDesigner = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+
     </div>
   )
 }
