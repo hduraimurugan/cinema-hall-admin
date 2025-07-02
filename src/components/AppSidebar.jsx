@@ -36,7 +36,7 @@ const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 
 export function AppSidebar({ pageTitle, collapsed = false }) {
   const location = useLocation()
-  const { user, logout } = useAuth()
+  const { user, cinemaHall, logout } = useAuth()
 
   const isActive = (url) => location.pathname === url
 
@@ -76,8 +76,9 @@ export function AppSidebar({ pageTitle, collapsed = false }) {
           </div>
           {!collapsed && (
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">CinemaMax</span>
-              <span className="truncate text-xs text-muted-foreground">Admin Panel</span>
+              <span className="truncate font-semibold">{cinemaHall.name}</span>
+              <span className="truncate text-xs text-muted-foreground">{cinemaHall.location}</span>
+              {/* <span className="truncate text-xs text-muted-foreground">Admin Panel</span> */}
             </div>
           )}
         </Link>

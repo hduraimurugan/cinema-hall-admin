@@ -510,7 +510,7 @@ const CinemaScreenDesigner = () => {
                       {/* Column numbers */}
                       <div className="flex items-center gap-1 mb-4 ml-8">
                         {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => (
-                          <div key={colIndex} className="w-12 text-center text-xs font-medium text-gray-500">
+                          <div key={colIndex} className="w-9 text-center text-xs font-medium text-gray-500">
                             {colIndex + 1}
                           </div>
                         ))}
@@ -533,14 +533,14 @@ const CinemaScreenDesigner = () => {
                             {/* Seats */}
                             {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
                               const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
-                              if (!seat) return <div key={colIndex} className="w-12 h-12" />
+                              if (!seat) return <div key={colIndex} className="w-9 h-9" />
 
                               if (seat.type === "passage") {
-                                return <div key={colIndex} className="w-12 h-12" />
+                                return <div key={colIndex} className="w-9 h-9" />
                               }
 
                               if (seat.isBlocked || seat.type === "entrance" || seat.type === "door") {
-                                return <div key={colIndex} className="w-12 h-12" />
+                                return <div key={colIndex} className="w-9 h-9" />
                               }
 
                               const seatColor =
@@ -553,7 +553,7 @@ const CinemaScreenDesigner = () => {
                               return (
                                 <button
                                   key={colIndex}
-                                  className={`w-12 h-12 rounded-lg border-2 transition-all duration-200 hover:scale-105 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
+                                  className={`w-9 h-9 rounded-lg border-2 transition-all duration-200 hover:scale-105 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
                                   title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - $${seat.price}`}
                                 >
                                   {seat.column}

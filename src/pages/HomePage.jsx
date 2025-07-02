@@ -1,6 +1,11 @@
 import React from 'react'
+import { useAuth } from '../context/AuthContext';
 
 const HomePage = () => {
+    const {user, cinemaHall} = useAuth()
+    console.log("User", user);
+    console.log("cinemaHall", cinemaHall);
+    
     return (
         <div className="p-8">
             <div className="card bg-base-100 shadow-lg max-w-md mx-auto">

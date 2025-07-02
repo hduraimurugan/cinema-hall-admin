@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Link, useLocation, Outlet } from "react-router-dom"
 import { Film, Search, Bell, User, Settings, LogOut, Sun, Moon, Home } from "lucide-react"
 import { Sidebar as SidebarIcon, ChevronRight, ChevronLeft } from "lucide-react"
-import { GoSidebarCollapse, GoSidebarExpand  } from "react-icons/go";
+import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
 
 import { AppSidebar } from "./AppSidebar"
 import { Button } from "@/components/ui/button"
@@ -42,7 +42,7 @@ export function CinemaLayout() {
     const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024)
     const location = useLocation()
 
-    const { user, logout } = useAuth();
+    const { user, cinemaHall, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -119,9 +119,9 @@ export function CinemaLayout() {
                             className="hidden lg:flex hover:bg-primary/10 transition-colors duration-200"
                         >
                             {isSidebarCollapsed ? (
-                                <GoSidebarCollapse  className="h-5 w-5" />
+                                <GoSidebarCollapse className="h-5 w-5" />
                             ) : (
-                                <GoSidebarExpand  className="h-5 w-5" />
+                                <GoSidebarExpand className="h-5 w-5" />
                             )}
                             <span className="sr-only">Toggle sidebar</span>
                         </Button>
@@ -133,7 +133,7 @@ export function CinemaLayout() {
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
                                 <Film className="h-4 w-4" />
                             </div>
-                            <span className="font-semibold text-lg hidden sm:inline-block">CinemaMax</span>
+                            <span className="font-semibold text-lg hidden sm:inline-block">{cinemaHall.name}</span>
                         </Link>
 
                         {/* Desktop Logo */}
@@ -142,7 +142,11 @@ export function CinemaLayout() {
                                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
                                     <Film className="h-4 w-4" />
                                 </div>
-                                <span className="font-semibold text-lg">CinemaMax</span>
+
+                                <div className="flex flex-col gap-0 justify-center items-start">
+                                <span className="font-semibold text-md">{cinemaHall.name}</span>
+                                <span className="truncate text-xs text-muted-foreground">{cinemaHall.location}</span>
+                                </div>
                             </Link>
                         </div>
 
@@ -327,7 +331,7 @@ export function CinemaLayout() {
             {/* Footer */}
             <footer className="hidden border-t bg-background/50 backdrop-blur-sm flex-shrink-0">
                 <div className="flex h-7 items-center justify-center px-4">
-                    <p className="text-xs text-muted-foreground">© 2025 CinemaMax Admin Panel. All rights reserved.</p>
+                    <p className="text-xs text-muted-foreground">© 2025 {cinemaHall.name} Admin Panel. All rights reserved.</p>
                 </div>
             </footer>
         </div>

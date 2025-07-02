@@ -1,31 +1,97 @@
-// src/context/AuthContext.jsx
-import { createContext, useState, useContext } from 'react'
+import { createContext, useContext, useEffect, useState } from "react"
+import { authAPI } from "../services/api.js"
 
 const AuthContext = createContext()
 
 export const AuthProvider = ({ children }) => {
-  // Read from localStorage on init
-  const savedUser = localStorage.getItem('user')
-  const [user, setUser] = useState(savedUser ? JSON.parse(savedUser) : null)
+  const [user, setUser] = useState(null)
+  const [cinemaHall, setCinemaHall] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  const login = (userData) => {
-    setUser(userData)
-    localStorage.setItem('user', JSON.stringify(userData))
+  // 🔄 Load session on mount
+  useEffect(() => {
+    const initializeSession = async () => {
+      const fetchUser = async () => {
+        try {
+          const res = await authAPI.getMe()
+          setUser(res.admin)
+          setCinemaHall(res.hall)
+          return true
+        } catch {
+          return false
+        }
+      }
+
+      const gotUser = await fetchUser()
+
+      if (!gotUser) {
+        try {
+          const refreshRes = await authAPI.refresh()
+          if (refreshRes.success) {
+            const retried = await fetchUser()
+            if (!retried) setUser(null)
+          } else {
+            setUser(null)
+          }
+        } catch {
+          setUser(null)
+        }
+      }
+
+      setLoading(false)
+    }
+
+    initializeSession()
+  }, [])
+
+  // ✅ Login
+  const login = async (email, password) => {
+    try {
+      const res = await authAPI.login(email, password)
+      setUser(res.admin)
+      setCinemaHall(res.hall)
+      return { success: true, admin: res.admin }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('user')
+  // ✅ Logout
+  const logout = async () => {
+    try {
+      await authAPI.logout()
+      setUser(null)
+      setCinemaHall(null)
+    } catch (err) {
+      console.error("Logout failed:", err)
+    }
+  }
+
+  // ✅ Register
+  const register = async (data) => {
+    try {
+      const res = await authAPI.register(data)
+      return { success: true, admin: res.admin }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
   }
 
   const value = {
-    isLoggedIn: !!user,
     user,
+    cinemaHall,
+    isLoggedIn: !!user,
+    loading,
     login,
     logout,
+    register,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => useContext(AuthContext)

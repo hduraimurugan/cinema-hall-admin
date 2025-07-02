@@ -69,7 +69,7 @@ html, body {
   --secondary: oklch(0.9 0.02 250);          /* Soft blue */
   --secondary-foreground: oklch(0.15 0.01 240);
 
-  --accent: oklch(0.77 0.18 80);             /* Golden yellow */
+  --accent: oklch(71.871% 0.00008 271.152);             /* Golden yellow */
   --accent-foreground: oklch(0.2 0.02 60);
 
   --muted: oklch(0.9 0.01 250);              /* Muted light gray */
@@ -106,7 +106,7 @@ html, body {
   --secondary: oklch(0.3 0.02 240);          /* Cool gray-blue */
   --secondary-foreground: var(--foreground);
 
-  --accent: oklch(66.16% 0.22981 13.494);             /* Cinema red (brightened)*/
+  --accent: oklch(53.128% 0.00006 271.152);             /* Cinema red (brightened)*/
   --accent-foreground: var(--background);
 
   --muted: oklch(0.3 0.01 250);              /* Subtle contrast for dividers */
