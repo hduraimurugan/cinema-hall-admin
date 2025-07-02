@@ -7,6 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   ArrowLeft,
   Save,
   Settings,
@@ -17,11 +25,16 @@ import {
   Square,
   Rows,
   Columns,
+  Edit,
+  Trash2,
+  Eye,
+  Plus,
 } from "lucide-react"
 
 const CinemaScreenDesigner = () => {
   const [currentView, setCurrentView] = useState("list") // "designer" or "list"
   const [screenName, setScreenName] = useState("")
+  const [editingScreen, setEditingScreen] = useState(null)
   const [layout, setLayout] = useState({
     rows: 10,
     columns: 15,
@@ -37,7 +50,13 @@ const CinemaScreenDesigner = () => {
   const [selectedSeats, setSelectedSeats] = useState(new Set())
   const [rowLabels, setRowLabels] = useState({})
   const [isSelecting, setIsSelecting] = useState(false)
-  const [selectionMode, setSelectionMode] = useState("single") // "single", "multi", "row", "column"
+  const [selectionMode, setSelectionMode] = useState("single")
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [screenToDelete, setScreenToDelete] = useState(null)
+  const [saveMessage, setSaveMessage] = useState("")
+
   const layoutRef = useRef(null)
 
   const initializeSeats = useCallback(() => {
@@ -58,8 +77,10 @@ const CinemaScreenDesigner = () => {
   }, [layout.rows, layout.columns, pricing, rowLabels])
 
   React.useEffect(() => {
-    initializeSeats()
-  }, [layout.rows, layout.columns])
+    if (!editingScreen) {
+      initializeSeats()
+    }
+  }, [layout.rows, layout.columns, editingScreen])
 
   const updateSeat = (seatId, updates) => {
     setLayout((prev) => ({
@@ -78,11 +99,9 @@ const CinemaScreenDesigner = () => {
   const reassignRowLabels = () => {
     const newRowLabels = {}
     let labelIndex = 0
-
     for (let row = 0; row < layout.rows; row++) {
       const rowSeats = layout.seats.filter((seat) => seat.id.startsWith(`${row}-`))
       const isRowAllPassages = rowSeats.every((seat) => seat.type === "passage")
-
       if (!isRowAllPassages) {
         newRowLabels[row] = String.fromCharCode(65 + labelIndex)
         labelIndex++
@@ -90,10 +109,7 @@ const CinemaScreenDesigner = () => {
         newRowLabels[row] = ""
       }
     }
-
     setRowLabels(newRowLabels)
-
-    // Update seat row labels
     setLayout((prev) => ({
       ...prev,
       seats: prev.seats.map((seat) => {
@@ -121,16 +137,13 @@ const CinemaScreenDesigner = () => {
     }
 
     if (selectionMode === "multi" && event.shiftKey && selectedSeats.size > 0) {
-      // Implement shift+click range selection
       const lastSelected = Array.from(selectedSeats)[selectedSeats.size - 1]
       const [lastRow, lastCol] = lastSelected.split("-").map(Number)
       const [currentRow, currentCol] = seat.id.split("-").map(Number)
-
       const minRow = Math.min(lastRow, currentRow)
       const maxRow = Math.max(lastRow, currentRow)
       const minCol = Math.min(lastCol, currentCol)
       const maxCol = Math.max(lastCol, currentCol)
-
       const rangeSeats = new Set(selectedSeats)
       for (let r = minRow; r <= maxRow; r++) {
         for (let c = minCol; c <= maxCol; c++) {
@@ -141,9 +154,7 @@ const CinemaScreenDesigner = () => {
       return
     }
 
-    // Apply tool to seat(s)
     const seatsToUpdate = selectedSeats.size > 0 ? Array.from(selectedSeats) : [seat.id]
-
     if (selectedTool === "block") {
       updateMultipleSeats(seatsToUpdate, { isBlocked: !seat.isBlocked })
     } else if (selectedTool === "passage") {
@@ -159,7 +170,6 @@ const CinemaScreenDesigner = () => {
         price: pricing[selectedTool],
       })
     }
-
     setSelectedSeats(new Set())
   }
 
@@ -186,13 +196,10 @@ const CinemaScreenDesigner = () => {
   const getSeatColor = (seat) => {
     const isSelected = selectedSeats.has(seat.id)
     const baseClasses = "transition-all duration-200 border-2"
-
     if (isSelected) {
       return `${baseClasses} border-blue-500 ring-2 ring-blue-200 scale-105`
     }
-
     if (seat.isBlocked) return `${baseClasses} bg-red-500 border-red-600 text-white`
-
     switch (seat.type) {
       case "premium":
         return `${baseClasses} bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 hover:from-yellow-500 hover:to-yellow-600 text-yellow-900 shadow-md`
@@ -211,9 +218,41 @@ const CinemaScreenDesigner = () => {
     }
   }
 
+  const startNewScreen = () => {
+    setEditingScreen(null)
+    setScreenName("")
+    setLayout({
+      rows: 10,
+      columns: 15,
+      seats: [],
+      screenPosition: "top",
+    })
+    setPricing({
+      premium: 25,
+      gold: 20,
+      silver: 15,
+    })
+    setRowLabels({})
+    setSelectedSeats(new Set())
+    setCurrentView("designer")
+  }
+
+  const editScreen = (screen) => {
+    setEditingScreen(screen)
+    setScreenName(screen.name)
+    setLayout(screen.layout)
+    setPricing({
+      premium: screen.premiumPrice,
+      gold: screen.goldPrice,
+      silver: screen.silverPrice,
+    })
+    setCurrentView("designer")
+  }
+
   const saveScreen = () => {
     if (!screenName.trim()) {
-      alert("Please enter a screen name")
+      setSaveMessage("Please enter a screen name")
+      setShowSaveDialog(true)
       return
     }
 
@@ -228,7 +267,7 @@ const CinemaScreenDesigner = () => {
     )
 
     const screenData = {
-      id: Date.now().toString(),
+      id: editingScreen ? editingScreen.id : Date.now().toString(),
       name: screenName,
       totalSeats: seatCounts.premium + seatCounts.gold + seatCounts.silver,
       premiumSeats: seatCounts.premium,
@@ -238,23 +277,56 @@ const CinemaScreenDesigner = () => {
       goldPrice: pricing.gold,
       silverPrice: pricing.silver,
       layout: layout,
-      createdAt: new Date().toISOString(),
+      createdAt: editingScreen ? editingScreen.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
 
-    const existingScreens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
-    existingScreens.push(screenData)
-    localStorage.setItem("cinema-screens", JSON.stringify(existingScreens))
+    console.log("Screen Data:", screenData)
 
-    alert("Screen saved successfully!")
+    const existingScreens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
+
+    if (editingScreen) {
+      const index = existingScreens.findIndex((s) => s.id === editingScreen.id)
+      if (index !== -1) {
+        existingScreens[index] = screenData
+      }
+      setSaveMessage("Screen updated successfully!")
+    } else {
+      existingScreens.push(screenData)
+      setSaveMessage("Screen saved successfully!")
+    }
+
+    localStorage.setItem("cinema-screens", JSON.stringify(existingScreens))
+    setShowSaveDialog(true)
+  }
+
+  const confirmSave = () => {
+    setShowSaveDialog(false)
     setCurrentView("list")
   }
 
   const resetLayout = () => {
-    if (confirm("Are you sure you want to reset the entire layout?")) {
-      initializeSeats()
-      setSelectedSeats(new Set())
-      setRowLabels({})
-    }
+    setShowResetDialog(true)
+  }
+
+  const confirmReset = () => {
+    initializeSeats()
+    setSelectedSeats(new Set())
+    setRowLabels({})
+    setShowResetDialog(false)
+  }
+
+  const deleteScreen = (screen) => {
+    setScreenToDelete(screen)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = () => {
+    const existingScreens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
+    const updatedScreens = existingScreens.filter((s) => s.id !== screenToDelete.id)
+    localStorage.setItem("cinema-screens", JSON.stringify(updatedScreens))
+    setShowDeleteDialog(false)
+    setScreenToDelete(null)
   }
 
   const tools = [
@@ -274,42 +346,130 @@ const CinemaScreenDesigner = () => {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Cinema Screens</h1>
-            <p className="text-muted-foreground">Manage your cinema screen layouts</p>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Cinema Screens
+            </h1>
+            <p className="text-muted-foreground mt-2">Manage your cinema screen layouts with professional tools</p>
           </div>
-          <Button onClick={() => setCurrentView("designer")} className="">
+          <Button
+            onClick={startNewScreen}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
             Add New Screen
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {screens.map((screen) => (
-            <Card key={screen.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  {screen.name}
-                  <Badge variant="secondary">{screen.totalSeats} seats</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Premium:</span>
-                    <span>{screen.premiumSeats} seats</span>
+        {screens.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Monitor className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No screens created yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first cinema screen layout to get started</p>
+              <Button onClick={startNewScreen} className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Screen
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {screens.map((screen) => (
+              <Card
+                key={screen.id}
+                className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg backdrop-blur dark:bg-zinc-900 dark:shadow-none"
+              >
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="truncate text-zinc-800 dark:text-zinc-100">{screen.name}</span>
+                    </div>
+                    <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 dark:from-blue-900 dark:to-purple-900 dark:text-blue-100">
+                      {screen.totalSeats} seats
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
+                      <div className="font-bold text-yellow-800 dark:text-yellow-200">{screen.premiumSeats}</div>
+                      <div className="text-yellow-600 dark:text-yellow-300 text-xs">Premium</div>
+                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">${screen.premiumPrice}</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+                      <div className="font-bold text-blue-800 dark:text-blue-200">{screen.goldSeats}</div>
+                      <div className="text-blue-600 dark:text-blue-300 text-xs">Gold</div>
+                      <div className="text-blue-700 dark:text-blue-200 text-xs">${screen.goldPrice}</div>
+                    </div>
+                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-700">
+                      <div className="font-bold text-gray-800 dark:text-zinc-200">{screen.silverSeats}</div>
+                      <div className="text-gray-600 dark:text-zinc-400 text-xs">Silver</div>
+                      <div className="text-gray-700 dark:text-zinc-200 text-xs">${screen.silverPrice}</div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Gold:</span>
-                    <span>{screen.goldSeats} seats</span>
+
+                  <div className="text-xs text-muted-foreground dark:text-zinc-400 space-y-1">
+                    <div>Created: {new Date(screen.createdAt).toLocaleDateString()}</div>
+                    {screen.updatedAt && <div>Updated: {new Date(screen.updatedAt).toLocaleDateString()}</div>}
                   </div>
-                  <div className="flex justify-between">
-                    <span>Silver:</span>
-                    <span>{screen.silverSeats} seats</span>
+
+                  <Separator className="dark:bg-zinc-700" />
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 hover:bg-blue-50 hover:border-blue-300 bg-transparent dark:hover:bg-blue-900 dark:hover:border-blue-700"
+                      onClick={() => editScreen(screen)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 hover:bg-green-50 hover:border-green-300 bg-transparent dark:hover:bg-green-900 dark:hover:border-green-700"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 bg-transparent dark:hover:bg-red-900 dark:hover:border-red-700 dark:hover:text-red-400"
+                      onClick={() => deleteScreen(screen)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Screen</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{screenToDelete?.name}"? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmDelete}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Screen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }
@@ -319,11 +479,11 @@ const CinemaScreenDesigner = () => {
       <div className="flex items-center gap-4">
         <Button variant="outline" onClick={() => setCurrentView("list")} className="hover:bg-slate-100">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Screens
+          {/* Back to Screens */}
         </Button>
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Cinema Screen Designer
+            {editingScreen ? `Edit: ${editingScreen.name}` : "Cinema Screen Designer"}
           </h1>
           <p className="text-muted-foreground">Design your professional cinema screen layout</p>
         </div>
@@ -497,18 +657,18 @@ const CinemaScreenDesigner = () => {
                   <div className="flex justify-center">
                     <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-12 py-3 rounded-lg shadow-lg flex items-center gap-3">
                       <Monitor className="h-5 w-5" />
-                      <span className="font-bold tracking-wider">SCREENS THIS WAY</span>
+                      <span className="font-bold tracking-wider">SCREEN</span>
                     </div>
                   </div>
                 )}
 
                 {/* Quick Selection Tools */}
                 <div className="flex gap-2 justify-center">
-                  <Button variant="outline" size="sm" onClick={() => {}}>
+                  <Button variant="outline" size="sm" onClick={() => { }}>
                     <Rows className="h-4 w-4 mr-1" />
                     Select Rows
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => {}}>
+                  <Button variant="outline" size="sm" onClick={() => { }}>
                     <Columns className="h-4 w-4 mr-1" />
                     Select Columns
                   </Button>
@@ -591,7 +751,7 @@ const CinemaScreenDesigner = () => {
                 )}
 
                 {/* Legend */}
-                <div className=" p-4 rounded-lg shadow-inner">
+                <div className="p-4 rounded-lg shadow-inner">
                   <h4 className="font-semibold mb-3">Legend</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {tools.map((tool) => (
@@ -621,7 +781,7 @@ const CinemaScreenDesigner = () => {
                     </Button>
                     <Button onClick={saveScreen} className="bg-green-600 hover:bg-green-700">
                       <Save className="h-4 w-4 mr-2" />
-                      Save Screen
+                      {editingScreen ? "Update Screen" : "Save Screen"}
                     </Button>
                   </div>
                 </div>
@@ -630,6 +790,44 @@ const CinemaScreenDesigner = () => {
           </Card>
         </div>
       </div>
+
+      {/* Save Success Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{saveMessage.includes("name") ? "Validation Error" : "Success"}</DialogTitle>
+            <DialogDescription>{saveMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            {saveMessage.includes("name") ? (
+              <Button onClick={() => setShowSaveDialog(false)}>OK</Button>
+            ) : (
+              <Button onClick={confirmSave}>Continue</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Confirmation Dialog */}
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Layout</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reset the entire layout? This will remove all your current seat configurations.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmReset}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset Layout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

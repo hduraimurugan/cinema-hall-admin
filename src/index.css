@@ -106,7 +106,7 @@ html, body {
   --secondary: oklch(0.3 0.02 240);          /* Cool gray-blue */
   --secondary-foreground: var(--foreground);
 
-  --accent: oklch(0.72 0.18 80);             /* Warm golden glow */
+  --accent: oklch(66.16% 0.22981 13.494);             /* Cinema red (brightened)*/
   --accent-foreground: var(--background);
 
   --muted: oklch(0.3 0.01 250);              /* Subtle contrast for dividers */
