@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
@@ -12,6 +10,16 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { User, Mail, Lock, Phone, Building, MapPin, Film, ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
+import { State, City } from 'country-state-city'
+import { useEffect } from 'react'
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select"
+
 
 export const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -21,7 +29,12 @@ export const RegisterPage = () => {
     phone: "",
     hall_name: "",
     hall_location: "",
+    hall_district: "",
+    hall_state: ""
   })
+  const [states, setStates] = useState([])
+  const [cities, setCities] = useState([])
+
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
@@ -56,6 +69,23 @@ export const RegisterPage = () => {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const indianStates = State.getStatesOfCountry("IN")
+    setStates(indianStates)
+  }, [])
+
+  useEffect(() => {
+    if (formData.hall_state) {
+      const selected = states.find((s) => s.name === formData.hall_state)
+      if (selected) {
+        const fetchedCities = City.getCitiesOfState("IN", selected.isoCode)
+        setCities(fetchedCities)
+      }
+    }
+  }, [formData.hall_state])
+
+
 
   return (
     <div className="h-screen flex flex-col overflow-y-auto">
@@ -202,7 +232,7 @@ export const RegisterPage = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="hall_location" className="text-sm font-medium">
-                        Hall Location
+                        Full Address
                       </Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -218,6 +248,97 @@ export const RegisterPage = () => {
                           disabled={isLoading}
                         />
                       </div>
+
+                      {/* Default type Dropdowns */}
+                      <div className="hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* State Dropdown */}
+                        <div className="space-y-2">
+                          <Label htmlFor="hall_state" className="text-sm font-medium">State</Label>
+                          <select
+                            id="hall_state"
+                            name="hall_state"
+                            className="w-full h-11 px-3 bg-background border rounded-md border-border/50 focus:border-primary transition-colors"
+                            value={formData.hall_state}
+                            onChange={handleInputChange}
+                            disabled={isLoading}
+                            required
+                          >
+                            <option value="">Select a State</option>
+                            {states.map((state) => (
+                              <option key={state.isoCode} value={state.name}>{state.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* District Dropdown */}
+                        <div className="space-y-2">
+                          <Label htmlFor="hall_district" className="text-sm font-medium">District</Label>
+                          <select
+                            id="hall_district"
+                            name="hall_district"
+                            className="w-full h-11 px-3 border bg-background  rounded-md border-border/50 focus:border-primary transition-colors"
+                            value={formData.hall_district}
+                            onChange={handleInputChange}
+                            disabled={isLoading || !formData.hall_state}
+                            required
+                          >
+                            <option value="">Select a District</option>
+                            {cities.map((city) => (
+                              <option key={city.name} value={city.name}>{city.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Shadecn type Dropdowns */}
+                      <div className=" grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* State Dropdown */}
+                        <div className="space-y-2">
+                          <Label htmlFor="hall_state" className="text-sm font-medium">State</Label>
+                          <Select
+                            value={formData.hall_state}
+                            onValueChange={(value) =>
+                              setFormData((prev) => ({ ...prev, hall_state: value, hall_district: "" }))
+                            }
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger className="w-full h-11">
+                              <SelectValue placeholder="Select a State" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {states.map((state) => (
+                                <SelectItem key={state.isoCode} value={state.name}>
+                                  {state.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* District Dropdown */}
+                        <div className="space-y-2">
+                          <Label htmlFor="hall_district" className="text-sm font-medium">District</Label>
+                          <Select
+                            value={formData.hall_district}
+                            onValueChange={(value) =>
+                              setFormData((prev) => ({ ...prev, hall_district: value }))
+                            }
+                            disabled={isLoading || !formData.hall_state}
+                          >
+                            <SelectTrigger className="w-full h-11">
+                              <SelectValue placeholder="Select a District" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cities.map((city) => (
+                                <SelectItem key={city.name} value={city.name}>
+                                  {city.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 </div>
