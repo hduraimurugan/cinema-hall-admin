@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react"
+import React, { useState, useCallback, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,22 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  ArrowLeft,
-  Save,
-  Settings,
-  Monitor,
-  DoorOpen,
-  RotateCcw,
-  MousePointer,
-  Square,
-  Rows,
-  Columns,
-  Edit,
-  Trash2,
-  Eye,
-  Plus,
-} from "lucide-react"
+import { ArrowLeft, Save, Settings, Monitor, DoorOpen, RotateCcw, MousePointer, Square, Rows, Columns, Edit, Trash2, Eye, Plus, Loader2 } from 'lucide-react'
+import { screensAPI } from "../services/api.js"
 
 const CinemaScreenDesigner = () => {
   const [currentView, setCurrentView] = useState("list") // "designer" or "list"
@@ -58,9 +44,30 @@ const CinemaScreenDesigner = () => {
   const [saveMessage, setSaveMessage] = useState("")
   const [showViewDialog, setShowViewDialog] = useState(false)
   const [viewingScreen, setViewingScreen] = useState(null)
-
+  const [screens, setScreens] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const layoutRef = useRef(null)
+
+  // Fetch screens on component mount
+  useEffect(() => {
+    fetchScreens()
+  }, [])
+
+  const fetchScreens = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      const data = await screensAPI.getMyScreens()
+      setScreens(data || [])    
+    } catch (err) {
+      setError(err.message || "Failed to fetch screens")
+      console.error("Error fetching screens:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const initializeSeats = useCallback(() => {
     const seats = []
@@ -79,7 +86,7 @@ const CinemaScreenDesigner = () => {
     setLayout((prev) => ({ ...prev, seats }))
   }, [layout.rows, layout.columns, pricing, rowLabels])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!editingScreen) {
       initializeSeats()
     }
@@ -143,10 +150,12 @@ const CinemaScreenDesigner = () => {
       const lastSelected = Array.from(selectedSeats)[selectedSeats.size - 1]
       const [lastRow, lastCol] = lastSelected.split("-").map(Number)
       const [currentRow, currentCol] = seat.id.split("-").map(Number)
+
       const minRow = Math.min(lastRow, currentRow)
       const maxRow = Math.max(lastRow, currentRow)
       const minCol = Math.min(lastCol, currentCol)
       const maxCol = Math.max(lastCol, currentCol)
+
       const rangeSeats = new Set(selectedSeats)
       for (let r = minRow; r <= maxRow; r++) {
         for (let c = minCol; c <= maxCol; c++) {
@@ -158,6 +167,7 @@ const CinemaScreenDesigner = () => {
     }
 
     const seatsToUpdate = selectedSeats.size > 0 ? Array.from(selectedSeats) : [seat.id]
+
     if (selectedTool === "block") {
       updateMultipleSeats(seatsToUpdate, { isBlocked: !seat.isBlocked })
     } else if (selectedTool === "passage") {
@@ -173,6 +183,7 @@ const CinemaScreenDesigner = () => {
         price: pricing[selectedTool],
       })
     }
+
     setSelectedSeats(new Set())
   }
 
@@ -199,10 +210,13 @@ const CinemaScreenDesigner = () => {
   const getSeatColor = (seat) => {
     const isSelected = selectedSeats.has(seat.id)
     const baseClasses = "transition-all duration-200 border-2"
+
     if (isSelected) {
       return `${baseClasses} border-blue-500 ring-2 ring-blue-200 scale-105`
     }
+
     if (seat.isBlocked) return `${baseClasses} bg-red-500 border-red-600 text-white`
+
     switch (seat.type) {
       case "premium":
         return `${baseClasses} bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 hover:from-yellow-500 hover:to-yellow-600 text-yellow-900 shadow-md`
@@ -245,67 +259,73 @@ const CinemaScreenDesigner = () => {
     setScreenName(screen.name)
     setLayout(screen.layout)
     setPricing({
-      premium: screen.premiumPrice,
-      gold: screen.goldPrice,
-      silver: screen.silverPrice,
+      premium: screen.premium_price,
+      gold: screen.gold_price,
+      silver: screen.silver_price,
     })
     setCurrentView("designer")
   }
 
-  const saveScreen = () => {
+  const saveScreen = async () => {
     if (!screenName.trim()) {
       setSaveMessage("Please enter a screen name")
       setShowSaveDialog(true)
       return
     }
 
-    const seatCounts = layout.seats.reduce(
-      (acc, seat) => {
-        if (seat.type in acc) {
-          acc[seat.type]++
-        }
-        return acc
-      },
-      { premium: 0, gold: 0, silver: 0 },
-    )
+    try {
+      setLoading(true)
+      setError("")
 
-    const screenData = {
-      id: editingScreen ? editingScreen.id : Date.now().toString(),
-      name: screenName,
-      totalSeats: seatCounts.premium + seatCounts.gold + seatCounts.silver,
-      premiumSeats: seatCounts.premium,
-      goldSeats: seatCounts.gold,
-      silverSeats: seatCounts.silver,
-      premiumPrice: pricing.premium,
-      goldPrice: pricing.gold,
-      silverPrice: pricing.silver,
-      layout: layout,
-      createdAt: editingScreen ? editingScreen.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+      const seatCounts = layout.seats.reduce(
+        (acc, seat) => {
+          if (seat.type in acc) {
+            acc[seat.type]++
+          }
+          return acc
+        },
+        { premium: 0, gold: 0, silver: 0 },
+      )
 
-    console.log("Screen Data:", screenData)
-
-    const existingScreens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
-
-    if (editingScreen) {
-      const index = existingScreens.findIndex((s) => s.id === editingScreen.id)
-      if (index !== -1) {
-        existingScreens[index] = screenData
+      const screenData = {
+        name: screenName,
+        total_seats: seatCounts.premium + seatCounts.gold + seatCounts.silver,
+        premium_seats: seatCounts.premium,
+        gold_seats: seatCounts.gold,
+        silver_seats: seatCounts.silver,
+        premium_price: pricing.premium,
+        gold_price: pricing.gold,
+        silver_price: pricing.silver,
+        layout: layout,
+        screen_position: layout.screenPosition,
+        rows: layout.rows,
+        columns: layout.columns,
       }
-      setSaveMessage("Screen updated successfully!")
-    } else {
-      existingScreens.push(screenData)
-      setSaveMessage("Screen saved successfully!")
-    }
 
-    localStorage.setItem("cinema-screens", JSON.stringify(existingScreens))
-    setShowSaveDialog(true)
+      if (editingScreen) {
+        await screensAPI.updateScreen(editingScreen.id, screenData)
+        setSaveMessage("Screen updated successfully!")
+      } else {
+        await screensAPI.createScreen(screenData)
+        setSaveMessage("Screen saved successfully!")
+      }
+
+      await fetchScreens() // Refresh the screens list
+      setShowSaveDialog(true)
+    } catch (err) {
+      setError(err.message || "Failed to save screen")
+      setSaveMessage(err.message || "Failed to save screen")
+      setShowSaveDialog(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const confirmSave = () => {
     setShowSaveDialog(false)
-    setCurrentView("list")
+    if (!saveMessage.includes("Failed") && !saveMessage.includes("name")) {
+      setCurrentView("list")
+    }
   }
 
   const resetLayout = () => {
@@ -324,12 +344,19 @@ const CinemaScreenDesigner = () => {
     setShowDeleteDialog(true)
   }
 
-  const confirmDelete = () => {
-    const existingScreens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
-    const updatedScreens = existingScreens.filter((s) => s.id !== screenToDelete.id)
-    localStorage.setItem("cinema-screens", JSON.stringify(updatedScreens))
-    setShowDeleteDialog(false)
-    setScreenToDelete(null)
+  const confirmDelete = async () => {
+    try {
+      setLoading(true)
+      setError("")
+      await screensAPI.deleteScreen(screenToDelete.id)
+      await fetchScreens() // Refresh the screens list
+      setShowDeleteDialog(false)
+      setScreenToDelete(null)
+    } catch (err) {
+      setError(err.message || "Failed to delete screen")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const viewScreen = (screen) => {
@@ -348,8 +375,6 @@ const CinemaScreenDesigner = () => {
   ]
 
   if (currentView === "list") {
-    const screens = JSON.parse(localStorage.getItem("cinema-screens") || "[]")
-
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -362,13 +387,37 @@ const CinemaScreenDesigner = () => {
           <Button
             onClick={startNewScreen}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            disabled={loading}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            {loading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
+            )}
             Add New Screen
           </Button>
         </div>
 
-        {screens.length === 0 ? (
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <p className="text-red-600">{error}</p>
+              <Button variant="outline" onClick={fetchScreens} className="mt-2">
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {loading && screens.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Loader2 className="h-16 w-16 mx-auto text-muted-foreground mb-4 animate-spin" />
+              <h3 className="text-xl font-semibold mb-2">Loading screens...</h3>
+              <p className="text-muted-foreground">Please wait while we fetch your screens</p>
+            </CardContent>
+          </Card>
+        ) : screens.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <Monitor className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -394,43 +443,40 @@ const CinemaScreenDesigner = () => {
                       <span className="truncate text-zinc-800 dark:text-zinc-100">{screen.name}</span>
                     </div>
                     <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 dark:from-blue-900 dark:to-purple-900 dark:text-blue-100">
-                      {screen.totalSeats} seats
+                      {screen.total_seats} seats
                     </Badge>
                   </CardTitle>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-3 gap-3 text-sm">
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
-                      <div className="font-bold text-yellow-800 dark:text-yellow-200">{screen.premiumSeats}</div>
+                      <div className="font-bold text-yellow-800 dark:text-yellow-200">{screen.premium_seats}</div>
                       <div className="text-yellow-600 dark:text-yellow-300 text-xs">Premium</div>
-                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">Rs.{screen.premiumPrice}</div>
+                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">Rs.{screen.premium_price}</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
-                      <div className="font-bold text-blue-800 dark:text-blue-200">{screen.goldSeats}</div>
+                      <div className="font-bold text-blue-800 dark:text-blue-200">{screen.gold_seats}</div>
                       <div className="text-blue-600 dark:text-blue-300 text-xs">Gold</div>
-                      <div className="text-blue-700 dark:text-blue-200 text-xs">Rs.{screen.goldPrice}</div>
+                      <div className="text-blue-700 dark:text-blue-200 text-xs">Rs.{screen.gold_price}</div>
                     </div>
                     <div className="text-center p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-700">
-                      <div className="font-bold text-gray-800 dark:text-zinc-200">{screen.silverSeats}</div>
+                      <div className="font-bold text-gray-800 dark:text-zinc-200">{screen.silver_seats}</div>
                       <div className="text-gray-600 dark:text-zinc-400 text-xs">Silver</div>
-                      <div className="text-gray-700 dark:text-zinc-200 text-xs">Rs.{screen.silverPrice}</div>
+                      <div className="text-gray-700 dark:text-zinc-200 text-xs">Rs.{screen.silver_price}</div>
                     </div>
                   </div>
-
                   <div className="text-xs text-muted-foreground dark:text-zinc-400 space-y-1">
-                    <div>Created: {new Date(screen.createdAt).toLocaleDateString()}</div>
-                    {screen.updatedAt && <div>Updated: {new Date(screen.updatedAt).toLocaleDateString()}</div>}
+                    <div>Created: {new Date(screen.created_at).toLocaleDateString()}</div>
+                    {screen.updated_at && <div>Updated: {new Date(screen.updated_at).toLocaleDateString()}</div>}
                   </div>
-
                   <Separator className="dark:bg-zinc-700" />
-
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1 hover:bg-blue-50 hover:border-blue-300 bg-transparent dark:hover:bg-blue-900 dark:hover:border-blue-700"
                       onClick={() => editScreen(screen)}
+                      disabled={loading}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -449,8 +495,9 @@ const CinemaScreenDesigner = () => {
                       size="sm"
                       className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 bg-transparent dark:hover:bg-red-900 dark:hover:border-red-700 dark:hover:text-red-400"
                       onClick={() => deleteScreen(screen)}
+                      disabled={loading}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </Button>
                   </div>
                 </CardContent>
@@ -469,11 +516,15 @@ const CinemaScreenDesigner = () => {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={loading}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={confirmDelete}>
-                <Trash2 className="h-4 w-4 mr-2" />
+              <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
+                {loading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
                 Delete Screen
               </Button>
             </DialogFooter>
@@ -490,7 +541,6 @@ const CinemaScreenDesigner = () => {
               </DialogTitle>
               <DialogDescription>Choose your preferred seats for the best movie experience</DialogDescription>
             </DialogHeader>
-
             {viewingScreen && (
               <div className="space-y-6 py-4">
                 {/* Screen Display */}
@@ -560,7 +610,6 @@ const CinemaScreenDesigner = () => {
                                 </button>
                               )
                             })}
-
                             {/* Row label (right side) */}
                             <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
                               {String.fromCharCode(65 + rowIndex)}
@@ -592,17 +641,17 @@ const CinemaScreenDesigner = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-gradient-to-br from-yellow-400 to-yellow-500 border-2 border-yellow-600"></div>
                         <span className="font-medium">Premium</span>
-                        <Badge className="ml-auto">${viewingScreen.premiumPrice}</Badge>
+                        <Badge className="ml-auto">Rs.{viewingScreen.premium_price}</Badge>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-gradient-to-br from-blue-400 to-blue-500 border-2 border-blue-600"></div>
                         <span className="font-medium">Gold</span>
-                        <Badge className="ml-auto">${viewingScreen.goldPrice}</Badge>
+                        <Badge className="ml-auto">Rs.{viewingScreen.gold_price}</Badge>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded bg-gradient-to-br from-gray-300 to-gray-400 border-2 border-gray-500"></div>
                         <span className="font-medium">Silver</span>
-                        <Badge className="ml-auto">${viewingScreen.silverPrice}</Badge>
+                        <Badge className="ml-auto">Rs.{viewingScreen.silver_price}</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -614,26 +663,25 @@ const CinemaScreenDesigner = () => {
                     <CardContent className="space-y-2">
                       <div className="flex justify-between">
                         <span>Total Seats:</span>
-                        <span className="font-bold">{viewingScreen.totalSeats}</span>
+                        <span className="font-bold">{viewingScreen.total_seats}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Premium Seats:</span>
-                        <span className="font-bold text-yellow-600">{viewingScreen.premiumSeats}</span>
+                        <span className="font-bold text-yellow-600">{viewingScreen.premium_seats}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Gold Seats:</span>
-                        <span className="font-bold text-blue-600">{viewingScreen.goldSeats}</span>
+                        <span className="font-bold text-blue-600">{viewingScreen.gold_seats}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Silver Seats:</span>
-                        <span className="font-bold text-gray-600">{viewingScreen.silverSeats}</span>
+                        <span className="font-bold text-gray-600">{viewingScreen.silver_seats}</span>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
               </div>
             )}
-
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowViewDialog(false)}>
                 Close
@@ -947,11 +995,15 @@ const CinemaScreenDesigner = () => {
                     💡 Tip: Use Ctrl+Click for multi-select, Shift+Click for range select
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="outline" onClick={() => setCurrentView("list")}>
+                    <Button variant="outline" onClick={() => setCurrentView("list")} disabled={loading}>
                       Cancel
                     </Button>
-                    <Button onClick={saveScreen} className="bg-green-600 hover:bg-green-700">
-                      <Save className="h-4 w-4 mr-2" />
+                    <Button onClick={saveScreen} className="bg-green-600 hover:bg-green-700" disabled={loading}>
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
                       {editingScreen ? "Update Screen" : "Save Screen"}
                     </Button>
                   </div>
@@ -966,11 +1018,11 @@ const CinemaScreenDesigner = () => {
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{saveMessage.includes("name") ? "Validation Error" : "Success"}</DialogTitle>
+            <DialogTitle>{saveMessage.includes("name") || saveMessage.includes("Failed") ? "Error" : "Success"}</DialogTitle>
             <DialogDescription>{saveMessage}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            {saveMessage.includes("name") ? (
+            {saveMessage.includes("name") || saveMessage.includes("Failed") ? (
               <Button onClick={() => setShowSaveDialog(false)}>OK</Button>
             ) : (
               <Button onClick={confirmSave}>Continue</Button>
@@ -999,8 +1051,6 @@ const CinemaScreenDesigner = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
     </div>
   )
 }
