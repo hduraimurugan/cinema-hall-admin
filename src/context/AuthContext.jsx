@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [cinemaHall, setCinemaHall] = useState(null)
   const [loading, setLoading] = useState(true)
+  const isSuperAdmin = user?.role === 'superAdmin'
 
   // 🔄 Load session on mount
   useEffect(() => {
@@ -80,6 +81,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     cinemaHall,
+    isSuperAdmin,
     isLoggedIn: !!user,
     loading,
     login,

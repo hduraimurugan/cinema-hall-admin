@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button"
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Screens", url: "/screens", icon: Monitor },
-  { title: "Movies", url: "/movies", icon: Film },
+  { title: "Movies", url: "/movies", icon: Film, roles: ["superAdmin"] },
   { title: "Showtimes", url: "/shows", icon: Calendar },
   { title: "Bookings", url: "/bookings", icon: Ticket },
 ]
@@ -36,7 +36,7 @@ const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 
 export function AppSidebar({ pageTitle, collapsed = false }) {
   const location = useLocation()
-  const { user, cinemaHall, logout } = useAuth()
+  const { user, cinemaHall, logout, isSuperAdmin } = useAuth()
 
   const isActive = (url) => location.pathname === url
 
@@ -48,20 +48,25 @@ export function AppSidebar({ pageTitle, collapsed = false }) {
         </h4>
       )}
       <div className="space-y-1">
-        {items.map(({ title, url, icon: Icon }) => (
-          <Link
-            key={title}
-            to={url}
-            className={`flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-200 hover:bg-primary/10 ${collapsed ? "justify-center px-2" : "gap-3 px-3"
-              } ${isActive(url)
-                ? "bg-gradient-to-r from-primary/20 to-primary/10 border-r-2 border-primary text-primary"
-                : "text-muted-foreground hover:text-foreground"
-              }`}
-          >
-            <Icon className="size-4" />
-            {!collapsed && <span>{title}</span>}
-          </Link>
-        ))}
+        {items
+          .filter(item => {
+            // Show if no role restriction OR user has required role
+            return !item.roles || item.roles.includes(user?.role)
+          })
+          .map(({ title, url, icon: Icon }) => (
+            <Link
+              key={title}
+              to={url}
+              className={`flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-200 hover:bg-primary/10 ${collapsed ? "justify-center px-2" : "gap-3 px-3"
+                } ${isActive(url)
+                  ? "bg-gradient-to-r from-primary/20 to-primary/10 border-r-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Icon className="size-4" />
+              {!collapsed && <span>{title}</span>}
+            </Link>
+          ))}
       </div>
     </div>
   )

@@ -12,6 +12,8 @@ import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import RegisterPage from './pages/RegisterPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
+import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
+import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -24,22 +26,31 @@ function App() {
           <Route
             path="/login"
             element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />}
-          />          
+          />
           <Route path="/register" element={<RegisterPage />} />
 
+          {/* Normal Cinema Admin routes */}
           <Route path="" element={
             <ProtectedRoute>
               <CinemaLayout />
             </ProtectedRoute>
           }>
             <Route path="/" element={<HomePage />} />
+            <Route path="/unauthorized" element={<UnAuthorizedPage />} />
             <Route path="/screens" element={<CinemaScreenDesigner />} />
-
-            <Route path="/movies" element={<MovieManagement />} />
             <Route path="/shows" element={<ShowsManagement />} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+          </Route>
+
+          {/* Super Admin Routes */}
+          <Route path="" element={
+            <AdminProtectedRoute>
+              <CinemaLayout />
+            </AdminProtectedRoute>
+          }>
+            <Route path="/movies" element={<MovieManagement />} />
           </Route>
 
           {/* Catch-all route - redirect to home */}
