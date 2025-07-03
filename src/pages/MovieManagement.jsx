@@ -15,14 +15,18 @@ import {
   Edit,
   Trash2,
   Upload,
-  Calendar,
   Clock,
   Star,
   ThumbsUp,
   MoreVertical,
 } from "lucide-react"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
 import { moviesAPI } from "../services/api.js"
 import { uploadImageToCloudinary } from "../services/cloudinary"
+import { cn } from "@/lib/utils" // utility to join classNames (optional)
 
 const MovieManagement = () => {
   const [movies, setMovies] = useState([])
@@ -51,8 +55,8 @@ const MovieManagement = () => {
     poster_url: "",
     trailer_url: "",
     duration_mins: "",
-    genre: "",
-    language: "",
+    genre: [], // changed to array
+    language: [], // changed to array
     release_date: "",
   })
   const [uploading, setUploading] = useState(false)
@@ -84,8 +88,6 @@ const MovieManagement = () => {
     setUploading(true)
     try {
       const result = await uploadImageToCloudinary(file)
-      console.log(result);
-      
       setFormData((prev) => ({ ...prev, poster_url: result.url }))
     } catch (error) {
       console.error("Error uploading image:", error)
@@ -123,8 +125,8 @@ const MovieManagement = () => {
       poster_url: movie.poster_url || "",
       trailer_url: movie.trailer_url || "",
       duration_mins: movie.duration_mins || "",
-      genre: movie.genre || "",
-      language: movie.language || "",
+      genre: movie.genre || [],         // ensure it's an array
+      language: movie.language || [],   // ensure it's an array
       release_date: movie.release_date || "",
     })
     setIsEditModalOpen(true)
@@ -203,50 +205,82 @@ const MovieManagement = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="genre">Genre *</Label>
-          <Select value={formData.genre} onValueChange={(value) => setFormData((prev) => ({ ...prev, genre: value }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select genre" />
-            </SelectTrigger>
-            <SelectContent>
-              {genres.map((genre) => (
-                <SelectItem key={genre} value={genre}>
-                  {genre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Genre *</Label>
+          <div className="flex flex-wrap gap-2">
+            {genres.map((genre) => (
+              <Badge
+                key={genre}
+                variant={formData.genre.includes(genre) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    genre: prev.genre.includes(genre)
+                      ? prev.genre.filter((g) => g !== genre)
+                      : [...prev.genre, genre],
+                  }))
+                }
+              >
+                {genre}
+              </Badge>
+            ))}
+          </div>
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="language">Language *</Label>
-          <Select
-            value={formData.language}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, language: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {languages.map((language) => (
-                <SelectItem key={language} value={language}>
-                  {language}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Language *</Label>
+          <div className="flex flex-wrap gap-2">
+            {languages.map((lang) => (
+              <Badge
+                key={lang}
+                variant={formData.language.includes(lang) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    language: prev.language.includes(lang)
+                      ? prev.language.filter((l) => l !== lang)
+                      : [...prev.language, lang],
+                  }))
+                }
+              >
+                {lang}
+              </Badge>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="release_date">Release Date *</Label>
-        <Input
-          id="release_date"
-          type="date"
-          value={formData.release_date}
-          onChange={(e) => setFormData((prev) => ({ ...prev, release_date: e.target.value }))}
-          required
-        />
+        <Label>Release Date *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={`w-full justify-start text-left font-normal ${formData.release_date ? "" : "text-muted-foreground"
+                }`}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {formData.release_date
+                ? format(new Date(formData.release_date), "PPP")
+                : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={formData.release_date ? new Date(formData.release_date) : undefined}
+              onSelect={(date) => {
+                if (date) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    release_date: date.toLocaleDateString("en-CA").split("T")[0], // sets to YYYY-MM-DD
+                  }))
+                }
+              }}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="space-y-2">
@@ -396,11 +430,35 @@ const MovieManagement = () => {
           </div>
 
           {expandedFilters.releaseDate && (
-            <Input
-              type="date"
-              value={filters.release_date}
-              onChange={(e) => setFilters((prev) => ({ ...prev, release_date: e.target.value, page: 1 }))}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !filters.release_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {filters.release_date ? format(new Date(filters.release_date), "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filters.release_date ? new Date(filters.release_date) : undefined}
+                  onSelect={(date) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      release_date: date ? date.toLocaleDateString("en-CA") : "",
+                      page: 1,
+                    }))
+                  }
+
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </div>
@@ -504,18 +562,27 @@ const MovieManagement = () => {
                     <CardContent className="p-4">
                       <h3 className="font-semibold mb-2 line-clamp-1">{movie.title}</h3>
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">
-                          {movie.genre}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          {movie.genre?.map((g, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="text-xs px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full"
+                            >
+                              {g}
+                            </Badge>
+                          ))}
+                        </div>
+
                         <div className="flex items-center text-xs text-neutral-500">
                           <Clock className="w-3 h-3 mr-1" />
                           {movie.duration_mins}m
                         </div>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-neutral-600">{movie.language}</span>
+                        <span className="text-sm text-neutral-600">{movie.language?.join(", ")}</span>
                         <div className="flex items-center text-xs text-neutral-500">
-                          <Calendar className="w-3 h-3 mr-1" />
+                          <CalendarIcon className="w-3 h-3 mr-1" />
                           {new Date(movie.release_date).getFullYear()}
                         </div>
                       </div>

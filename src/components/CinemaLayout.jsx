@@ -46,7 +46,16 @@ export function CinemaLayout() {
     const { user, cinemaHall, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+        const storedState = localStorage.getItem("sidebar-collapsed")
+        return storedState !== null ? JSON.parse(storedState) : false
+    })
+
+    useEffect(() => {
+        localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarCollapsed))
+    }, [isSidebarCollapsed])
+
+    console.log("Sidebar Collapsed:", isSidebarCollapsed)
 
 
     // Handle responsive views
@@ -116,7 +125,7 @@ export function CinemaLayout() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                            onClick={() => setIsSidebarCollapsed(prev => !prev)}
                             className="hidden lg:flex hover:bg-primary/10 transition-colors duration-200"
                         >
                             {isSidebarCollapsed ? (
@@ -145,8 +154,8 @@ export function CinemaLayout() {
                                 </div>
 
                                 <div className="flex flex-col gap-0 justify-center items-start">
-                                <span className="font-semibold text-md">{cinemaHall.name}</span>
-                                <span className="truncate text-xs text-muted-foreground">{cinemaHall.location}</span>
+                                    <span className="font-semibold text-md">{cinemaHall.name}</span>
+                                    <span className="truncate text-xs text-muted-foreground">{cinemaHall.location}</span>
                                 </div>
                             </Link>
                         </div>
