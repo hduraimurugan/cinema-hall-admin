@@ -130,3 +130,102 @@ export const screensAPI = {
     return response.json()
   },
 }
+
+export const moviesAPI = {
+  // ✅ Add a new movie
+  addMovie: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to add movie")
+    }
+
+    return response.json()
+  },
+
+  // ✅ Edit an existing movie
+  editMovie: async (movieId, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/edit/${movieId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to edit movie")
+    }
+
+    return response.json()
+  },
+
+  // ✅ Delete a movie
+  deleteMovie: async (movieId) => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/delete/${movieId}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to delete movie")
+    }
+
+    return response.json()
+  },
+
+  // ✅ Get all movies with optional filters and pagination
+  getAllMovies: async ({ page = 1, limit = 10, genre, language, status, release_date } = {}) => {
+    const params = new URLSearchParams()
+
+    // Add filters if provided
+    if (page) params.append("page", page)
+    if (limit) params.append("limit", limit)
+    if (genre) params.append("genre", genre)
+    if (language) params.append("language", language)
+    if (status) params.append("status", status)
+    if (release_date) params.append("release_date", release_date)
+
+    const response = await fetch(`${API_BASE_URL}/api/movies?${params.toString()}`, {
+      method: "GET",
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to fetch movies")
+    }
+
+    return response.json()
+  },
+
+  // ✅ Update movie status
+  updateStatus: async (movieId, status) => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/${movieId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ status }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to update status")
+    }
+
+    return response.json()
+  },
+}

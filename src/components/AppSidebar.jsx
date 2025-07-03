@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAuth } from "../context/AuthContext"
 import { Button } from "@/components/ui/button"
+import { formatRole } from "../utils/utils"
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
@@ -31,6 +32,7 @@ const managementItems = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Reviews", url: "/reviews", icon: Star },
 ]
+
 
 const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 
@@ -113,7 +115,7 @@ export function AppSidebar({ pageTitle, collapsed = false }) {
             <>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user?.name || "Admin User"}</span>
-                <span className="truncate text-xs text-muted-foreground">{user?.role || "Administrator"}</span>
+                <span className="truncate text-xs text-muted-foreground">{formatRole(user?.role) || "Administrator"}</span>
               </div>
 
               <Button

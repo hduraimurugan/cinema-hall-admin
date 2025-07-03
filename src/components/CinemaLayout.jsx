@@ -28,6 +28,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
+import { formatRole } from "../utils/utils";
 
 // Mock notifications
 const mockNotifications = [
@@ -273,7 +274,7 @@ export function CinemaLayout() {
                                     <div className="flex flex-col space-y-1">
                                         <p className="text-sm font-medium">{user.name}</p>
                                         <p className="text-xs text-muted-foreground">{user.email}</p>
-                                        <p className="text-xs text-primary font-medium">{user.role}</p>
+                                        <p className="text-xs text-primary font-medium">{formatRole(user?.role)}</p>
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
