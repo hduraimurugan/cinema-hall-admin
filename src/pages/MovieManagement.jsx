@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   ChevronDown,
   ChevronUp,
@@ -27,6 +28,7 @@ import { format } from "date-fns"
 import { moviesAPI } from "../services/api.js"
 import { uploadImageToCloudinary } from "../services/cloudinary"
 import { cn } from "@/lib/utils" // utility to join classNames (optional)
+import { formatStatus, getStatusColor } from "../utils/utils.js"
 
 const MovieManagement = () => {
   const [movies, setMovies] = useState([])
@@ -63,6 +65,17 @@ const MovieManagement = () => {
 
   const genres = ["Action", "Comedy", "Drama", "Horror", "Romance", "Thriller", "Sci-Fi", "Adventure"]
   const languages = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada"]
+
+  useEffect(() => {
+    if (!isEditModalOpen && !isAddModalOpen) {
+      // If any popover/calendar is open, force it to close
+      setTimeout(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
+      }, 100)
+    }
+  }, [isEditModalOpen, isAddModalOpen])
 
   useEffect(() => {
     fetchMovies()
@@ -151,8 +164,8 @@ const MovieManagement = () => {
       poster_url: "",
       trailer_url: "",
       duration_mins: "",
-      genre: "",
-      language: "",
+      genre: [],
+      language: [],
       release_date: "",
     })
   }
@@ -252,7 +265,7 @@ const MovieManagement = () => {
 
       <div className="space-y-2">
         <Label>Release Date *</Label>
-        <Popover>
+        <Popover forceMount>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -265,7 +278,7 @@ const MovieManagement = () => {
                 : "Pick a date"}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
+          <PopoverContent forceMount className="w-auto p-0">
             <Calendar
               mode="single"
               selected={formData.release_date ? new Date(formData.release_date) : undefined}
@@ -333,6 +346,25 @@ const MovieManagement = () => {
       </div>
     </form>
   )
+
+  const EditMovieDialog = ({ movie, open, onOpenChange, onSave }) => {
+    return (
+      <>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Movie</DialogTitle>
+            </DialogHeader>
+            <MovieForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={onSave}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    )
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -430,7 +462,7 @@ const MovieManagement = () => {
           </div>
 
           {expandedFilters.releaseDate && (
-            <Popover>
+            <Popover forceMount>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -443,7 +475,7 @@ const MovieManagement = () => {
                   {filters.release_date ? format(new Date(filters.release_date), "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent forceMount className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={filters.release_date ? new Date(filters.release_date) : undefined}
@@ -508,8 +540,25 @@ const MovieManagement = () => {
 
           {/* Movies Grid */}
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-neutral-500">Loading movies...</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden animate-pulse">
+                  <Skeleton className="w-full h-80" /> {/* Poster image */}
+
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-3/4" /> {/* Title */}
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-16 rounded-full" /> {/* Genre 1 */}
+                      <Skeleton className="h-3 w-12 rounded-full" /> {/* Genre 2 */}
+                      <Skeleton className="h-3 w-10 rounded-full" /> {/* Duration */}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-3 w-24" /> {/* Languages */}
+                      <Skeleton className="h-3 w-12" /> {/* Release year */}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : (
             <>
@@ -522,6 +571,16 @@ const MovieManagement = () => {
                         alt={movie.title}
                         className="w-full h-80 object-cover"
                       />
+
+                      {/* 🔹 Movie Status Badge */}
+                      {movie.status && (
+                        <div
+                          className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider ${getStatusColor(movie.status)}`}
+                        >
+                          {formatStatus(movie.status)}
+                        </div>
+
+                      )}
 
                       {/* Action Menu */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -626,14 +685,28 @@ const MovieManagement = () => {
           )}
 
           {/* Edit Modal */}
-          <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <EditMovieDialog
+            movie={editingMovie}
+            open={isEditModalOpen}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditingMovie(null);
+                resetForm();
+              }
+              setIsEditModalOpen(open);
+            }}
+            onSave={handleSubmit}
+          />
+
+          {/* Edit Modal */}
+          {/* <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+            <DialogContent key={editingMovie?.id || "edit"} className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Movie</DialogTitle>
               </DialogHeader>
               <MovieForm />
             </DialogContent>
-          </Dialog>
+          </Dialog> */}
         </div>
       </div>
     </div>

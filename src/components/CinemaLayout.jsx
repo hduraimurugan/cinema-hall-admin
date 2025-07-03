@@ -55,9 +55,6 @@ export function CinemaLayout() {
         localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarCollapsed))
     }, [isSidebarCollapsed])
 
-    console.log("Sidebar Collapsed:", isSidebarCollapsed)
-
-
     // Handle responsive views
     useEffect(() => {
         const handleResize = () => {
