@@ -9,6 +9,8 @@ import { formatStatus, getStatusColor } from "../utils/utils"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { LazyLoadImage } from "react-lazy-load-image-component"
+import "react-lazy-load-image-component/src/effects/blur.css"
 
 const MoviePage = () => {
     const { id } = useParams()
@@ -66,7 +68,7 @@ const MoviePage = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-                <div className="container mx-auto px-4 py-8">
+                <div className="container mx-auto lg:px-50 px-10 py-8">
                     <div className="grid lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-1">
                             <Skeleton className="w-full h-[600px] rounded-xl" />
@@ -154,11 +156,20 @@ const MoviePage = () => {
                         {/* Movie Poster */}
                         <div className="lg:col-span-1">
                             <Card className="overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-300 p-0 border-0">
-                                <img
+                                {/* <img
                                     src={movie.poster_url || "/placeholder.svg"}
                                     alt={movie.title}
                                     className="w-full h-auto object-cover"
+                                /> */}
+                                <LazyLoadImage
+                                    src={movie.poster_url || "/placeholder.svg?height=400&width=300"}
+                                    alt={movie.title}
+                                    effect="blur"
+                                    height="100%"
+                                    width="100%"
+                                    className="w-full h-auto object-cover"
                                 />
+
                             </Card>
                         </div>
 
@@ -257,7 +268,7 @@ const MoviePage = () => {
 
             {/* Trailer Section */}
             {movie.trailer_url && (
-                <div className="container mx-auto px-4 py-16">
+                <div className="container mx-auto md:px-4 px-10 py-16">
                     <Card className="overflow-hidden shadow-2xl">
                         <CardContent className="md:p-8 px-2">
                             <div className="hidden flex items-center gap-3 mb-6">
@@ -280,7 +291,7 @@ const MoviePage = () => {
             )}
 
             {/* Additional Info Section */}
-            <div className="container mx-auto px-4 pb-16">
+            <div className="container mx-auto md:px-4 px-10 pb-16">
                 <div className="grid md:grid-cols-2 gap-8">
                     <Card className=" shadow-xl">
                         <CardContent className="p-6">

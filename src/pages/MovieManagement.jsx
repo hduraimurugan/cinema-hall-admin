@@ -20,18 +20,20 @@ import { cn } from "@/lib/utils"
 import { formatStatus, genres, getStatusColor, languages } from "../utils/utils.js"
 import { useNavigate } from "react-router-dom"
 import { MovieForm } from "./MovieForm.jsx"
+import { LazyLoadImage } from "react-lazy-load-image-component"
+import "react-lazy-load-image-component/src/effects/blur.css"
 
 // Move EditMovieDialog outside of the main component
-const EditMovieDialog = ({ 
-  open, 
-  onOpenChange, 
-  formData, 
-  setFormData, 
-  onSubmit, 
-  onCancel, 
-  uploading, 
-  handleImageUpload, 
-  editingMovie 
+const EditMovieDialog = ({
+  open,
+  onOpenChange,
+  formData,
+  setFormData,
+  onSubmit,
+  onCancel,
+  uploading,
+  handleImageUpload,
+  editingMovie
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -410,11 +412,21 @@ const MovieManagement = () => {
                     onClick={() => navigate(`/movie/${movie.id}`)}
                   >
                     <div className="relative">
-                      <img
+                      {/* <img
                         src={movie.poster_url || "/placeholder.svg?height=400&width=300"}
                         alt={movie.title}
                         className="w-full h-80 object-cover"
+                      /> */}
+                      <LazyLoadImage
+                        src={movie.poster_url || "/placeholder.svg?height=400&width=300"}
+                        alt={movie.title}
+                        effect="blur"
+                        height="100%"
+                        width="100%"
+                        className="w-full h-80 object-cover rounded-xl shadow-md transition-all duration-500 ease-in-out transform hover:scale-105"
                       />
+
+
                       {/* Movie Status Badge */}
                       {movie.status && (
                         <div
