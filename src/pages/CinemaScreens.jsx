@@ -376,10 +376,10 @@ const CinemaScreenDesigner = () => {
 
   if (currentView === "list") {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-7 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="md:text-4xl text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Cinema Screens
             </h1>
             <p className="text-muted-foreground mt-2">Manage your cinema screen layouts with professional tools</p>
@@ -394,7 +394,7 @@ const CinemaScreenDesigner = () => {
             ) : (
               <Plus className="h-4 w-4 mr-2" />
             )}
-            Add New Screen
+            Add Screen
           </Button>
         </div>
 

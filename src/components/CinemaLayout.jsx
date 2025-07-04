@@ -328,7 +328,7 @@ export function CinemaLayout() {
                 {/* Page Content - Scrollable */}
                 <main className="flex-1 min-w-0 overflow-hidden">
                     <div className="h-full overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
-                        <div className="w-full p-2 md:p-6">
+                        <div className="w-full">
                             <Outlet />
                         </div>
                     </div>

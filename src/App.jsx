@@ -14,6 +14,7 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
+import MoviePage from './pages/MoviePage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -51,6 +52,7 @@ function App() {
             </AdminProtectedRoute>
           }>
             <Route path="/movies" element={<MovieManagement />} />
+            <Route path="/movie/:id" element={<MoviePage />} />
           </Route>
 
           {/* Catch-all route - redirect to home */}

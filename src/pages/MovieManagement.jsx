@@ -28,9 +28,12 @@ import { format } from "date-fns"
 import { moviesAPI } from "../services/api.js"
 import { uploadImageToCloudinary } from "../services/cloudinary"
 import { cn } from "@/lib/utils" // utility to join classNames (optional)
-import { formatStatus, getStatusColor } from "../utils/utils.js"
+import { formatStatus, genres, getStatusColor, languages } from "../utils/utils.js"
+import { useNavigate } from "react-router-dom"
+import { MovieForm } from "./MovieForm.jsx"
 
 const MovieManagement = () => {
+  const navigate = useNavigate()
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(false)
   const [filters, setFilters] = useState({
@@ -63,8 +66,6 @@ const MovieManagement = () => {
   })
   const [uploading, setUploading] = useState(false)
 
-  const genres = ["Action", "Comedy", "Drama", "Horror", "Romance", "Thriller", "Sci-Fi", "Adventure"]
-  const languages = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada"]
 
   useEffect(() => {
     if (!isEditModalOpen && !isAddModalOpen) {
@@ -180,174 +181,7 @@ const MovieManagement = () => {
     })
   }
 
-  const MovieForm = () => (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Title *</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="duration">Duration (minutes) *</Label>
-          <Input
-            id="duration"
-            type="number"
-            value={formData.duration_mins}
-            onChange={(e) => setFormData((prev) => ({ ...prev, duration_mins: e.target.value }))}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description *</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-          rows={3}
-          required
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Genre *</Label>
-          <div className="flex flex-wrap gap-2">
-            {genres.map((genre) => (
-              <Badge
-                key={genre}
-                variant={formData.genre.includes(genre) ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    genre: prev.genre.includes(genre)
-                      ? prev.genre.filter((g) => g !== genre)
-                      : [...prev.genre, genre],
-                  }))
-                }
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Language *</Label>
-          <div className="flex flex-wrap gap-2">
-            {languages.map((lang) => (
-              <Badge
-                key={lang}
-                variant={formData.language.includes(lang) ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    language: prev.language.includes(lang)
-                      ? prev.language.filter((l) => l !== lang)
-                      : [...prev.language, lang],
-                  }))
-                }
-              >
-                {lang}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Release Date *</Label>
-        <Popover forceMount>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={`w-full justify-start text-left font-normal ${formData.release_date ? "" : "text-muted-foreground"
-                }`}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.release_date
-                ? format(new Date(formData.release_date), "PPP")
-                : "Pick a date"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent forceMount className="w-auto p-0">
-            <Calendar
-              mode="single"
-              selected={formData.release_date ? new Date(formData.release_date) : undefined}
-              onSelect={(date) => {
-                if (date) {
-                  setFormData((prev) => ({
-                    ...prev,
-                    release_date: date.toLocaleDateString("en-CA").split("T")[0], // sets to YYYY-MM-DD
-                  }))
-                }
-              }}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="trailer_url">Trailer URL</Label>
-        <Input
-          id="trailer_url"
-          type="url"
-          value={formData.trailer_url}
-          onChange={(e) => setFormData((prev) => ({ ...prev, trailer_url: e.target.value }))}
-          placeholder="https://youtube.com/watch?v=..."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Poster Image *</Label>
-        <div className="flex items-center gap-4">
-          <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
-          <Button type="button" disabled={uploading} variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
-            {uploading ? "Uploading..." : "Upload"}
-          </Button>
-        </div>
-        {formData.poster_url && (
-          <div className="mt-2">
-            <img
-              src={formData.poster_url || "/placeholder.svg"}
-              alt="Preview"
-              className="w-32 h-48 object-cover rounded"
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            setIsAddModalOpen(false)
-            setIsEditModalOpen(false)
-            resetForm()
-            setEditingMovie(null)
-          }}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" className="bg-primary hover:bg-primary/90">
-          {editingMovie ? "Update Movie" : "Add Movie"}
-        </Button>
-      </div>
-    </form>
-  )
-
-  const EditMovieDialog = ({ movie, open, onOpenChange, onSave }) => {
+  const EditMovieDialog = ({ open, onOpenChange }) => {
     return (
       <>
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -358,8 +192,18 @@ const MovieManagement = () => {
             <MovieForm
               formData={formData}
               setFormData={setFormData}
-              onSubmit={onSave}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setIsAddModalOpen(false);
+                setIsEditModalOpen(false);
+                resetForm();
+                setEditingMovie(null);
+              }}
+              uploading={uploading}
+              handleImageUpload={handleImageUpload}
+              editingMovie={editingMovie}
             />
+
           </DialogContent>
         </Dialog>
       </>
@@ -367,7 +211,7 @@ const MovieManagement = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen p-6 ">
       {/* Sidebar */}
       <div className="w-50 border-r border-secondary/50 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -512,7 +356,20 @@ const MovieManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Add New Movie</DialogTitle>
                 </DialogHeader>
-                <MovieForm />
+                <MovieForm
+                  formData={formData}
+                  setFormData={setFormData}
+                  onSubmit={handleSubmit}
+                  onCancel={() => {
+                    setIsAddModalOpen(false);
+                    setIsEditModalOpen(false);
+                    resetForm();
+                    setEditingMovie(null);
+                  }}
+                  uploading={uploading}
+                  handleImageUpload={handleImageUpload}
+                  editingMovie={editingMovie}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -564,7 +421,8 @@ const MovieManagement = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {movies.map((movie) => (
-                  <Card key={movie.id} className="overflow-hidden hover:shadow-lg transition-shadow group p-0 cursor-pointer">
+                  <Card key={movie.id} className="overflow-hidden hover:shadow-lg transition-shadow group p-0 cursor-pointer"
+                    onClick={() => navigate(`/movie/${movie.id}`)}>
                     <div className="relative">
                       <img
                         src={movie.poster_url || "/placeholder.svg?height=400&width=300"}
@@ -586,31 +444,51 @@ const MovieManagement = () => {
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="secondary" className="bg-background">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="bg-background"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                              }}
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => handleEdit(movie)}>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleEdit(movie)
+                            }}>
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(movie.id)} className="text-red-600">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleDelete(movie.id)
+                              }}
+                              className="text-red-600"
+                            >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
+
                       </div>
 
                       {/* Movie Stats */}
                       <div className="absolute bottom-2 left-2 right-2">
-                        <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm flex items-center justify-between">
-                          <div className="flex items-center">
+                        <div className=" bg-opacity-75 text-white px-2 py-1 rounded text-sm flex items-center justify-between">
+                          <div className="flex items-center bg-black/30 rounded-full px-2">
                             <Star className="w-3 h-3 mr-1 text-yellow-400" />
                             <span>8.5</span>
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center bg-black/30 rounded-full px-2">
                             <ThumbsUp className="w-3 h-3 mr-1 text-green-400" />
                             <span>2.5K</span>
                           </div>
@@ -686,17 +564,16 @@ const MovieManagement = () => {
 
           {/* Edit Modal */}
           <EditMovieDialog
-            movie={editingMovie}
             open={isEditModalOpen}
             onOpenChange={(open) => {
               if (!open) {
-                setEditingMovie(null);
                 resetForm();
+                setEditingMovie(null);
               }
               setIsEditModalOpen(open);
             }}
-            onSave={handleSubmit}
           />
+
 
           {/* Edit Modal */}
           {/* <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

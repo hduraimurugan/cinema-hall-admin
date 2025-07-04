@@ -210,6 +210,21 @@ export const moviesAPI = {
     return response.json()
   },
 
+    // ✅ Get a specific movie by ID
+  getMovieById: async (movieId) => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/${movieId}`, {
+      method: "GET",
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to fetch movie details")
+    }
+
+    return response.json()
+  },
+
   // ✅ Update movie status
   updateStatus: async (movieId, status) => {
     const response = await fetch(`${API_BASE_URL}/api/movies/${movieId}/status`, {
