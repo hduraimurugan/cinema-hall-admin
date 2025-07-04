@@ -21,6 +21,41 @@ import { formatStatus, genres, getStatusColor, languages } from "../utils/utils.
 import { useNavigate } from "react-router-dom"
 import { MovieForm } from "./MovieForm.jsx"
 
+// Move EditMovieDialog outside of the main component
+const EditMovieDialog = ({ 
+  open, 
+  onOpenChange, 
+  formData, 
+  setFormData, 
+  onSubmit, 
+  onCancel, 
+  uploading, 
+  handleImageUpload, 
+  editingMovie 
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Movie</DialogTitle>
+          <DialogDescription>
+            Update the movie information below and save your changes.
+          </DialogDescription>
+        </DialogHeader>
+        <MovieForm
+          formData={formData}
+          setFormData={setFormData}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          uploading={uploading}
+          handleImageUpload={handleImageUpload}
+          editingMovie={editingMovie}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 const MovieManagement = () => {
   const navigate = useNavigate()
   const [movies, setMovies] = useState([])
@@ -157,33 +192,10 @@ const MovieManagement = () => {
     })
   }
 
-  const EditMovieDialog = ({ open, onOpenChange }) => {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Movie</DialogTitle>
-            <DialogDescription>
-              Update the movie information below and save your changes.
-            </DialogDescription>
-          </DialogHeader>
-          <MovieForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleSubmit}
-            onCancel={() => {
-              setIsAddModalOpen(false);
-              setIsEditModalOpen(false);
-              resetForm();
-              setEditingMovie(null);
-            }}
-            uploading={uploading}
-            handleImageUpload={handleImageUpload}
-            editingMovie={editingMovie}
-          />
-        </DialogContent>
-      </Dialog>
-    )
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false)
+    resetForm()
+    setEditingMovie(null)
   }
 
   return (
@@ -336,13 +348,11 @@ const MovieManagement = () => {
                   onSubmit={handleSubmit}
                   onCancel={() => {
                     setIsAddModalOpen(false);
-                    setIsEditModalOpen(false);
                     resetForm();
-                    setEditingMovie(null);
                   }}
                   uploading={uploading}
                   handleImageUpload={handleImageUpload}
-                  editingMovie={editingMovie}
+                  editingMovie={null}
                 />
               </DialogContent>
             </Dialog>
@@ -536,11 +546,16 @@ const MovieManagement = () => {
             open={isEditModalOpen}
             onOpenChange={(open) => {
               if (!open) {
-                resetForm();
-                setEditingMovie(null);
+                handleEditModalClose()
               }
-              setIsEditModalOpen(open);
             }}
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onCancel={handleEditModalClose}
+            uploading={uploading}
+            handleImageUpload={handleImageUpload}
+            editingMovie={editingMovie}
           />
         </div>
       </div>
