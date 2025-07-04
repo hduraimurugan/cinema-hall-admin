@@ -49,6 +49,7 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
   const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [selectedMovie, setSelectedMovie] = useState(null)
+  const [isInitialLoading, setIsInitialLoading] = useState(!!selectedMovieId)
 
   const debouncedSearch = useCallback(
     debounce(async (searchTerm) => {
@@ -70,8 +71,28 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
         setIsLoading(false)
       }
     }, 300),
-    [],
+    []
   )
+
+  // 🎯 Load selected movie if ID is passed (for editing etc.)
+  useEffect(() => {
+    const fetchSelectedMovie = async () => {
+      if (!selectedMovieId) return setIsInitialLoading(false)
+
+      try {
+        console.log(selectedMovieId);
+        
+        const response = await moviesAPI.getMovieById(selectedMovieId)
+        setSelectedMovie(response.movie || null)
+      } catch (err) {
+        console.error("Error fetching selected movie:", err)
+      } finally {
+        setIsInitialLoading(false)
+      }
+    }
+
+    fetchSelectedMovie()
+  }, [selectedMovieId])
 
   useEffect(() => {
     if (searchValue) {
@@ -88,12 +109,17 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
 
   return (
     <div className="relative">
-      <Button variant="outline" className="w-full justify-between bg-transparent" onClick={() => setIsOpen(!isOpen)}>
-        {selectedMovie ? selectedMovie.title : placeholder}
+      <Button
+        variant="outline"
+        className="w-full justify-between bg-transparent"
+        onClick={() => setIsOpen(!isOpen)}
+        disabled={isInitialLoading}
+      >
+        {isInitialLoading ? "Loading movie..." : selectedMovie ? selectedMovie.title : placeholder}
         <Search className="h-4 w-4" />
       </Button>
 
-      {isOpen && (
+      {isOpen && !isInitialLoading && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-64 overflow-hidden">
           <div className="p-2 border-b">
             <Input
@@ -150,6 +176,7 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
     </div>
   )
 }
+
 
 // Add/Edit Show Modal Component
 const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] }) => {
@@ -422,7 +449,7 @@ const ShowsManagement = () => {
   }
 
   const openEditModal = (show) => {
-    setEditingShow(show)
+    setEditingShow(show)    
     setIsEditModalOpen(true)
   }
 
