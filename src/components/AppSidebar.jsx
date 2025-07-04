@@ -76,7 +76,7 @@ export function AppSidebar({ pageTitle, collapsed = false }) {
   return (
     <div className="flex h-full w-full flex-col bg-background">
       {/* Header */}
-      <div className="md:hidden flex h-16 items-center border-b px-4">
+      <div className="lg:hidden flex h-16 items-center border-b px-4 mt-2">
         <Link to="/" className={`flex items-center gap-3 ${collapsed ? "justify-center w-full" : ""}`}>
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
             <Film className="size-4" />

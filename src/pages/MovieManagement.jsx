@@ -6,28 +6,17 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  Edit,
-  Trash2,
-  Upload,
-  Clock,
-  Star,
-  ThumbsUp,
-  MoreVertical,
-} from "lucide-react"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { ChevronDown, ChevronUp, Plus, Edit, Trash2, Upload, Clock, Star, ThumbsUp, MoreVertical } from 'lucide-react'
+import { CalendarIcon } from 'lucide-react'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { moviesAPI } from "../services/api.js"
 import { uploadImageToCloudinary } from "../services/cloudinary"
-import { cn } from "@/lib/utils" // utility to join classNames (optional)
+import { cn } from "@/lib/utils"
 import { formatStatus, genres, getStatusColor, languages } from "../utils/utils.js"
 import { useNavigate } from "react-router-dom"
 import { MovieForm } from "./MovieForm.jsx"
@@ -60,23 +49,11 @@ const MovieManagement = () => {
     poster_url: "",
     trailer_url: "",
     duration_mins: "",
-    genre: [], // changed to array
-    language: [], // changed to array
+    genre: [],
+    language: [],
     release_date: "",
   })
   const [uploading, setUploading] = useState(false)
-
-
-  useEffect(() => {
-    if (!isEditModalOpen && !isAddModalOpen) {
-      // If any popover/calendar is open, force it to close
-      setTimeout(() => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur()
-        }
-      }, 100)
-    }
-  }, [isEditModalOpen, isAddModalOpen])
 
   useEffect(() => {
     fetchMovies()
@@ -122,7 +99,6 @@ const MovieManagement = () => {
         await moviesAPI.addMovie(formData)
         setIsAddModalOpen(false)
       }
-
       resetForm()
       fetchMovies()
     } catch (error) {
@@ -139,8 +115,8 @@ const MovieManagement = () => {
       poster_url: movie.poster_url || "",
       trailer_url: movie.trailer_url || "",
       duration_mins: movie.duration_mins || "",
-      genre: movie.genre || [],         // ensure it's an array
-      language: movie.language || [],   // ensure it's an array
+      genre: movie.genre || [],
+      language: movie.language || [],
       release_date: movie.release_date || "",
     })
     setIsEditModalOpen(true)
@@ -183,35 +159,35 @@ const MovieManagement = () => {
 
   const EditMovieDialog = ({ open, onOpenChange }) => {
     return (
-      <>
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Movie</DialogTitle>
-            </DialogHeader>
-            <MovieForm
-              formData={formData}
-              setFormData={setFormData}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setIsAddModalOpen(false);
-                setIsEditModalOpen(false);
-                resetForm();
-                setEditingMovie(null);
-              }}
-              uploading={uploading}
-              handleImageUpload={handleImageUpload}
-              editingMovie={editingMovie}
-            />
-
-          </DialogContent>
-        </Dialog>
-      </>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Movie</DialogTitle>
+            <DialogDescription>
+              Update the movie information below and save your changes.
+            </DialogDescription>
+          </DialogHeader>
+          <MovieForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onCancel={() => {
+              setIsAddModalOpen(false);
+              setIsEditModalOpen(false);
+              resetForm();
+              setEditingMovie(null);
+            }}
+            uploading={uploading}
+            handleImageUpload={handleImageUpload}
+            editingMovie={editingMovie}
+          />
+        </DialogContent>
+      </Dialog>
     )
   }
 
   return (
-    <div className="flex min-h-screen p-6 ">
+    <div className="flex min-h-screen p-6">
       {/* Sidebar */}
       <div className="w-50 border-r border-secondary/50 p-6">
         <div className="flex items-center justify-between mb-6">
@@ -236,7 +212,6 @@ const MovieManagement = () => {
               Languages
             </button>
           </div>
-
           {expandedFilters.languages && (
             <div className="space-y-2">
               {languages.map((language) => (
@@ -248,7 +223,7 @@ const MovieManagement = () => {
                     onChange={() => setFilters((prev) => ({ ...prev, language, page: 1 }))}
                     className="mr-2 text-primary"
                   />
-                  <span className="">{language}</span>
+                  <span>{language}</span>
                 </label>
               ))}
             </div>
@@ -270,7 +245,6 @@ const MovieManagement = () => {
               Genres
             </button>
           </div>
-
           {expandedFilters.genres && (
             <div className="space-y-2">
               {genres.map((genre) => (
@@ -282,7 +256,7 @@ const MovieManagement = () => {
                     onChange={() => setFilters((prev) => ({ ...prev, genre, page: 1 }))}
                     className="mr-2 text-primary"
                   />
-                  <span className="">{genre}</span>
+                  <span>{genre}</span>
                 </label>
               ))}
             </div>
@@ -304,9 +278,8 @@ const MovieManagement = () => {
               Release Date
             </button>
           </div>
-
           {expandedFilters.releaseDate && (
-            <Popover forceMount>
+            <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -319,7 +292,7 @@ const MovieManagement = () => {
                   {filters.release_date ? format(new Date(filters.release_date), "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent forceMount className="w-auto p-0" align="start">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={filters.release_date ? new Date(filters.release_date) : undefined}
@@ -330,7 +303,6 @@ const MovieManagement = () => {
                       page: 1,
                     }))
                   }
-
                   initialFocus
                 />
               </PopoverContent>
@@ -344,7 +316,6 @@ const MovieManagement = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-semibold">Movie Management</h1>
-
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-primary hover:bg-primary/90">
@@ -355,6 +326,9 @@ const MovieManagement = () => {
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Add New Movie</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details below to add a new movie to your collection.
+                  </DialogDescription>
                 </DialogHeader>
                 <MovieForm
                   formData={formData}
@@ -399,19 +373,18 @@ const MovieManagement = () => {
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden animate-pulse">
-                  <Skeleton className="w-full h-80" /> {/* Poster image */}
-
+                <Card key={i} className="overflow-hidden animate-pulse p-0">
+                  <Skeleton className="w-full h-80" />
                   <CardContent className="p-4 space-y-3">
-                    <Skeleton className="h-4 w-3/4" /> {/* Title */}
+                    <Skeleton className="h-4 w-3/4" />
                     <div className="flex items-center gap-2">
-                      <Skeleton className="h-3 w-16 rounded-full" /> {/* Genre 1 */}
-                      <Skeleton className="h-3 w-12 rounded-full" /> {/* Genre 2 */}
-                      <Skeleton className="h-3 w-10 rounded-full" /> {/* Duration */}
+                      <Skeleton className="h-3 w-16 rounded-full" />
+                      <Skeleton className="h-3 w-12 rounded-full" />
+                      <Skeleton className="h-3 w-10 rounded-full" />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Skeleton className="h-3 w-24" /> {/* Languages */}
-                      <Skeleton className="h-3 w-12" /> {/* Release year */}
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-3 w-12" />
                     </div>
                   </CardContent>
                 </Card>
@@ -421,28 +394,28 @@ const MovieManagement = () => {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                 {movies.map((movie) => (
-                  <Card key={movie.id} className="overflow-hidden hover:shadow-lg transition-shadow group p-0 cursor-pointer"
-                    onClick={() => navigate(`/movie/${movie.id}`)}>
+                  <Card
+                    key={movie.id}
+                    className="overflow-hidden hover:shadow-lg transition-shadow group p-0 cursor-pointer"
+                    onClick={() => navigate(`/movie/${movie.id}`)}
+                  >
                     <div className="relative">
                       <img
                         src={movie.poster_url || "/placeholder.svg?height=400&width=300"}
                         alt={movie.title}
                         className="w-full h-80 object-cover"
                       />
-
-                      {/* 🔹 Movie Status Badge */}
+                      {/* Movie Status Badge */}
                       {movie.status && (
                         <div
                           className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider ${getStatusColor(movie.status)}`}
                         >
                           {formatStatus(movie.status)}
                         </div>
-
                       )}
-
                       {/* Action Menu */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button
                               size="sm"
@@ -457,11 +430,13 @@ const MovieManagement = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
-                            <DropdownMenuItem onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              handleEdit(movie)
-                            }}>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleEdit(movie)
+                              }}
+                            >
                               <Edit className="w-4 h-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
@@ -478,12 +453,10 @@ const MovieManagement = () => {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-
                       </div>
-
                       {/* Movie Stats */}
                       <div className="absolute bottom-2 left-2 right-2">
-                        <div className=" bg-opacity-75 text-white px-2 py-1 rounded text-sm flex items-center justify-between">
+                        <div className="bg-opacity-75 text-white px-2 py-1 rounded text-sm flex items-center justify-between">
                           <div className="flex items-center bg-black/30 rounded-full px-2">
                             <Star className="w-3 h-3 mr-1 text-yellow-400" />
                             <span>8.5</span>
@@ -495,7 +468,6 @@ const MovieManagement = () => {
                         </div>
                       </div>
                     </div>
-
                     <CardContent className="p-4">
                       <h3 className="font-semibold mb-2 line-clamp-1">{movie.title}</h3>
                       <div className="flex items-center gap-2 mb-2">
@@ -510,7 +482,6 @@ const MovieManagement = () => {
                             </Badge>
                           ))}
                         </div>
-
                         <div className="flex items-center text-xs text-neutral-500">
                           <Clock className="w-3 h-3 mr-1" />
                           {movie.duration_mins}m
@@ -538,7 +509,6 @@ const MovieManagement = () => {
                   >
                     Previous
                   </Button>
-
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <Button
                       key={page}
@@ -549,7 +519,6 @@ const MovieManagement = () => {
                       {page}
                     </Button>
                   ))}
-
                   <Button
                     variant="outline"
                     disabled={filters.page === totalPages}
@@ -573,17 +542,6 @@ const MovieManagement = () => {
               setIsEditModalOpen(open);
             }}
           />
-
-
-          {/* Edit Modal */}
-          {/* <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-            <DialogContent key={editingMovie?.id || "edit"} className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Edit Movie</DialogTitle>
-              </DialogHeader>
-              <MovieForm />
-            </DialogContent>
-          </Dialog> */}
         </div>
       </div>
     </div>
