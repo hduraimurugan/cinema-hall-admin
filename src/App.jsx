@@ -38,6 +38,8 @@ function App() {
           }>
             <Route path="/" element={<HomePage />} />
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
+            
+            <Route path="/movie/:id" element={<MoviePage />} />
             <Route path="/screens" element={<CinemaScreenDesigner />} />
             <Route path="/shows" element={<ShowsManagement />} />
             <Route path="/bookings" element={<Bookings />} />
@@ -52,7 +54,6 @@ function App() {
             </AdminProtectedRoute>
           }>
             <Route path="/movies" element={<MovieManagement />} />
-            <Route path="/movie/:id" element={<MoviePage />} />
           </Route>
 
           {/* Catch-all route - redirect to home */}

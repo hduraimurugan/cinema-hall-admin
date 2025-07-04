@@ -186,7 +186,7 @@ export const moviesAPI = {
   },
 
   // ✅ Get all movies with optional filters and pagination
-  getAllMovies: async ({ page = 1, limit = 10, genre, language, status, release_date } = {}) => {
+  getAllMovies: async ({ page = 1, limit = 10, genre, language, status, release_date, search } = {}) => {
     const params = new URLSearchParams()
 
     // Add filters if provided
@@ -196,6 +196,7 @@ export const moviesAPI = {
     if (language) params.append("language", language)
     if (status) params.append("status", status)
     if (release_date) params.append("release_date", release_date)
+    if (search) params.append("search", search)
 
     const response = await fetch(`${API_BASE_URL}/api/movies?${params.toString()}`, {
       method: "GET",
@@ -210,7 +211,7 @@ export const moviesAPI = {
     return response.json()
   },
 
-    // ✅ Get a specific movie by ID
+  // ✅ Get a specific movie by ID
   getMovieById: async (movieId) => {
     const response = await fetch(`${API_BASE_URL}/api/movies/${movieId}`, {
       method: "GET",

@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
+import { useAuth } from "../context/AuthContext"
 
 const MoviePage = () => {
+    const { isSuperAdmin } = useAuth()
     const { id } = useParams()
     const [movie, setMovie] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -232,34 +234,35 @@ const MoviePage = () => {
                                     ))}
                                 </div>
                             </div>
+                            {isSuperAdmin &&
+                                (
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <Label className="text-white font-medium">Status:</Label>
 
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                                <Label className="text-white font-medium">Status:</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Select
+                                            value={selectedStatus}
+                                            onValueChange={(value) => setSelectedStatus(value)}
+                                        >
+                                            <SelectTrigger className="w-[160px] bg-slate-800 border-slate-600 text-white">
+                                                <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                                                <SelectItem value="upcoming">Upcoming</SelectItem>
+                                                <SelectItem value="now_showing">Now Showing</SelectItem>
+                                                <SelectItem value="ended">Ended</SelectItem>
+                                            </SelectContent>
+                                        </Select>
 
-                                <div className="flex items-center gap-2">
-                                    <Select
-                                        value={selectedStatus}
-                                        onValueChange={(value) => setSelectedStatus(value)}
-                                    >
-                                        <SelectTrigger className="w-[160px] bg-slate-800 border-slate-600 text-white">
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-slate-900 border-slate-700 text-white">
-                                            <SelectItem value="upcoming">Upcoming</SelectItem>
-                                            <SelectItem value="now_showing">Now Showing</SelectItem>
-                                            <SelectItem value="ended">Ended</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <Button
-                                        onClick={handleStatusChange}
-                                        disabled={updatingStatus}
-                                        className="bg-purple-600 hover:bg-purple-700 transition"
-                                    >
-                                        {updatingStatus ? "Updating..." : "Update"}
-                                    </Button>
-                                </div>
-                            </div>
+                                        <Button
+                                            onClick={handleStatusChange}
+                                            disabled={updatingStatus}
+                                            className="bg-purple-600 hover:bg-purple-700 transition"
+                                        >
+                                            {updatingStatus ? "Updating..." : "Update"}
+                                        </Button>
+                                    </div>
+                                </div>)}
 
                         </div>
                     </div>

@@ -29,6 +29,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
 import { formatRole } from "../utils/utils";
+import SearchMovies from "./SearchMovies";
 
 // Mock notifications
 const mockNotifications = [
@@ -38,8 +39,7 @@ const mockNotifications = [
 ]
 
 export function CinemaLayout() {
-    const [searchValue, setSearchValue] = useState("")
-    const [isSearchFocused, setIsSearchFocused] = useState(false)
+    
     const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024)
     const location = useLocation()
 
@@ -88,10 +88,6 @@ export function CinemaLayout() {
 
     const pageTitle = getPageTitle(location.pathname)
 
-    const handleSearch = (e) => {
-        e.preventDefault()
-        console.log("Searching for:", searchValue)
-    }
 
     return (
         <div className="h-screen flex flex-col bg-background">
@@ -181,24 +177,9 @@ export function CinemaLayout() {
                     </div>
 
                     {/* Center section with search */}
-                    <div className="flex flex-1 items-center justify-end lg:justify-center px-2">
-                        <form onSubmit={handleSearch} className="relative hidden md:block w-full max-w-sm">
-                            <Search
-                                className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors ${isSearchFocused ? "text-primary" : "text-muted-foreground"
-                                    }`}
-                            />
-                            <Input
-                                type="search"
-                                placeholder="Search movies, bookings..."
-                                className={`w-full pl-9 bg-secondary/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all duration-200 ${isSearchFocused ? "shadow-md" : ""
-                                    }`}
-                                value={searchValue}
-                                onChange={(e) => setSearchValue(e.target.value)}
-                                onFocus={() => setIsSearchFocused(true)}
-                                onBlur={() => setIsSearchFocused(false)}
-                            />
-                        </form>
-                    </div>
+                    <>
+                       <SearchMovies />
+                    </>
 
                     {/* Right side actions */}
                     <div className="flex items-center justify-end gap-2">
