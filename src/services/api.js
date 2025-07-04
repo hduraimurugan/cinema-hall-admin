@@ -245,3 +245,92 @@ export const moviesAPI = {
     return response.json()
   },
 }
+
+export const showsAPI = {
+  // ✅ Create a single show
+  createShow: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create show");
+    }
+
+    return response.json();
+  },
+
+  // ✅ Create multiple shows (bulk)
+  createMultipleShows: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/bulk`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to create multiple shows");
+    }
+
+    return response.json();
+  },
+
+  // ✅ Edit a show
+  editShow: async (showId, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/edit/${showId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to edit show");
+    }
+
+    return response.json();
+  },
+
+  // ✅ Delete a show
+  deleteShow: async (showId) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/delete/${showId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete show");
+    }
+
+    return response.json();
+  },
+
+  // ✅ Get shows grouped by movie for a specific date
+  getShowsByDate: async (date) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/date/${date}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch shows");
+    }
+
+    return response.json();
+  },
+};
