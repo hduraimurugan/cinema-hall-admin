@@ -333,4 +333,38 @@ export const showsAPI = {
 
     return response.json();
   },
+
+  // ✅ 🆕 Get a show by ID (with screen layout + movie + seat status)
+  getShowById: async (showId) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/get/${showId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch show details");
+    }
+
+    return response.json();
+  },
+
+  // ✅ 🆕 Book seats for a show (lock in_booking)
+  bookShow: async (showId, seats) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/book/${showId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ seats }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to book seats");
+    }
+
+    return response.json();
+  },
 };

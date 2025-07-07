@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +12,14 @@ import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Search, Play } from "lucid
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 import { moviesAPI, screensAPI, showsAPI } from "../services/api"
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { useNavigate } from "react-router-dom"
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 
 // Utility functions
 function debounce(func, wait) {
@@ -80,8 +86,6 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
       if (!selectedMovieId) return setIsInitialLoading(false)
 
       try {
-        console.log(selectedMovieId);
-        
         const response = await moviesAPI.getMovieById(selectedMovieId)
         setSelectedMovie(response.movie || null)
       } catch (err) {
@@ -196,6 +200,8 @@ const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] })
 
   useEffect(() => {
     if (editData) {
+      console.log("Edit show data:", editData);
+
       setFormData({
         movie_id: editData.movie_id || "",
         screen_id: editData.screen_id || "",
@@ -280,9 +286,17 @@ const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] })
             <Label>Show Date</Label>
             <Input
               type="date"
-              value={formData.show_date}
-              onChange={(e) => setFormData((prev) => ({ ...prev, show_date: e.target.value }))}
-              required
+              value={
+                formData.show_date
+                  ? dayjs(formData.show_date).tz("Asia/Kolkata").format("YYYY-MM-DD")
+                  : ""
+              }
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  show_date: e.target.value,
+                }))
+              }
             />
           </div>
 
@@ -366,6 +380,7 @@ const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] })
 
 // Main Shows Management Component
 const ShowsManagement = () => {
+  const navigate = useNavigate()
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
   const [showsData, setShowsData] = useState(null)
   const [screens, setScreens] = useState([])
@@ -449,7 +464,7 @@ const ShowsManagement = () => {
   }
 
   const openEditModal = (show) => {
-    setEditingShow(show)    
+    setEditingShow(show)
     setIsEditModalOpen(true)
   }
 
@@ -566,7 +581,10 @@ const ShowsManagement = () => {
                                 </div>
 
                                 {/* 🕐 Time */}
-                                <div className="text-sm font-semibold tracking-tight">{formatTime(show.start_time)}</div>
+                                <div className="text-sm font-semibold tracking-tight"
+                                  onClick={() => navigate(`/show/${show.id}`)}>
+                                  {formatTime(show.start_time)}
+                                </div>
 
                                 {/* 🎞 Language & Price */}
                                 <div className="flex justify-between items-center w-full text-xs text-muted-foreground">

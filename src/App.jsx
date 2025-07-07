@@ -15,6 +15,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
 import MoviePage from './pages/MoviePage.jsx';
+import ShowPage from './pages/ShowPage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -42,6 +43,7 @@ function App() {
             <Route path="/movie/:id" element={<MoviePage />} />
             <Route path="/screens" element={<CinemaScreenDesigner />} />
             <Route path="/shows" element={<ShowsManagement />} />
+            <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />

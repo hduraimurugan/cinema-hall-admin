@@ -1,5 +1,5 @@
   export const genres = ["Action", "Comedy", "Drama", "Mystery", "Fantasy" ,"Period" ,"Musical", "Horror", "Romance", "Thriller", "Sci-Fi", "Adventure"]
-  export const languages = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada","Marathi","German","French"]
+  export const languages = ["Tamil", "English", "Hindi", "Telugu", "Malayalam", "Kannada","Marathi"]
 
 export const formatRole = (role) => {
   if (!role) return ""
