@@ -192,8 +192,25 @@ export const moviesAPI = {
     // Add filters if provided
     if (page) params.append("page", page)
     if (limit) params.append("limit", limit)
-    if (genre) params.append("genre", genre)
-    if (language) params.append("language", language)
+
+    // Handle multiple genres
+    if (genre) {
+      if (Array.isArray(genre)) {
+        genre.forEach(g => params.append("genre", g))
+      } else {
+        params.append("genre", genre)
+      }
+    }
+
+    // Handle multiple languages
+    if (language) {
+      if (Array.isArray(language)) {
+        language.forEach(l => params.append("language", l))
+      } else {
+        params.append("language", language)
+      }
+    }
+
     if (status) params.append("status", status)
     if (release_date) params.append("release_date", release_date)
     if (search) params.append("search", search)

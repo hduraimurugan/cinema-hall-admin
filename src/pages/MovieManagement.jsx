@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ChevronDown, ChevronUp, Plus, Edit, Trash2, Upload, Clock, Star, ThumbsUp, MoreVertical } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plus, Edit, Trash2, Upload, Clock, Star, ThumbsUp, MoreVertical, Globe, Clapperboard, Swords, Heart, Laugh, Ghost, Drama, Rocket, Music, Trophy, Sparkles, Users, Zap } from 'lucide-react'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -22,6 +22,28 @@ import { useNavigate } from "react-router-dom"
 import { MovieForm } from "./MovieForm.jsx"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
+
+// Genre icon mapping
+const genreIcons = {
+  Action: Swords,
+  Comedy: Laugh,
+  Drama: Drama,
+  Horror: Ghost,
+  Romance: Heart,
+  "Sci-Fi": Rocket,
+  Thriller: Zap,
+  Animation: Sparkles,
+  Adventure: Clapperboard,
+  Crime: Users,
+  Fantasy: Sparkles,
+  Mystery: Ghost,
+  Musical: Music,
+  War: Trophy,
+  Western: Clapperboard,
+}
+
+// Language icon
+const LanguageIcon = Globe
 
 // Move EditMovieDialog outside of the main component
 const EditMovieDialog = ({
@@ -63,8 +85,8 @@ const MovieManagement = () => {
   const [movies, setMovies] = useState([])
   const [loading, setLoading] = useState(false)
   const [filters, setFilters] = useState({
-    genre: "",
-    language: "",
+    genre: [],
+    language: [],
     release_date: "",
     page: 1,
     limit: 12,
@@ -186,12 +208,32 @@ const MovieManagement = () => {
 
   const clearFilters = () => {
     setFilters({
-      genre: "",
-      language: "",
+      genre: [],
+      language: [],
       release_date: "",
       page: 1,
       limit: 12,
     })
+  }
+
+  const toggleLanguage = (language) => {
+    setFilters((prev) => ({
+      ...prev,
+      language: prev.language.includes(language)
+        ? prev.language.filter((l) => l !== language)
+        : [...prev.language, language],
+      page: 1,
+    }))
+  }
+
+  const toggleGenre = (genre) => {
+    setFilters((prev) => ({
+      ...prev,
+      genre: prev.genre.includes(genre)
+        ? prev.genre.filter((g) => g !== genre)
+        : [...prev.genre, genre],
+      page: 1,
+    }))
   }
 
   const handleEditModalClose = () => {
@@ -201,127 +243,174 @@ const MovieManagement = () => {
   }
 
   return (
-    <div className="flex min-h-screen p-6">
+    <div className="flex min-h-full">
       {/* Sidebar */}
-      <div className="w-50 border-r border-secondary/50 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Filters</h2>
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-primary">
-            Clear All
-          </Button>
+      <div className="w-61 border-r border-secondary/20 bg-secondary/5 sticky top-0 self-start h-screen overflow-y-auto">
+        <div className="p-5 border-b border-secondary/20 bg-background/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Filters</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-xs text-primary hover:bg-primary/10 h-7"
+            >
+              Clear All
+            </Button>
+          </div>
         </div>
 
-        {/* Languages Filter */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
+        <div className="p-5 space-y-5">
+          {/* Languages Filter */}
+          <div className="space-y-3">
             <button
               onClick={() => setExpandedFilters((prev) => ({ ...prev, languages: !prev.languages }))}
-              className="flex items-center text-primary font-medium"
+              className="flex items-center justify-between w-full text-sm font-medium text-foreground hover:text-primary transition-colors group"
             >
+              <div className="flex items-center gap-2">
+                <LanguageIcon className="w-4 h-4 text-primary" />
+                <span>Languages</span>
+              </div>
               {expandedFilters.languages ? (
-                <ChevronUp className="w-4 h-4 mr-1" />
+                <ChevronUp className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
               ) : (
-                <ChevronDown className="w-4 h-4 mr-1" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
               )}
-              Languages
             </button>
-          </div>
-          {expandedFilters.languages && (
-            <div className="space-y-2">
+            <div
+              className={cn(
+                "grid gap-2 pt-2 overflow-hidden transition-all duration-300 ease-in-out",
+                expandedFilters.languages
+                  ? "grid-cols-2 max-h-96 opacity-100"
+                  : "grid-cols-2 max-h-0 opacity-0"
+              )}
+            >
               {languages.map((language) => (
-                <label key={language} className="flex items-center">
-                  <input
-                    type="radio"
-                    name="language"
-                    checked={filters.language === language}
-                    onChange={() => setFilters((prev) => ({ ...prev, language, page: 1 }))}
-                    className="mr-2 text-primary"
-                  />
-                  <span>{language}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Genres Filter */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setExpandedFilters((prev) => ({ ...prev, genres: !prev.genres }))}
-              className="flex items-center text-primary font-medium"
-            >
-              {expandedFilters.genres ? (
-                <ChevronUp className="w-4 h-4 mr-1" />
-              ) : (
-                <ChevronDown className="w-4 h-4 mr-1" />
-              )}
-              Genres
-            </button>
-          </div>
-          {expandedFilters.genres && (
-            <div className="space-y-2">
-              {genres.map((genre) => (
-                <label key={genre} className="flex items-center">
-                  <input
-                    type="radio"
-                    name="genre"
-                    checked={filters.genre === genre}
-                    onChange={() => setFilters((prev) => ({ ...prev, genre, page: 1 }))}
-                    className="mr-2 text-primary"
-                  />
-                  <span>{genre}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Release Date Filter */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={() => setExpandedFilters((prev) => ({ ...prev, releaseDate: !prev.releaseDate }))}
-              className="flex items-center text-primary font-medium"
-            >
-              {expandedFilters.releaseDate ? (
-                <ChevronUp className="w-4 h-4 mr-1" />
-              ) : (
-                <ChevronDown className="w-4 h-4 mr-1" />
-              )}
-              Release Date
-            </button>
-          </div>
-          {expandedFilters.releaseDate && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
+                <label
+                  key={language}
                   className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !filters.release_date && "text-muted-foreground"
+                    "flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border transition-all duration-200 cursor-pointer text-sm",
+                    filters.language.includes(language)
+                      ? "bg-primary/10 border-primary/40 text-primary font-medium shadow-sm scale-[0.98]"
+                      : "bg-background border-secondary/30 hover:border-primary/30 hover:bg-secondary/30 hover:scale-[1.02]"
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {filters.release_date ? format(new Date(filters.release_date), "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={filters.release_date ? new Date(filters.release_date) : undefined}
-                  onSelect={(date) =>
-                    setFilters((prev) => ({
-                      ...prev,
-                      release_date: date ? date.toLocaleDateString("en-CA") : "",
-                      page: 1,
-                    }))
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          )}
+                  <input
+                    type="checkbox"
+                    checked={filters.language.includes(language)}
+                    onChange={() => toggleLanguage(language)}
+                    className="sr-only"
+                  />
+                  <span className="text-xs truncate">{language}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Genres Filter */}
+          <div className="space-y-3 pt-2 border-t border-secondary/20">
+            <button
+              onClick={() => setExpandedFilters((prev) => ({ ...prev, genres: !prev.genres }))}
+              className="flex items-center justify-between w-full text-sm font-medium text-foreground hover:text-primary transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <Clapperboard className="w-4 h-4 text-primary" />
+                <span>Genres</span>
+              </div>
+              {expandedFilters.genres ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
+              )}
+            </button>
+            <div
+              className={cn(
+                "grid gap-2 pt-2 overflow-hidden transition-all duration-300 ease-in-out",
+                expandedFilters.genres
+                  ? "grid-cols-2 max-h-[500px] opacity-100"
+                  : "grid-cols-2 max-h-0 opacity-0"
+              )}
+            >
+              {genres.map((genre) => {
+                const GenreIcon = genreIcons[genre] || Clapperboard
+                return (
+                  <label
+                    key={genre}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border transition-all duration-200 cursor-pointer text-sm",
+                      filters.genre.includes(genre)
+                        ? "bg-primary/10 border-primary/40 text-primary font-medium shadow-sm scale-[0.98]"
+                        : "bg-background border-secondary/30 hover:border-primary/30 hover:bg-secondary/30 hover:scale-[1.02]"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.genre.includes(genre)}
+                      onChange={() => toggleGenre(genre)}
+                      className="sr-only"
+                    />
+                    <GenreIcon className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="text-xs truncate">{genre}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Release Date Filter */}
+          <div className="space-y-3 pt-2 border-t border-secondary/20">
+            <button
+              onClick={() => setExpandedFilters((prev) => ({ ...prev, releaseDate: !prev.releaseDate }))}
+              className="flex items-center justify-between w-full text-sm font-medium text-foreground hover:text-primary transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-primary" />
+                <span>Release Date</span>
+              </div>
+              {expandedFilters.releaseDate ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-300" />
+              )}
+            </button>
+            <div
+              className={cn(
+                "overflow-hidden transition-all duration-300 ease-in-out",
+                expandedFilters.releaseDate
+                  ? "max-h-24 opacity-100 pt-2"
+                  : "max-h-0 opacity-0 pt-0"
+              )}
+            >
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-10 text-sm hover:bg-secondary/30 transition-all duration-200",
+                      !filters.release_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.release_date ? format(new Date(filters.release_date), "PP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.release_date ? new Date(filters.release_date) : undefined}
+                    onSelect={(date) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        release_date: date ? date.toLocaleDateString("en-CA") : "",
+                        page: 1,
+                      }))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -361,18 +450,18 @@ const MovieManagement = () => {
           </div>
 
           {/* Active Filters */}
-          {(filters.genre || filters.language || filters.release_date) && (
-            <div className="flex gap-2 mb-6">
-              {filters.language && (
-                <Badge variant="secondary" className="text-primary border-primary bg-primary/10">
-                  {filters.language}
+          {(filters.genre.length > 0 || filters.language.length > 0 || filters.release_date) && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {filters.language.map((lang) => (
+                <Badge key={lang} variant="secondary" className="text-primary border-primary bg-primary/10">
+                  {lang}
                 </Badge>
-              )}
-              {filters.genre && (
-                <Badge variant="secondary" className="text-primary border-primary bg-primary/10">
-                  {filters.genre}
+              ))}
+              {filters.genre.map((gen) => (
+                <Badge key={gen} variant="secondary" className="text-primary border-primary bg-primary/10">
+                  {gen}
                 </Badge>
-              )}
+              ))}
               {filters.release_date && (
                 <Badge variant="secondary" className="text-primary border-primary bg-primary/10">
                   {filters.release_date}

@@ -135,3 +135,87 @@ html, body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Scrollbar Styling - Professional & Theme-Aware */
+/* For Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 100px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0.02 250 / 0.3);
+  border-radius: 100px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.6 0.15 10 / 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: oklch(0.6 0.2 10 / 0.7);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.4 0.02 240 / 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.68 0.2 10 / 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: oklch(0.68 0.2 10 / 0.8);
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: medium;
+  scrollbar-color: oklch(0.7 0.02 250 / 0.3) transparent;
+}
+
+.dark * {
+  scrollbar-color: oklch(0.4 0.02 240 / 0.4) transparent;
+}
+
+/* Smooth scrolling behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for specific containers (optional enhanced version) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: oklch(0.95 0.01 250 / 0.5);
+  border-radius: 100px;
+  margin: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, oklch(0.6 0.2 10 / 0.6), oklch(0.6 0.2 10 / 0.4));
+  border-radius: 100px;
+  border: 1px solid oklch(0.95 0.01 250 / 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, oklch(0.6 0.2 10 / 0.8), oklch(0.6 0.2 10 / 0.6));
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: oklch(0.18 0.01 240 / 0.5);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, oklch(0.68 0.2 10 / 0.6), oklch(0.68 0.2 10 / 0.4));
+  border: 1px solid oklch(0.3 0.02 240 / 0.3);
+}

@@ -410,94 +410,205 @@ const CinemaScreenDesigner = () => {
         )}
 
         {loading && screens.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Loader2 className="h-16 w-16 mx-auto text-muted-foreground mb-4 animate-spin" />
-              <h3 className="text-xl font-semibold mb-2">Loading screens...</h3>
-              <p className="text-muted-foreground">Please wait while we fetch your screens</p>
+          <Card className="border-0 shadow-xl overflow-hidden">
+            <CardContent className="py-20">
+              <div className="flex flex-col items-center">
+                {/* Custom Cinema Loader Animation */}
+                <div className="relative mb-8">
+                  {/* Outer rotating ring */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-32 w-32 rounded-full border-4 border-transparent border-t-blue-500 border-r-purple-500 animate-spin"
+                         style={{ animationDuration: '3s' }} />
+                  </div>
+
+                  {/* Middle pulsing ring */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-24 w-24 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 animate-pulse" />
+                  </div>
+
+                  {/* Inner content - animated screen seats */}
+                  <div className="relative h-32 w-32 flex items-center justify-center">
+                    <div className="space-y-2">
+                      {/* Animated seat rows */}
+                      <div className="flex gap-1 justify-center animate-pulse" style={{ animationDelay: '0s' }}>
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                      </div>
+                      <div className="flex gap-1 justify-center animate-pulse" style={{ animationDelay: '0.2s' }}>
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-purple-600 to-purple-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-purple-600 to-purple-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-purple-600 to-purple-500" />
+                      </div>
+                      <div className="flex gap-1 justify-center animate-pulse" style={{ animationDelay: '0.4s' }}>
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                        <div className="h-2 w-2 rounded-sm bg-gradient-to-br from-blue-600 to-blue-500" />
+                      </div>
+                      {/* Mini screen indicator */}
+                      <div className="flex justify-center mt-3">
+                        <div className="h-1 w-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Loading Screens
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 font-medium">
+                  Please wait while we fetch your cinema screens...
+                </p>
+              </div>
             </CardContent>
           </Card>
         ) : screens.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <Monitor className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No screens created yet</h3>
-              <p className="text-muted-foreground mb-4">Create your first cinema screen layout to get started</p>
-              <Button onClick={startNewScreen} className="bg-gradient-to-r from-blue-600 to-purple-600">
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Screen
-              </Button>
+          <Card className="border-0 shadow-2xl overflow-hidden">
+            <CardContent className="relative py-20">
+              <div className="flex flex-col items-center max-w-md mx-auto">
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-2xl opacity-20 animate-pulse" />
+                  <div className="relative bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 p-6 rounded-2xl shadow-lg">
+                    <Monitor className="h-20 w-20 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+
+                <h3 className="text-3xl font-bold mb-3 text-center bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                  No Screens Created Yet
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-8 text-center leading-relaxed">
+                  Get started by creating your first cinema screen layout. Define rows, seats, and pricing to manage your cinema efficiently.
+                </p>
+
+                <Button
+                  onClick={startNewScreen}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group"
+                >
+                  <Plus className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                  Create Your First Screen
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {screens.map((screen) => (
+            {screens.map((screen, index) => (
               <Card
                 key={screen.id}
-                className="hover:shadow-xl transition-all duration-300 border-0 shadow-lg backdrop-blur dark:bg-zinc-900 dark:shadow-none"
+                className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500  hover:scale-[1.02] cursor-pointer"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
-                <CardHeader className="pb-3">
+                {/* Animated gradient overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/0 via-purple-500/0 to-blue-500/0 group-hover:from-blue-500/5 group-hover:via-purple-500/5 group-hover:to-blue-500/5 transition-all duration-500" />
+
+                {/* Decorative corner accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-bl-full transform translate-x-16 -translate-y-16 group-hover:translate-x-12 group-hover:-translate-y-12 transition-transform duration-500" />
+
+                <CardHeader className="relative pb-4">
                   <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Monitor className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      <span className="truncate text-zinc-800 dark:text-zinc-100">{screen.name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 group-hover:scale-110 transition-transform duration-300">
+                        <Monitor className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="truncate text-zinc-800 dark:text-zinc-100 font-bold text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {screen.name}
+                      </span>
                     </div>
-                    <Badge className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 dark:from-blue-900 dark:to-purple-900 dark:text-blue-100">
+                    <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md hover:shadow-lg transition-shadow">
                       {screen.total_seats} seats
                     </Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
-                      <div className="font-bold text-yellow-800 dark:text-yellow-200">{screen.premium_seats}</div>
-                      <div className="text-yellow-600 dark:text-yellow-300 text-xs">Premium</div>
-                      <div className="text-yellow-700 dark:text-yellow-200 text-xs">Rs.{screen.premium_price}</div>
+
+                <CardContent className="relative space-y-4">
+                  {/* Seat type statistics with enhanced design */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="group/stat relative overflow-hidden text-center p-3 rounded-xl bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/40 border border-yellow-200/50 dark:border-yellow-700/30 hover:shadow-md transition-all duration-300 hover:scale-105">
+                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/0 to-yellow-500/0 group-hover/stat:from-yellow-400/10 group-hover/stat:to-yellow-500/10 transition-all duration-300" />
+                      <div className="relative">
+                        <div className="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-1">{screen.premium_seats}</div>
+                        <div className="text-yellow-600 dark:text-yellow-300 text-xs font-semibold mb-1">Premium</div>
+                        <div className="text-yellow-700 dark:text-yellow-200 text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 px-2 py-0.5 rounded-full inline-block">
+                          Rs.{screen.premium_price}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
-                      <div className="font-bold text-blue-800 dark:text-blue-200">{screen.gold_seats}</div>
-                      <div className="text-blue-600 dark:text-blue-300 text-xs">Gold</div>
-                      <div className="text-blue-700 dark:text-blue-200 text-xs">Rs.{screen.gold_price}</div>
+
+                    <div className="group/stat relative overflow-hidden text-center p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/40 border border-blue-200/50 dark:border-blue-700/30 hover:shadow-md transition-all duration-300 hover:scale-105">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/0 to-blue-500/0 group-hover/stat:from-blue-400/10 group-hover/stat:to-blue-500/10 transition-all duration-300" />
+                      <div className="relative">
+                        <div className="text-2xl font-bold text-blue-800 dark:text-blue-200 mb-1">{screen.gold_seats}</div>
+                        <div className="text-blue-600 dark:text-blue-300 text-xs font-semibold mb-1">Gold</div>
+                        <div className="text-blue-700 dark:text-blue-200 text-xs font-medium bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded-full inline-block">
+                          Rs.{screen.gold_price}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center p-2 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-700">
-                      <div className="font-bold text-gray-800 dark:text-zinc-200">{screen.silver_seats}</div>
-                      <div className="text-gray-600 dark:text-zinc-400 text-xs">Silver</div>
-                      <div className="text-gray-700 dark:text-zinc-200 text-xs">Rs.{screen.silver_price}</div>
+
+                    <div className="group/stat relative overflow-hidden text-center p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800/40 dark:to-zinc-700/40 border border-gray-200/50 dark:border-zinc-600/30 hover:shadow-md transition-all duration-300 hover:scale-105">
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-400/0 to-gray-500/0 group-hover/stat:from-gray-400/10 group-hover/stat:to-gray-500/10 transition-all duration-300" />
+                      <div className="relative">
+                        <div className="text-2xl font-bold text-gray-800 dark:text-zinc-200 mb-1">{screen.silver_seats}</div>
+                        <div className="text-gray-600 dark:text-zinc-400 text-xs font-semibold mb-1">Silver</div>
+                        <div className="text-gray-700 dark:text-zinc-200 text-xs font-medium bg-gray-100 dark:bg-zinc-800/50 px-2 py-0.5 rounded-full inline-block">
+                          Rs.{screen.silver_price}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground dark:text-zinc-400 space-y-1">
-                    <div>Created: {new Date(screen.created_at).toLocaleDateString()}</div>
-                    {screen.updated_at && <div>Updated: {new Date(screen.updated_at).toLocaleDateString()}</div>}
+
+                  {/* Timestamps with icons */}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 text-xs space-y-1.5">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      <span className="font-medium">Created:</span>
+                      <span className="ml-auto">{new Date(screen.created_at).toLocaleDateString()}</span>
+                    </div>
+                    {screen.updated_at && (
+                      <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="font-medium">Updated:</span>
+                        <span className="ml-auto">{new Date(screen.updated_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
                   </div>
+
                   <Separator className="dark:bg-zinc-700" />
+
+                  {/* Action buttons with enhanced styling */}
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 hover:bg-blue-50 hover:border-blue-300 bg-transparent dark:hover:bg-blue-900 dark:hover:border-blue-700"
+                      className="flex-1 border-blue-200 hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100 hover:border-blue-400 dark:border-blue-800 dark:hover:from-blue-950 dark:hover:to-blue-900 dark:hover:border-blue-600 transition-all duration-300 group/btn"
                       onClick={() => editScreen(screen)}
                       disabled={loading}
                     >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
+                      <Edit className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
+                      <span className="font-medium">Edit</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 hover:bg-green-50 hover:border-green-300 bg-transparent dark:hover:bg-green-900 dark:hover:border-green-700"
+                      className="flex-1 border-green-200 hover:bg-gradient-to-br hover:from-green-50 hover:to-green-100 hover:border-green-400 dark:border-green-800 dark:hover:from-green-950 dark:hover:to-green-900 dark:hover:border-green-600 transition-all duration-300 group/btn"
                       onClick={() => viewScreen(screen)}
                     >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
+                      <Eye className="h-4 w-4 mr-1.5 group-hover/btn:scale-110 transition-transform" />
+                      <span className="font-medium">View</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 bg-transparent dark:hover:bg-red-900 dark:hover:border-red-700 dark:hover:text-red-400"
+                      className="border-red-200 hover:bg-gradient-to-br hover:from-red-50 hover:to-red-100 hover:border-red-400 hover:text-red-700 dark:border-red-800 dark:hover:from-red-950 dark:hover:to-red-900 dark:hover:border-red-600 dark:hover:text-red-400 transition-all duration-300 group/btn"
                       onClick={() => deleteScreen(screen)}
                       disabled={loading}
                     >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
+                      )}
                     </Button>
                   </div>
                 </CardContent>
