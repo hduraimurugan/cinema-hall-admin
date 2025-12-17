@@ -295,7 +295,7 @@ export function CinemaLayout() {
             <div className="flex flex-1 min-h-0">
                 {/* Sidebar - Hidden on mobile */}
                 <aside
-                    className={`hidden h-full border-r bg-background lg:flex lg:flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-64"
+                    className={`hidden h-full border-r bg-background lg:flex lg:flex-shrink-0 transition-all duration-300 ${isSidebarCollapsed ? "w-16" : "w-52"
                         }`}
                 >
                     <AppSidebar
