@@ -12,7 +12,6 @@ const ShowPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
     const [showData, setShowData] = useState(null)
-    const [selectedSeats, setSelectedSeats] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -31,46 +30,21 @@ const ShowPage = () => {
         }
     }, [id])
 
-    const handleSeatClick = (seat) => {
-        if (seat.status !== "available") return
-        setSelectedSeats((prev) => {
-            const isSelected = prev.find((s) => s.id === seat.id)
-            if (isSelected) {
-                return prev.filter((s) => s.id !== seat.id)
-            } else {
-                return [...prev, seat]
-            }
-        })
-    }
-
     const getSeatColor = (seat) => {
-        const isSelected = selectedSeats.find((s) => s.id === seat.id)
-
         if (seat.type === "passage" || seat.isBlocked || seat.status === "blocked") {
             return "invisible"
         }
 
-        if (seat.status === "booked") {
-            return "bg-gray-300 text-gray-500 cursor-not-allowed"
+        if (seat.status === "booked" || seat.status === "BOOKED") {
+            return "bg-red-400 text-white cursor-default"
         }
 
-        if (seat.status === "in_booking") {
-            return "bg-gray-300 text-gray-500 cursor-not-allowed"
+        if (seat.status === "in_booking" || seat.status === "HELD") {
+            return "bg-yellow-400 text-gray-700 cursor-default"
         }
 
-        if (isSelected) {
-            return "bg-green-500 border-green-600 text-white shadow-lg"
-        }
-
-        // Available seats - green border with white background
-        return "bg-primary-background border-2 border-green-400 hover:border-green-500 cursor-pointer"
-    }
-
-    const getTotalPrice = () => {
-        return selectedSeats.reduce((total, seat) => {
-            const overridePrice = showData?.show_details?.price_override?.[seat.type]
-            return total + (overridePrice ? Number.parseInt(overridePrice) : seat.price)
-        }, 0)
+        // Available seats - green border
+        return "bg-primary-background border-2 border-green-400 cursor-default"
     }
 
     const generateSeatsByCategory = () => {
@@ -116,20 +90,16 @@ const ShowPage = () => {
                                     return aNum - bNum
                                 })
                                 .map((seat, index) => (
-                                    <button
+                                    <div
                                         key={seat.id}
-                                        onClick={() => handleSeatClick(seat)}
-                                        disabled={seat.status !== "available"}
                                         className={`
-                    w-8 h-8 text-xs font-medium rounded transition-all duration-200 transform
+                    w-8 h-8 text-xs text-center flex items-center justify-center font-medium rounded transition-all duration-200
                     ${getSeatColor(seat)}
-                    ${seat.status === "available" ? "hover:scale-105" : ""}
-                    ${selectedSeats.find((s) => s.id === seat.id) ? "ring-1 ring-green-400" : ""}
                   `}
-                                        title={`${seat.seat_label} - ₹${price}`}
+                                        title={`${seat.seat_label} - ₹${price} - ${seat.status?.toUpperCase() || 'AVAILABLE'}`}
                                     >
                                         {seat.seat_label?.slice(1) || index + 1}
-                                    </button>
+                                    </div>
                                 ))}
                         </div>
                     ))}
@@ -238,12 +208,12 @@ const ShowPage = () => {
                                         <span className="">AVAILABLE</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-4 h-4 bg-gray-300 border-2 border-gray-400 rounded"></div>
-                                        <span className="">BOOKED</span>
+                                        <div className="w-4 h-4 bg-yellow-400 rounded"></div>
+                                        <span className="">HELD</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-4 h-4 bg-green-500 border-2 border-green-600 rounded"></div>
-                                        <span className="">SELECTED</span>
+                                        <div className="w-4 h-4 bg-red-400 rounded"></div>
+                                        <span className="">BOOKED</span>
                                     </div>
                                 </div>
 
@@ -296,66 +266,63 @@ const ShowPage = () => {
                     <div className="lg:col-span-1">
                         <Card className="shadow-lg border-0 sticky top-32">
                             <CardHeader className="pb-4">
-                                <CardTitle className="text-lg font-semibold ">Booking Summary</CardTitle>
+                                <CardTitle className="text-lg font-semibold">Seat Status Overview</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {selectedSeats.length > 0 ? (
-                                    <>
-                                        <div>
-                                            <h4 className="font-medium mb-3">Selected Seats</h4>
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {selectedSeats.map((seat) => (
-                                                    <div
-                                                        key={seat.id}
-                                                        className="bg-green-50 border border-green-200 rounded px-2 py-1 text-center"
-                                                    >
-                                                        <span className="text-xs font-medium text-green-700">{seat.seat_label}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                {(() => {
+                                    const seats = showData?.screen?.layout?.seats || []
+                                    const bookedSeats = seats.filter(s => s.status === "booked" || s.status === "BOOKED")
+                                    const heldSeats = seats.filter(s => s.status === "in_booking" || s.status === "HELD")
+                                    const availableSeats = seats.filter(s =>
+                                        s.type !== "passage" &&
+                                        !s.isBlocked &&
+                                        s.status !== "blocked" &&
+                                        s.status !== "booked" &&
+                                        s.status !== "BOOKED" &&
+                                        s.status !== "in_booking" &&
+                                        s.status !== "HELD"
+                                    )
 
-                                        <Separator />
-
-                                        <div className="space-y-3">
-                                            {Object.entries(
-                                                selectedSeats.reduce((acc, seat) => {
-                                                    const type = seat.type
-                                                    const price = showData.show_details.price_override?.[type] || seat.price
-                                                    if (!acc[type]) {
-                                                        acc[type] = { count: 0, price: Number.parseInt(price), total: 0 }
-                                                    }
-                                                    acc[type].count += 1
-                                                    acc[type].total += Number.parseInt(price)
-                                                    return acc
-                                                }, {}),
-                                            ).map(([type, data]) => (
-                                                <div key={type} className="flex justify-between text-sm">
-                                                    <span className="capitalize">
-                                                        {type} ({data.count}x)
-                                                    </span>
-                                                    <span className="font-medium">₹{data.total}</span>
+                                    return (
+                                        <>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                                                    <span className="font-medium">Available</span>
+                                                    <span className="text-lg font-bold text-green-600">{availableSeats.length}</span>
                                                 </div>
-                                            ))}
-                                        </div>
 
-                                        <Separator />
+                                                <div className="flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                                                    <span className="font-medium">Held</span>
+                                                    <span className="text-lg font-bold text-yellow-600">{heldSeats.length}</span>
+                                                </div>
 
-                                        <div className="flex justify-between font-bold text-lg">
-                                            <span>Total</span>
-                                            <span>₹{getTotalPrice()}</span>
-                                        </div>
+                                                <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                                                    <span className="font-medium">Booked</span>
+                                                    <span className="text-lg font-bold text-red-600">{bookedSeats.length}</span>
+                                                </div>
+                                            </div>
 
-                                        <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-medium">
-                                            Proceed to Payment
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-8">
-                                        <Users className="w-12 h-12 mx-auto mb-4" />
-                                        <p className="text-sm">Select seats to continue</p>
-                                    </div>
-                                )}
+                                            {bookedSeats.length > 0 && (
+                                                <>
+                                                    <Separator />
+                                                    <div>
+                                                        <h4 className="font-medium mb-3">Booked Seats</h4>
+                                                        <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+                                                            {bookedSeats.map((seat) => (
+                                                                <div
+                                                                    key={seat.id}
+                                                                    className="bg-red-50 dark:bg-red-950 border border-red-200 rounded px-2 py-1 text-center"
+                                                                >
+                                                                    <span className="text-xs font-medium text-red-700 dark:text-red-400">{seat.seat_label}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </>
+                                    )
+                                })()}
 
                                 <Separator />
 
