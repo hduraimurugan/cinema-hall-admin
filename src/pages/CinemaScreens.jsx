@@ -78,7 +78,7 @@ const CinemaScreenDesigner = () => {
           row: rowLabels[row] || String.fromCharCode(65 + row),
           column: col + 1,
           type: "silver",
-          price: pricing.silver,
+          // price: pricing.silver,
           isBlocked: false,
         })
       }
@@ -1049,7 +1049,7 @@ const CinemaScreenDesigner = () => {
                               key={`${rowIndex}-${colIndex}`}
                               className={`w-10 h-10 rounded-lg text-xs font-bold ${getSeatColor(seat)} hover:scale-105 active:scale-95`}
                               onClick={(e) => handleSeatClick(seat, e)}
-                              title={`${seat.row}${seat.column} - ${seat.type} - $${seat.price}`}
+                              title={`${seat.row}${seat.column} - ${seat.type} - $${seat?.price}`}
                             >
                               {seat.type === "passage" ? (
                                 ""
