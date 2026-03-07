@@ -263,6 +263,24 @@ export const moviesAPI = {
   },
 }
 
+export const bookingAPI = {
+  getCinemaHallBookings: async ({ date, search, status, page = 1 } = {}) => {
+    const params = new URLSearchParams();
+    if (date) params.append("date", date);
+    if (search) params.append("search", search);
+    if (status) params.append("status", status);
+    params.append("page", page);
+    const response = await fetch(`${API_BASE_URL}/api/booking/admin/all?${params}`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const e = await response.json();
+      throw new Error(e.error || e.message || "Failed to fetch bookings");
+    }
+    return response.json();
+  }
+};
+
 export const showsAPI = {
   // ✅ Create a single show
   createShow: async (data) => {
