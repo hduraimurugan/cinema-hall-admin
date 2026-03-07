@@ -210,7 +210,7 @@ const Bookings = () => {
                       <TableCell className="font-semibold">₹{b.total_amount}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariants[b.booking_status] || "default"}>
-                          {b.booking_status}
+                          {b.booking_status?.charAt(0).toUpperCase() + b.booking_status?.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-muted-foreground">
