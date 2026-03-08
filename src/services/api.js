@@ -278,7 +278,18 @@ export const bookingAPI = {
       throw new Error(e.error || e.message || "Failed to fetch bookings");
     }
     return response.json();
-  }
+  },
+
+  verifyBooking: async (bookingId) => {
+    const response = await fetch(`${API_BASE_URL}/api/booking/admin/verify/${bookingId}`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const e = await response.json();
+      throw new Error(e.error || e.message || "Booking not found");
+    }
+    return response.json();
+  },
 };
 
 export const showsAPI = {

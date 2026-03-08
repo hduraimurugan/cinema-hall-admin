@@ -8,6 +8,7 @@ import { SettingsPage } from './pages/SettingsPage'
 import HomePage from './pages/HomePage.jsx'
 import ShowsManagement from './pages/ShowsManagement.jsx';
 import Bookings from './pages/Bookings.jsx';
+import VerifyTicket from './pages/VerifyTicket.jsx';
 import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -45,6 +46,7 @@ function App() {
             <Route path="/shows" element={<ShowsManagement />} />
             <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
+            <Route path="/verify-ticket" element={<VerifyTicket />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>

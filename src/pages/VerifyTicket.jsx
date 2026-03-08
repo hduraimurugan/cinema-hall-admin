@@ -1,0 +1,239 @@
+import { useState, useRef, useEffect } from "react"
+import { Html5Qrcode } from "html5-qrcode"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { ScanLine, Search, Camera, CameraOff, CheckCircle2, XCircle } from "lucide-react"
+import { bookingAPI } from "../services/api"
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+const statusVariants = {
+  confirmed: "default",
+  cancelled: "destructive",
+  completed: "secondary",
+}
+
+const VerifyTicket = () => {
+  const [manualInput, setManualInput] = useState("")
+  const [bookingResult, setBookingResult] = useState(null)
+  const [scanError, setScanError] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [scannerActive, setScannerActive] = useState(false)
+  const html5QrCodeRef = useRef(null)
+
+  const fetchBooking = async (id) => {
+    if (!UUID_REGEX.test(id)) {
+      setFetchError("Invalid booking ID format")
+      return
+    }
+    setLoading(true)
+    setFetchError(null)
+    setBookingResult(null)
+    try {
+      const data = await bookingAPI.verifyBooking(id)
+      setBookingResult(data.booking)
+    } catch (err) {
+      setFetchError(err.message || "Booking not found")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const startScanner = async () => {
+    setScanError(null)
+    setScannerActive(true)
+    const html5QrCode = new Html5Qrcode("qr-reader")
+    html5QrCodeRef.current = html5QrCode
+    try {
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        (decodedText) => {
+          stopScanner()
+          if (!UUID_REGEX.test(decodedText)) {
+            setScanError("Invalid QR code — not a booking ID")
+            return
+          }
+          setManualInput(decodedText)
+          fetchBooking(decodedText)
+        },
+        () => {} // ignore per-frame errors
+      )
+    } catch {
+      setScannerActive(false)
+      setScanError("Could not access camera. Please allow camera permission or use manual entry.")
+    }
+  }
+
+  const stopScanner = () => {
+    html5QrCodeRef.current?.stop().catch(() => {})
+    setScannerActive(false)
+  }
+
+  useEffect(() => {
+    return () => {
+      html5QrCodeRef.current?.stop().catch(() => {})
+    }
+  }, [])
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center gap-3">
+        <ScanLine className="w-6 h-6 text-primary" />
+        <h1 className="text-2xl font-bold">Verify Ticket</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left: Scanner + Manual Entry */}
+        <div className="space-y-4">
+          {/* Camera Scanner */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Scan QR Code</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div
+                id="qr-reader"
+                className={`w-full rounded-lg overflow-hidden bg-muted ${scannerActive ? "min-h-64" : "hidden"}`}
+              />
+              {!scannerActive && (
+                <div className="flex flex-col items-center justify-center h-36 bg-muted rounded-lg text-muted-foreground gap-2">
+                  <Camera className="w-10 h-10 opacity-40" />
+                  <p className="text-sm">Camera is off</p>
+                </div>
+              )}
+              {scanError && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <XCircle className="w-4 h-4 shrink-0" />
+                  {scanError}
+                </p>
+              )}
+              <Button
+                onClick={scannerActive ? stopScanner : startScanner}
+                variant={scannerActive ? "destructive" : "default"}
+                className="w-full"
+              >
+                {scannerActive ? (
+                  <><CameraOff className="w-4 h-4 mr-2" />Stop Camera</>
+                ) : (
+                  <><Camera className="w-4 h-4 mr-2" />Start Camera</>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Manual Entry */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Manual Entry</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Paste booking ID (UUID)..."
+                  value={manualInput}
+                  onChange={e => setManualInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && fetchBooking(manualInput.trim())}
+                />
+                <Button
+                  onClick={() => fetchBooking(manualInput.trim())}
+                  disabled={loading || !manualInput.trim()}
+                >
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+              {fetchError && (
+                <p className="text-sm text-destructive flex items-center gap-1.5">
+                  <XCircle className="w-4 h-4 shrink-0" />
+                  {fetchError}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Result */}
+        <div>
+          {loading && (
+            <Card>
+              <CardContent className="flex items-center justify-center h-48 text-muted-foreground">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </CardContent>
+            </Card>
+          )}
+
+          {!loading && bookingResult && (
+            <Card className="border-green-500/40">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  <CardTitle className="text-base">Booking Details</CardTitle>
+                  <Badge variant={statusVariants[bookingResult.booking_status] || "default"} className="ml-auto">
+                    {bookingResult.booking_status?.charAt(0).toUpperCase() + bookingResult.booking_status?.slice(1)}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Movie & Show */}
+                <div className="pb-3 border-b border-border">
+                  <p className="font-bold text-lg">{bookingResult.movie_title}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {bookingResult.show_date
+                      ? new Date(bookingResult.show_date).toLocaleDateString("en-IN", { dateStyle: "long" })
+                      : ""}
+                    {bookingResult.start_time ? ` • ${bookingResult.start_time.slice(0, 5)}` : ""}
+                  </p>
+                  {bookingResult.screen_name && (
+                    <p className="text-sm text-muted-foreground">{bookingResult.screen_name}</p>
+                  )}
+                </div>
+
+                {/* Customer */}
+                <div className="pb-3 border-b border-border">
+                  <p className="text-xs text-muted-foreground mb-0.5">Customer</p>
+                  <p className="font-semibold">{bookingResult.customer_name || "—"}</p>
+                  <p className="text-sm text-muted-foreground">{bookingResult.customer_email}</p>
+                </div>
+
+                {/* Seats */}
+                <div className="pb-3 border-b border-border">
+                  <p className="text-xs text-muted-foreground mb-2">Seats</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(bookingResult.seat_labels || []).map((s, i) => (
+                      <span key={i} className="px-3 py-1 bg-secondary text-secondary-foreground text-sm rounded-lg font-semibold">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amount & Booking ID */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Booking ID</p>
+                    <p className="text-xs font-mono text-muted-foreground">{bookingResult.id}</p>
+                  </div>
+                  <p className="text-2xl font-bold">₹{bookingResult.total_amount}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!loading && !bookingResult && !fetchError && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-3">
+                <ScanLine className="w-12 h-12 opacity-30" />
+                <p className="text-sm">Scan a QR code or enter a booking ID to verify</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default VerifyTicket

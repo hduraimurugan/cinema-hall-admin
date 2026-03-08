@@ -10,6 +10,7 @@ import {
   DollarSign,
   Star,
   LogOut,
+  ScanLine,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -24,6 +25,7 @@ const navigationItems = [
   { title: "Movies", url: "/movies", icon: Film, roles: ["superAdmin"] },
   { title: "Showtimes", url: "/shows", icon: Calendar },
   { title: "Bookings", url: "/bookings", icon: Ticket },
+  { title: "Verify Ticket", url: "/verify-ticket", icon: ScanLine },
 ]
 
 const managementItems = [
