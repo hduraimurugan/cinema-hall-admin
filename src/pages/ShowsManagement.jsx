@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Search, Play } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
@@ -48,6 +47,22 @@ const formatDuration = (minutes) => {
   return `${hours}h ${mins}m`
 }
 
+const formatDateParts = (date) => ({
+  dow: date.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase(),
+  day: date.getDate(),
+  month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+})
+
+const getNextDates = () => {
+  const dates = []
+  for (let i = 0; i < 7; i++) {
+    const date = new Date()
+    date.setDate(date.getDate() + i)
+    dates.push(date)
+  }
+  return dates
+}
+
 // Movie Search Dropdown Component
 const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Select a movie" }) => {
   const [searchValue, setSearchValue] = useState("")
@@ -80,11 +95,9 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
     []
   )
 
-  // 🎯 Load selected movie if ID is passed (for editing etc.)
   useEffect(() => {
     const fetchSelectedMovie = async () => {
       if (!selectedMovieId) return setIsInitialLoading(false)
-
       try {
         const response = await moviesAPI.getMovieById(selectedMovieId)
         setSelectedMovie(response.movie || null)
@@ -94,7 +107,6 @@ const MovieSearchDropdown = ({ selectedMovieId, onMovieSelect, placeholder = "Se
         setIsInitialLoading(false)
       }
     }
-
     fetchSelectedMovie()
   }, [selectedMovieId])
 
@@ -200,8 +212,6 @@ const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] })
 
   useEffect(() => {
     if (editData) {
-      console.log("Edit show data:", editData);
-
       setFormData({
         movie_id: editData.movie_id || "",
         screen_id: editData.screen_id || "",
@@ -381,7 +391,7 @@ const ShowModal = ({ isOpen, onClose, onSubmit, editData = null, screens = [] })
 // Main Shows Management Component
 const ShowsManagement = () => {
   const navigate = useNavigate()
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
+  const [selectedDate, setSelectedDate] = useState(new Date())
   const [showsData, setShowsData] = useState(null)
   const [screens, setScreens] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -389,25 +399,11 @@ const ShowsManagement = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingShow, setEditingShow] = useState(null)
 
-  // Generate next 3 dates
-  const dates = Array.from({ length: 4 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-    return {
-      value: date.toISOString().split("T")[0],
-      label: date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      }),
-    }
-  })
-
-  // Fetch shows data
   const fetchShows = async (date) => {
     setIsLoading(true)
     try {
-      const response = await showsAPI.getShowsByDate(date)
+      const dateStr = date.toISOString().split("T")[0]
+      const response = await showsAPI.getShowsByDate(dateStr)
       setShowsData(response)
     } catch (error) {
       console.error("Error fetching shows:", error)
@@ -416,7 +412,6 @@ const ShowsManagement = () => {
     }
   }
 
-  // Fetch screens
   const fetchScreens = async () => {
     try {
       const data = await screensAPI.getMyScreens()
@@ -469,12 +464,13 @@ const ShowsManagement = () => {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto">
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="px-6 pt-6 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Shows Management</h1>
-          <p className="text-muted-foreground">Manage your cinema shows and schedules</p>
+          <p className="text-muted-foreground text-sm mt-1">Manage your cinema shows and schedules</p>
         </div>
         <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
           <Plus className="h-4 w-4" />
@@ -482,161 +478,191 @@ const ShowsManagement = () => {
         </Button>
       </div>
 
-      {/* Date Tabs */}
-      <Tabs value={selectedDate} onValueChange={setSelectedDate} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-md">
-          {dates.map((date) => (
-            <TabsTrigger key={date.value} value={date.value} className="text-sm">
-              {date.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* Date Selector shelf */}
+      <div className="bg-card border-b border-border">
+        <div className="px-6">
+          <div className="flex items-center gap-4 py-3">
+            <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {getNextDates().map((date, index) => {
+                const { dow, day, month } = formatDateParts(date)
+                const isSelected = date.toDateString() === selectedDate.toDateString()
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedDate(date)}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center w-14 py-2 rounded-lg transition-all duration-200 ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "border border-border text-foreground hover:border-primary hover:text-primary"
+                    }`}
+                  >
+                    <span className="text-[10px] font-semibold tracking-wider leading-none">{dow}</span>
+                    <span className="text-xl font-bold leading-tight">{day}</span>
+                    <span className="text-[10px] font-semibold tracking-wider leading-none">{month}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {dates.map((date) => (
-          <TabsContent key={date.value} value={date.value} className="mt-6">
-            {isLoading ? (
-              <div className="space-y-6">
-                {[...Array(2)].map((_, i) => (
-                  <Card key={i}>
-                    <CardHeader>
-                      <div className="flex space-x-4">
-                        <Skeleton className="h-24 w-16 rounded" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-6 w-1/3" />
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-4 w-1/2" />
-                        </div>
+      {/* Availability Legend */}
+      <div className="px-6 py-2">
+        <div className="flex items-center justify-end gap-4 text-xs font-semibold tracking-wide">
+          <span className="flex items-center gap-1.5 text-green-600 dark:text-green-500">
+            <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+            AVAILABLE
+          </span>
+          <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-500">
+            <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+            FAST FILLING
+          </span>
+        </div>
+      </div>
+
+      {/* Shows Content */}
+      <div className="px-6 py-3 pb-10">
+        {isLoading ? (
+          <div className="space-y-4 animate-pulse">
+            {[1, 2].map((i) => (
+              <Card key={i} className="rounded-xl overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex space-x-4">
+                    <Skeleton className="h-24 w-16 rounded-lg flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                      <div className="flex gap-2 pt-1">
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-16 rounded-full" />
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-2">
-                        {[...Array(3)].map((_, j) => (
-                          <Skeleton key={j} className="h-10 w-24" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-3">
+                    {[1, 2, 3].map((j) => (
+                      <Skeleton key={j} className="h-16 w-28 rounded-lg" />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : showsData?.grouped?.length > 0 ? (
+          <div className="space-y-4">
+            {showsData.grouped.map((movieGroup) => (
+              <Card key={movieGroup.movie_id} className="rounded-xl overflow-hidden">
+                <CardHeader className="pb-4">
+                  <div className="flex space-x-4">
+                    {/* Poster */}
+                    <div className="h-24 w-16 bg-secondary rounded-lg overflow-hidden flex-shrink-0 shadow-md">
+                      {movieGroup.poster_url ? (
+                        <LazyLoadImage
+                          src={movieGroup.poster_url}
+                          alt={movieGroup.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Play className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Movie info */}
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-lg mb-2 leading-tight">{movieGroup.title}</CardTitle>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3.5 w-3.5" />
+                          {formatDuration(movieGroup.duration)}
+                        </span>
+                        {movieGroup.genre?.map((g, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs rounded-full px-2.5">
+                            {g}
+                          </Badge>
+                        ))}
+                        {movieGroup.language?.map((lang, i) => (
+                          <Badge key={i} variant="outline" className="text-xs rounded-full px-2.5">
+                            {lang}
+                          </Badge>
                         ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : showsData?.grouped?.length > 0 ? (
-              <div className="space-y-6">
-                {showsData.grouped.map((movieGroup) => (
-                  <Card key={movieGroup.movie_id} className="overflow-hidden">
-                    <CardHeader className="pb-4">
-                      <div className="flex space-x-4">
-                        <div className="h-24 w-16 bg-secondary rounded overflow-hidden flex-shrink-0">
-                          {movieGroup.poster_url ? (
-                            <LazyLoadImage
-                              src={movieGroup.poster_url}
-                              alt={movieGroup.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-xl mb-2">{movieGroup.title}</CardTitle>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              {formatDuration(movieGroup.duration)}
-                            </div>
-                            <div className="flex gap-1">
-                              {movieGroup.genre?.map((g, i) => (
-                                <Badge key={i} variant="secondary" className="text-xs">
-                                  {g}
-                                </Badge>
-                              ))}
-                            </div>
-                            <div className="flex gap-1">
-                              {movieGroup.language?.map((lang, i) => (
-                                <Badge key={i} variant="outline" className="text-xs">
-                                  {lang}
-                                </Badge>
-                              ))}
-                            </div>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-0">
+                  <div className="flex flex-wrap gap-3">
+                    {[...movieGroup.shows]
+                      .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                      .map((show) => (
+                        <div key={show.id} className="group relative">
+                          {/* Show time button — BookMyShow style */}
+                          <button
+                            className="flex flex-col items-center justify-center px-4 py-2.5 min-w-[110px] border border-green-500 rounded-lg text-green-700 dark:text-green-400 hover:border-primary hover:text-primary transition-colors duration-150"
+                            onClick={() => navigate(`/show/${show.id}`)}
+                          >
+                            {/* Screen info */}
+                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                              <MapPin className="h-2.5 w-2.5" />
+                              <span className="truncate max-w-[80px]">{show.screen_name}</span>
+                              <span className="text-border opacity-60">·</span>
+                              <span>{show.total_seats}s</span>
+                            </span>
+                            {/* Time */}
+                            <span className="font-bold text-sm leading-tight">
+                              {formatTime(show.start_time)}
+                            </span>
+                            {/* Language & price */}
+                            <span className="flex items-center justify-between w-full text-[10px] text-muted-foreground mt-0.5 gap-2">
+                              <span className="truncate">{show.language_version}</span>
+                              <span>₹{show.price_override?.silver ?? "—"}</span>
+                            </span>
+                          </button>
+
+                          {/* Edit / Delete hover actions */}
+                          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-6 w-6 p-0"
+                              onClick={() => openEditModal(show)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleDeleteShow(show.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex flex-wrap gap-4">
-                          {movieGroup.shows.map((show) => (
-                            <div key={show.id} className="group relative">
-                              <Button
-                                variant="outline"
-                                className="h-auto p-3 flex flex-col items-start gap-2 min-w-[120px] rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
-                              >
-                                {/* 🏷 Screen Info */}
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <MapPin className="h-3 w-3" />
-                                  <span className="truncate max-w-[80px]">{show.screen_name}</span>
-                                  <Badge variant="outline" className="text-[10px] px-1 py-0.5 rounded">
-                                    {show.total_seats} seats
-                                  </Badge>
-                                </div>
-
-                                {/* 🕐 Time */}
-                                <div className="text-sm font-semibold tracking-tight"
-                                  onClick={() => navigate(`/show/${show.id}`)}>
-                                  {formatTime(show.start_time)}
-                                </div>
-
-                                {/* 🎞 Language & Price */}
-                                <div className="flex justify-between items-center w-full text-xs text-muted-foreground">
-                                  <span>{show.language_version}</span>
-                                  <span>₹{show.price_override?.silver || "N/A"}</span>
-                                </div>
-                              </Button>
-
-                              {/* ✏️🗑 Hover Actions */}
-                              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => openEditModal(show)}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleDeleteShow(show.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card className="p-12 text-center">
-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No shows scheduled</h3>
-                <p className="text-muted-foreground mb-4">
-                  No shows are scheduled for {date.label}. Add your first show to get started.
-                </p>
-                <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Show
-                </Button>
+                      ))}
+                  </div>
+                </CardContent>
               </Card>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+            ))}
+          </div>
+        ) : (
+          <Card className="rounded-xl p-12 text-center">
+            <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No shows scheduled</h3>
+            <p className="text-muted-foreground mb-4 text-sm">
+              No shows are scheduled for this date. Add your first show to get started.
+            </p>
+            <Button onClick={() => setIsAddModalOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Show
+            </Button>
+          </Card>
+        )}
+      </div>
 
       {/* Add Show Modal */}
       <ShowModal
