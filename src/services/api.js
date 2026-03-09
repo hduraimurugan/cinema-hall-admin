@@ -264,11 +264,12 @@ export const moviesAPI = {
 }
 
 export const bookingAPI = {
-  getCinemaHallBookings: async ({ date, search, status, page = 1 } = {}) => {
+  getCinemaHallBookings: async ({ date, search, status, screen_id, page = 1 } = {}) => {
     const params = new URLSearchParams();
     if (date) params.append("date", date);
     if (search) params.append("search", search);
     if (status) params.append("status", status);
+    if (screen_id) params.append("screen_id", screen_id);
     params.append("page", page);
     const response = await fetch(`${API_BASE_URL}/api/booking/admin/all?${params}`, {
       credentials: "include",
