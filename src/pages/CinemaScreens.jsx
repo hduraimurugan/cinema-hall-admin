@@ -1,4 +1,78 @@
 import React, { useState, useCallback, useRef, useEffect } from "react"
+
+// ── Migration: converts old passage-seat format → new aisleAfterColumns/Rows format ──
+function migrateLayoutFromPassage(layout) {
+  if (!layout || !layout.seats) return layout
+  if (layout.aisleAfterColumns !== undefined) return layout // already new format
+
+  const { rows, columns, seats } = layout
+
+  // Find column indices (0-based) where ALL rows have passage
+  const passageCols = new Set()
+  for (let col = 0; col < columns; col++) {
+    const allPassage = Array.from({ length: rows }, (_, r) =>
+      seats.find((s) => s.id === `${r}-${col}`)?.type === "passage"
+    ).every(Boolean)
+    if (allPassage) passageCols.add(col)
+  }
+
+  // Find row indices (0-based) where ALL columns have passage
+  const passageRows = new Set()
+  for (let row = 0; row < rows; row++) {
+    const allPassage = Array.from({ length: columns }, (_, c) =>
+      seats.find((s) => s.id === `${row}-${c}`)?.type === "passage"
+    ).every(Boolean)
+    if (allPassage) passageRows.add(row)
+  }
+
+  const realCols = Array.from({ length: columns }, (_, i) => i).filter((c) => !passageCols.has(c))
+  const realRows = Array.from({ length: rows }, (_, i) => i).filter((r) => !passageRows.has(r))
+  const oldColToNew = Object.fromEntries(realCols.map((c, i) => [c, i]))
+  const oldRowToNew = Object.fromEntries(realRows.map((r, i) => [r, i]))
+  const newRowLetters = realRows.map((_, i) => String.fromCharCode(65 + i))
+
+  // Compute aisleAfterColumns: 1-indexed column number just before each passage cluster
+  const aisleAfterColumns = []
+  let inPassage = false
+  let lastRealColNew = -1
+  for (let c = 0; c < columns; c++) {
+    if (!passageCols.has(c)) { lastRealColNew = oldColToNew[c]; inPassage = false }
+    else if (!inPassage) { if (lastRealColNew >= 0) aisleAfterColumns.push(lastRealColNew + 1); inPassage = true }
+  }
+
+  // Compute aisleAfterRows: row letter of last real row before each passage cluster
+  const aisleAfterRows = []
+  let inPassageRow = false
+  let lastRealRowNew = -1
+  for (let r = 0; r < rows; r++) {
+    if (!passageRows.has(r)) { lastRealRowNew = oldRowToNew[r]; inPassageRow = false }
+    else if (!inPassageRow) { if (lastRealRowNew >= 0) aisleAfterRows.push(newRowLetters[lastRealRowNew]); inPassageRow = true }
+  }
+
+  // Build new seats: remove passage seats, renumber remaining
+  const newSeats = seats
+    .filter((s) => s.type !== "passage")
+    .filter((s) => {
+      const [r, c] = s.id.split("-").map(Number)
+      return !passageCols.has(c) && !passageRows.has(r)
+    })
+    .map((s) => {
+      const [r, c] = s.id.split("-").map(Number)
+      const nr = oldRowToNew[r], nc = oldColToNew[c]
+      const newRow = newRowLetters[nr]
+      const newColumn = nc + 1
+      return { ...s, id: `${nr}-${nc}`, row: newRow, column: newColumn, label: `${newRow}-${newColumn}` }
+    })
+
+  return {
+    ...layout,
+    rows: realRows.length,
+    columns: realCols.length,
+    aisleAfterColumns: aisleAfterColumns.sort((a, b) => a - b),
+    aisleAfterRows: aisleAfterRows.sort(),
+    seats: newSeats,
+  }
+}
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -73,17 +147,24 @@ const CinemaScreenDesigner = () => {
     const seats = []
     for (let row = 0; row < layout.rows; row++) {
       for (let col = 0; col < layout.columns; col++) {
+        const rowLetter = rowLabels[row] || String.fromCharCode(65 + row)
+        const colNumber = col + 1
         seats.push({
           id: `${row}-${col}`,
-          row: rowLabels[row] || String.fromCharCode(65 + row),
-          column: col + 1,
+          row: rowLetter,
+          column: colNumber,
+          label: `${rowLetter}-${colNumber}`,
           type: "silver",
-          // price: pricing.silver,
           isBlocked: false,
         })
       }
     }
-    setLayout((prev) => ({ ...prev, seats }))
+    setLayout((prev) => ({
+      ...prev,
+      seats,
+      aisleAfterColumns: prev.aisleAfterColumns || [],
+      aisleAfterRows: prev.aisleAfterRows || [],
+    }))
   }, [layout.rows, layout.columns, pricing, rowLabels])
 
   useEffect(() => {
@@ -103,32 +184,6 @@ const CinemaScreenDesigner = () => {
     setLayout((prev) => ({
       ...prev,
       seats: prev.seats.map((seat) => (seatIds.includes(seat.id) ? { ...seat, ...updates } : seat)),
-    }))
-  }
-
-  const reassignRowLabels = () => {
-    const newRowLabels = {}
-    let labelIndex = 0
-    for (let row = 0; row < layout.rows; row++) {
-      const rowSeats = layout.seats.filter((seat) => seat.id.startsWith(`${row}-`))
-      const isRowAllPassages = rowSeats.every((seat) => seat.type === "passage")
-      if (!isRowAllPassages) {
-        newRowLabels[row] = String.fromCharCode(65 + labelIndex)
-        labelIndex++
-      } else {
-        newRowLabels[row] = ""
-      }
-    }
-    setRowLabels(newRowLabels)
-    setLayout((prev) => ({
-      ...prev,
-      seats: prev.seats.map((seat) => {
-        const [row] = seat.id.split("-").map(Number)
-        return {
-          ...seat,
-          row: newRowLabels[row] || "",
-        }
-      }),
     }))
   }
 
@@ -166,13 +221,12 @@ const CinemaScreenDesigner = () => {
       return
     }
 
+    if (selectedTool === "aisle") return // aisle tool works on column/row headers, not seats
+
     const seatsToUpdate = selectedSeats.size > 0 ? Array.from(selectedSeats) : [seat.id]
 
     if (selectedTool === "block") {
       updateMultipleSeats(seatsToUpdate, { isBlocked: !seat.isBlocked })
-    } else if (selectedTool === "passage") {
-      updateMultipleSeats(seatsToUpdate, { type: "passage", price: 0 })
-      setTimeout(reassignRowLabels, 100)
     } else if (selectedTool === "entrance") {
       updateMultipleSeats(seatsToUpdate, { type: "entrance", price: 0 })
     } else if (selectedTool === "door") {
@@ -203,6 +257,29 @@ const CinemaScreenDesigner = () => {
     setSelectedSeats(colSeats)
   }
 
+  const toggleAisleAfterColumn = (colNumber) => {
+    if (colNumber >= layout.columns) return // no aisle after last column
+    setLayout((prev) => {
+      const existing = prev.aisleAfterColumns || []
+      const updated = existing.includes(colNumber)
+        ? existing.filter((c) => c !== colNumber)
+        : [...existing, colNumber].sort((a, b) => a - b)
+      return { ...prev, aisleAfterColumns: updated }
+    })
+  }
+
+  const toggleAisleAfterRow = (rowLetter) => {
+    const letters = Array.from({ length: layout.rows }, (_, i) => String.fromCharCode(65 + i))
+    if (rowLetter === letters[letters.length - 1]) return // no aisle after last row
+    setLayout((prev) => {
+      const existing = prev.aisleAfterRows || []
+      const updated = existing.includes(rowLetter)
+        ? existing.filter((r) => r !== rowLetter)
+        : [...existing, rowLetter].sort()
+      return { ...prev, aisleAfterRows: updated }
+    })
+  }
+
   const clearSelection = () => {
     setSelectedSeats(new Set())
   }
@@ -224,8 +301,6 @@ const CinemaScreenDesigner = () => {
         return `${baseClasses} bg-gradient-to-br from-blue-400 to-blue-500 border-blue-600 hover:from-blue-500 hover:to-blue-600 text-blue-900 shadow-md`
       case "silver":
         return `${baseClasses} bg-gradient-to-br from-gray-300 to-gray-400 border-gray-500 hover:from-gray-400 hover:to-gray-500 text-gray-800 shadow-md`
-      case "passage":
-        return `${baseClasses} bg-transparent border-dashed border-gray-300 hover:border-gray-400`
       case "entrance":
         return `${baseClasses} bg-gradient-to-br from-green-400 to-green-500 border-green-600 text-green-900 shadow-md`
       case "door":
@@ -243,6 +318,8 @@ const CinemaScreenDesigner = () => {
       columns: 15,
       seats: [],
       screenPosition: "top",
+      aisleAfterColumns: [],
+      aisleAfterRows: [],
     })
     setPricing({
       premium: 100,
@@ -257,7 +334,12 @@ const CinemaScreenDesigner = () => {
   const editScreen = (screen) => {
     setEditingScreen(screen)
     setScreenName(screen.name)
-    setLayout(screen.layout)
+    const migrated = migrateLayoutFromPassage(screen.layout)
+    // Backfill label on any seat missing it (e.g. screens saved before label was introduced)
+    migrated.seats = migrated.seats.map((s) =>
+      s.label ? s : { ...s, label: `${s.row}-${s.column}` }
+    )
+    setLayout(migrated)
     setPricing({
       premium: screen.premium_price,
       gold: screen.gold_price,
@@ -333,6 +415,7 @@ const CinemaScreenDesigner = () => {
   }
 
   const confirmReset = () => {
+    setLayout((prev) => ({ ...prev, aisleAfterColumns: [], aisleAfterRows: [] }))
     initializeSeats()
     setSelectedSeats(new Set())
     setRowLabels({})
@@ -368,7 +451,7 @@ const CinemaScreenDesigner = () => {
     { id: "premium", label: "Premium", color: "bg-gradient-to-r from-yellow-400 to-yellow-500", icon: "💎" },
     { id: "gold", label: "Gold", color: "bg-gradient-to-r from-blue-400 to-blue-500", icon: "🥇" },
     { id: "silver", label: "Silver", color: "bg-gradient-to-r from-gray-300 to-gray-400", icon: "🥈" },
-    { id: "passage", label: "Passage", color: "border-2 border-dashed border-gray-400", icon: "🚶" },
+    { id: "aisle", label: "Aisle", color: "border-2 border-dashed border-purple-400 bg-purple-50", icon: "↔", description: "Click column/row headers to add or remove aisle gaps" },
     { id: "entrance", label: "Entrance", color: "bg-gradient-to-r from-green-400 to-green-500", icon: "🚪" },
     { id: "door", label: "Door", color: "bg-gradient-to-r from-orange-400 to-orange-500", icon: "🔓" },
     { id: "block", label: "Block/Unblock", color: "bg-gradient-to-r from-red-500 to-red-600", icon: "❌" },
@@ -670,62 +753,89 @@ const CinemaScreenDesigner = () => {
                     <div className="inline-block">
                       {/* Column numbers */}
                       <div className="flex items-center gap-1 mb-4 ml-8">
-                        {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => (
-                          <div key={colIndex} className="w-9 text-center text-xs font-medium text-gray-500">
-                            {colIndex + 1}
-                          </div>
-                        ))}
+                        {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
+                          const colNumber = colIndex + 1
+                          const hasAisle = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
+                          return (
+                            <React.Fragment key={colIndex}>
+                              <div className="w-9 text-center text-xs font-medium text-gray-500">
+                                {colNumber}
+                              </div>
+                              {hasAisle && colIndex < viewingScreen.layout.columns - 1 && (
+                                <div className="w-4" />
+                              )}
+                            </React.Fragment>
+                          )
+                        })}
                       </div>
 
                       {/* Rows with seats */}
                       {Array.from({ length: viewingScreen.layout.rows }, (_, rowIndex) => {
+                        const rowLabel = String.fromCharCode(65 + rowIndex)
+                        const hasAisleAfterRow = (viewingScreen.layout.aisleAfterRows || []).includes(rowLabel)
                         const rowSeats = viewingScreen.layout.seats.filter((seat) => seat.id.startsWith(`${rowIndex}-`))
-                        const hasValidSeats = rowSeats.some((seat) => seat.type !== "passage" && !seat.isBlocked)
+                        const hasValidSeats = rowSeats.some((seat) => !seat.isBlocked && seat.type !== "entrance" && seat.type !== "door")
 
                         if (!hasValidSeats) return null
 
                         return (
-                          <div key={rowIndex} className="flex items-center gap-1 mb-2">
-                            {/* Row label */}
-                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
-                              {String.fromCharCode(65 + rowIndex)}
+                          <React.Fragment key={rowIndex}>
+                            <div className="flex items-center gap-1 mb-2">
+                              {/* Row label */}
+                              <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
+                                {rowLabel}
+                              </div>
+
+                              {/* Seats with column aisle spacers */}
+                              {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
+                                const colNumber = colIndex + 1
+                                const hasAisleAfterCol = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
+                                const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
+
+                                const seatEl = !seat || seat.isBlocked || seat.type === "entrance" || seat.type === "door"
+                                  ? <div key={colIndex} className="w-9 h-9" />
+                                  : (() => {
+                                      const seatColor =
+                                        seat.type === "premium"
+                                          ? "bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 text-yellow-900 shadow-lg hover:shadow-xl"
+                                          : seat.type === "gold"
+                                            ? "bg-gradient-to-br from-blue-400 to-blue-500 border-blue-600 text-blue-900 shadow-lg hover:shadow-xl"
+                                            : "bg-gradient-to-br from-gray-300 to-gray-400 border-gray-500 text-gray-800 shadow-md hover:shadow-lg"
+                                      return (
+                                        <button
+                                          className={`w-9 h-9 rounded-lg border-2 transition-all duration-200 hover:scale-105 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
+                                          title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - Rs.${seat.price}`}
+                                        >
+                                          {seat.column}
+                                        </button>
+                                      )
+                                    })()
+
+                                return (
+                                  <React.Fragment key={colIndex}>
+                                    {seatEl}
+                                    {hasAisleAfterCol && colIndex < viewingScreen.layout.columns - 1 && (
+                                      <div className="w-4 flex items-center justify-center opacity-40">
+                                        <div className="w-0.5 h-7 bg-purple-400 rounded" />
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                )
+                              })}
+
+                              {/* Row label (right side) */}
+                              <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
+                                {rowLabel}
+                              </div>
                             </div>
 
-                            {/* Seats */}
-                            {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
-                              const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
-                              if (!seat) return <div key={colIndex} className="w-9 h-9" />
-
-                              if (seat.type === "passage") {
-                                return <div key={colIndex} className="w-9 h-9" />
-                              }
-
-                              if (seat.isBlocked || seat.type === "entrance" || seat.type === "door") {
-                                return <div key={colIndex} className="w-9 h-9" />
-                              }
-
-                              const seatColor =
-                                seat.type === "premium"
-                                  ? "bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 text-yellow-900 shadow-lg hover:shadow-xl"
-                                  : seat.type === "gold"
-                                    ? "bg-gradient-to-br from-blue-400 to-blue-500 border-blue-600 text-blue-900 shadow-lg hover:shadow-xl"
-                                    : "bg-gradient-to-br from-gray-300 to-gray-400 border-gray-500 text-gray-800 shadow-md hover:shadow-lg"
-
-                              return (
-                                <button
-                                  key={colIndex}
-                                  className={`w-9 h-9 rounded-lg border-2 transition-all duration-200 hover:scale-105 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
-                                  title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - $${seat.price}`}
-                                >
-                                  {seat.column}
-                                </button>
-                              )
-                            })}
-                            {/* Row label (right side) */}
-                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
-                              {String.fromCharCode(65 + rowIndex)}
-                            </div>
-                          </div>
+                            {/* Horizontal aisle spacer */}
+                            {hasAisleAfterRow && (
+                              <div className="flex items-center gap-1 my-1 ml-8">
+                                <div className="flex-1 h-0.5 bg-purple-300 rounded opacity-50" />
+                              </div>
+                            )}
+                          </React.Fragment>
                         )
                       })}
                     </div>
@@ -992,17 +1102,13 @@ const CinemaScreenDesigner = () => {
                   </div>
                 )}
 
-                {/* Quick Selection Tools */}
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" size="sm" onClick={() => { }}>
-                    <Rows className="h-4 w-4 mr-1" />
-                    Select Rows
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => { }}>
-                    <Columns className="h-4 w-4 mr-1" />
-                    Select Columns
-                  </Button>
-                </div>
+                {/* Aisle mode hint */}
+                {selectedTool === "aisle" && (
+                  <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-purple-50 dark:bg-purple-950 border border-dashed border-purple-300 text-purple-700 dark:text-purple-300 text-sm">
+                    <span>↔</span>
+                    <span>Click a <strong>column number</strong> to toggle a vertical aisle after it. Click a row's <strong>⬌</strong> button to toggle a horizontal aisle.</span>
+                  </div>
+                )}
 
                 {/* Seating Layout */}
                 <div className="overflow-auto p-6 rounded-lg">
@@ -1010,63 +1116,127 @@ const CinemaScreenDesigner = () => {
                     {/* Column headers */}
                     <div className="flex items-center gap-1 mb-2">
                       <div className="w-12"></div>
-                      {Array.from({ length: layout.columns }, (_, colIndex) => (
-                        <button
-                          key={colIndex}
-                          className="w-10 h-6 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded transition-colors"
-                          onClick={() => selectFullColumn(colIndex)}
-                          title={`Select column ${colIndex + 1}`}
-                        >
-                          {colIndex + 1}
-                        </button>
-                      ))}
+                      {Array.from({ length: layout.columns }, (_, colIndex) => {
+                        const colNumber = colIndex + 1
+                        const hasAisle = (layout.aisleAfterColumns || []).includes(colNumber)
+                        return (
+                          <React.Fragment key={colIndex}>
+                            <button
+                              className={`w-10 h-6 text-xs font-medium rounded transition-colors ${
+                                selectedTool === "aisle"
+                                  ? hasAisle
+                                    ? "bg-purple-300 border border-purple-500 text-purple-900 dark:bg-purple-700 dark:text-purple-100"
+                                    : "bg-purple-100 hover:bg-purple-200 border border-dashed border-purple-300 text-purple-700 dark:bg-purple-900/40 dark:hover:bg-purple-900/70"
+                                  : "bg-secondary/50 hover:bg-secondary"
+                              }`}
+                              onClick={() =>
+                                selectedTool === "aisle"
+                                  ? toggleAisleAfterColumn(colNumber)
+                                  : selectFullColumn(colIndex)
+                              }
+                              title={
+                                selectedTool === "aisle"
+                                  ? hasAisle
+                                    ? `Remove aisle after column ${colNumber}`
+                                    : `Add aisle after column ${colNumber}`
+                                  : `Select column ${colNumber}`
+                              }
+                            >
+                              {colNumber}
+                            </button>
+                            {hasAisle && colIndex < layout.columns - 1 && (
+                              <div className="w-5 flex items-center justify-center opacity-50">
+                                <div className="w-0.5 h-4 bg-purple-400 rounded" />
+                              </div>
+                            )}
+                          </React.Fragment>
+                        )
+                      })}
                     </div>
 
                     {/* Rows */}
-                    {Array.from({ length: layout.rows }, (_, rowIndex) => (
-                      <div key={rowIndex} className="flex items-center gap-1 mb-1">
-                        {/* Row selector and label */}
-                        <div className="flex items-center gap-1">
-                          <button
-                            className="w-6 h-10 text-xs font-medium bg-secondary/50 hover:bg-secondary rounded transition-colors"
-                            onClick={() => selectFullRow(rowIndex)}
-                            title={`Select row ${rowLabels[rowIndex] || String.fromCharCode(65 + rowIndex)}`}
-                          >
-                            ⬌
-                          </button>
-                          <div className="w-4 text-center font-bold text-sm">
-                            {rowLabels[rowIndex] || String.fromCharCode(65 + rowIndex)}
+                    {Array.from({ length: layout.rows }, (_, rowIndex) => {
+                      const rowLabel = rowLabels[rowIndex] || String.fromCharCode(65 + rowIndex)
+                      const hasAisleAfterRow = (layout.aisleAfterRows || []).includes(rowLabel)
+                      return (
+                        <React.Fragment key={rowIndex}>
+                          <div className="flex items-center gap-1 mb-1">
+                            {/* Row selector and label */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                className={`w-6 h-10 text-xs font-medium rounded transition-colors ${
+                                  selectedTool === "aisle"
+                                    ? hasAisleAfterRow
+                                      ? "bg-purple-300 border border-purple-500 text-purple-900 dark:bg-purple-700 dark:text-purple-100"
+                                      : "bg-purple-100 hover:bg-purple-200 border border-dashed border-purple-300 text-purple-700 dark:bg-purple-900/40"
+                                    : "bg-secondary/50 hover:bg-secondary"
+                                }`}
+                                onClick={() =>
+                                  selectedTool === "aisle"
+                                    ? toggleAisleAfterRow(rowLabel)
+                                    : selectFullRow(rowIndex)
+                                }
+                                title={
+                                  selectedTool === "aisle"
+                                    ? hasAisleAfterRow
+                                      ? `Remove aisle after row ${rowLabel}`
+                                      : `Add aisle after row ${rowLabel}`
+                                    : `Select row ${rowLabel}`
+                                }
+                              >
+                                ⬌
+                              </button>
+                              <div className={`w-4 text-center font-bold text-sm ${hasAisleAfterRow ? "text-purple-600" : ""}`}>
+                                {rowLabel}
+                              </div>
+                            </div>
+
+                            {/* Seats with column aisle spacers */}
+                            {Array.from({ length: layout.columns }, (_, colIndex) => {
+                              const colNumber = colIndex + 1
+                              const hasAisleAfterCol = (layout.aisleAfterColumns || []).includes(colNumber)
+                              const seat = layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
+                              return (
+                                <React.Fragment key={`${rowIndex}-${colIndex}`}>
+                                  {seat ? (
+                                    <button
+                                      className={`w-10 h-10 rounded-lg text-xs font-bold ${getSeatColor(seat)} hover:scale-105 active:scale-95`}
+                                      onClick={(e) => handleSeatClick(seat, e)}
+                                      title={`${seat.row}${seat.column} - ${seat.type}${seat.price ? ` - Rs.${seat.price}` : ""}`}
+                                    >
+                                      {seat.type === "entrance" ? (
+                                        <DoorOpen className="h-4 w-4 mx-auto" />
+                                      ) : seat.type === "door" ? (
+                                        <DoorOpen className="h-4 w-4 mx-auto" />
+                                      ) : seat.isBlocked ? (
+                                        "✕"
+                                      ) : (
+                                        seat.column
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <div className="w-10 h-10" />
+                                  )}
+                                  {hasAisleAfterCol && colIndex < layout.columns - 1 && (
+                                    <div className="w-5 flex items-center justify-center opacity-50">
+                                      <div className="w-0.5 h-8 bg-purple-400 rounded" />
+                                    </div>
+                                  )}
+                                </React.Fragment>
+                              )
+                            })}
                           </div>
-                        </div>
 
-                        {/* Seats */}
-                        {Array.from({ length: layout.columns }, (_, colIndex) => {
-                          const seat = layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
-                          if (!seat) return null
-
-                          return (
-                            <button
-                              key={`${rowIndex}-${colIndex}`}
-                              className={`w-10 h-10 rounded-lg text-xs font-bold ${getSeatColor(seat)} hover:scale-105 active:scale-95`}
-                              onClick={(e) => handleSeatClick(seat, e)}
-                              title={`${seat.row}${seat.column} - ${seat.type} - $${seat?.price}`}
-                            >
-                              {seat.type === "passage" ? (
-                                ""
-                              ) : seat.type === "entrance" ? (
-                                <DoorOpen className="h-4 w-4 mx-auto" />
-                              ) : seat.type === "door" ? (
-                                <DoorOpen className="h-4 w-4 mx-auto" />
-                              ) : seat.isBlocked ? (
-                                "✕"
-                              ) : (
-                                seat.column
-                              )}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    ))}
+                          {/* Horizontal aisle spacer after this row */}
+                          {hasAisleAfterRow && (
+                            <div className="flex items-center gap-1 my-1">
+                              <div className="w-12" />
+                              <div className="flex-1 h-0.5 bg-purple-300 rounded opacity-60" />
+                            </div>
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
                   </div>
                 </div>
 
