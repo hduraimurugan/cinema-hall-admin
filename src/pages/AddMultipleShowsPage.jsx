@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Plus, Trash2 } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { ArrowLeft, Plus, Trash2, CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { screensAPI, showsAPI } from "@/services/api"
 import MovieSearchDropdown from "@/components/MovieSearchDropdown"
 import { toast } from "sonner"
@@ -165,12 +168,36 @@ const AddMultipleShowsPage = () => {
             {/* Show Date */}
             <div className="space-y-2">
               <Label>Show Date</Label>
-              <Input
-                type="date"
-                value={sharedData.show_date ? dayjs(sharedData.show_date).tz("Asia/Kolkata").format("YYYY-MM-DD") : ""}
-                onChange={(e) => setSharedData((prev) => ({ ...prev, show_date: e.target.value }))}
-                required
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !sharedData.show_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {sharedData.show_date
+                      ? dayjs(sharedData.show_date).format("MMM D, YYYY")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={sharedData.show_date ? dayjs(sharedData.show_date).toDate() : undefined}
+                    onSelect={(date) =>
+                      setSharedData((prev) => ({
+                        ...prev,
+                        show_date: date ? dayjs(date).format("YYYY-MM-DD") : "",
+                      }))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Language Version */}

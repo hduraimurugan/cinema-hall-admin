@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon } from "lucide-react"
 import { bookingAPI, screensAPI } from "../services/api"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import dayjs from "dayjs"
 
 function debounce(fn, delay) {
   let t
@@ -78,7 +82,7 @@ const Bookings = () => {
   )
 
   const handleSearchChange = (e) => { setSearchInput(e.target.value); debouncedSearch(e.target.value) }
-  const handleDateChange = (e) => { setDate(e.target.value); setPage(1) }
+  const handleDateChange = (d) => { setDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
   const handleStatusChange = (val) => { setStatus(val); setPage(1) }
   const handleScreenChange = (val) => { setScreenId(val); setPage(1) }
 
@@ -137,12 +141,29 @@ const Bookings = () => {
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                 <CalendarDays className="w-3 h-3" /> Show Date
               </label>
-              <Input
-                type="date"
-                value={date}
-                onChange={handleDateChange}
-                className="h-9 text-sm"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-9 w-full justify-start text-left text-sm font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {date ? dayjs(date).format("MMM D, YYYY") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date ? dayjs(date).toDate() : undefined}
+                    onSelect={handleDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex flex-col gap-1.5">
