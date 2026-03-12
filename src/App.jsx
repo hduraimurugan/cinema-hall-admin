@@ -18,6 +18,9 @@ import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
 import MoviePage from './pages/MoviePage.jsx';
 import ShowPage from './pages/ShowPage.jsx';
+import AddShowPage from './pages/AddShowPage.jsx';
+import EditShowPage from './pages/EditShowPage.jsx';
+import AddMultipleShowsPage from './pages/AddMultipleShowsPage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -47,6 +50,9 @@ function App() {
             <Route path="/screens/new" element={<ScreenDesignerPage />} />
             <Route path="/screens/:id/edit" element={<ScreenDesignerPage />} />
             <Route path="/shows" element={<ShowsManagement />} />
+            <Route path="/shows/new" element={<AddShowPage />} />
+            <Route path="/shows/bulk" element={<AddMultipleShowsPage />} />
+            <Route path="/shows/:id/edit" element={<EditShowPage />} />
             <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/verify-ticket" element={<VerifyTicket />} />
