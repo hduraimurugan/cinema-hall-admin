@@ -415,3 +415,20 @@ export const showsAPI = {
     return response.json();
   },
 };
+
+export const paymentAPI = {
+  // ✅ Get all payment orders for the cinema hall (admin)
+  getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {
+    const params = new URLSearchParams()
+    if (date) params.set("date", date)
+    if (status && status !== "all") params.set("status", status)
+    if (customer) params.set("customer", customer)
+    if (movie) params.set("movie", movie)
+    params.set("page", page)
+    const response = await fetch(`${API_BASE_URL}/api/payment/admin/orders?${params}`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+};
