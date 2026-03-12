@@ -124,7 +124,11 @@ const ShowsManagement = () => {
           <div className="flex items-center gap-3 py-3">
             {/* Left arrow */}
             <button
-              onClick={() => setWeekOffset(prev => prev - 1)}
+              onClick={() => {
+                const newOffset = weekOffset - 1
+                setWeekOffset(newOffset)
+                setSelectedDate(getNextDates(newOffset)[0])
+              }}
               className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -155,7 +159,11 @@ const ShowsManagement = () => {
 
             {/* Right arrow */}
             <button
-              onClick={() => setWeekOffset(prev => prev + 1)}
+              onClick={() => {
+                const newOffset = weekOffset + 1
+                setWeekOffset(newOffset)
+                setSelectedDate(getNextDates(newOffset)[0])
+              }}
               className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
             >
               <ChevronRight className="h-4 w-4" />
