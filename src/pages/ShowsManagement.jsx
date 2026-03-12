@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus } from "lucide-react"
+import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 import { showsAPI } from "../services/api"
@@ -37,11 +37,11 @@ const formatDateParts = (date) => ({
   month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
 })
 
-const getNextDates = () => {
+const getNextDates = (offset = 0) => {
   const dates = []
   for (let i = 0; i < 7; i++) {
     const date = new Date()
-    date.setDate(date.getDate() + i)
+    date.setDate(date.getDate() + offset * 7 + i)
     dates.push(date)
   }
   return dates
@@ -52,6 +52,7 @@ const getNextDates = () => {
 const ShowsManagement = () => {
   const navigate = useNavigate()
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [weekOffset, setWeekOffset] = useState(0)
   const [showsData, setShowsData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -107,28 +108,58 @@ const ShowsManagement = () => {
       {/* Date Selector shelf */}
       <div className="bg-card border-b border-border">
         <div className="px-6">
-          <div className="flex items-center gap-4 py-3">
-            <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {getNextDates().map((date, index) => {
+          {/* Week range label */}
+          {(() => {
+            const dates = getNextDates(weekOffset)
+            const first = dates[0]
+            const last = dates[6]
+            const sameMonth = first.getMonth() === last.getMonth()
+            const rangeLabel = sameMonth
+              ? `${first.toLocaleDateString("en-US", { month: "long" })} ${first.getDate()} – ${last.getDate()}, ${last.getFullYear()}`
+              : `${first.toLocaleDateString("en-US", { month: "short" })} ${first.getDate()} – ${last.toLocaleDateString("en-US", { month: "short" })} ${last.getDate()}, ${last.getFullYear()}`
+            return (
+              <p className="pt-3 pb-0 text-xs font-medium text-muted-foreground tracking-wide">{rangeLabel}</p>
+            )
+          })()}
+          <div className="flex items-center gap-3 py-3">
+            {/* Left arrow */}
+            <button
+              onClick={() => setWeekOffset(prev => prev - 1)}
+              className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            {/* Date pills */}
+            <div className="flex gap-2">
+              {getNextDates(weekOffset).map((date, index) => {
                 const { dow, day, month } = formatDateParts(date)
                 const isSelected = date.toDateString() === selectedDate.toDateString()
                 return (
                   <button
                     key={index}
                     onClick={() => setSelectedDate(date)}
-                    className={`flex-shrink-0 flex flex-col items-center justify-center w-14 py-2 rounded-lg transition-all duration-200 ${
+                    className={`w-14 flex-shrink-0 flex flex-col items-center justify-center py-2.5 rounded-lg transition-all duration-200 ${
                       isSelected
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "border border-border text-foreground hover:border-primary hover:text-primary"
+                        ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30"
+                        : "border border-border text-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
                     }`}
                   >
                     <span className="text-[10px] font-semibold tracking-wider leading-none">{dow}</span>
-                    <span className="text-xl font-bold leading-tight">{day}</span>
+                    <span className="text-xl font-bold leading-tight mt-0.5">{day}</span>
                     <span className="text-[10px] font-semibold tracking-wider leading-none">{month}</span>
                   </button>
                 )
               })}
             </div>
+
+            {/* Right arrow */}
+            <button
+              onClick={() => setWeekOffset(prev => prev + 1)}
+              className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-200"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
