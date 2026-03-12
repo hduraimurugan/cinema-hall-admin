@@ -123,8 +123,21 @@ const ScreenDesignerPage = () => {
   const [saveMessage, setSaveMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [inputRows, setInputRows] = useState(10)
+  const [inputColumns, setInputColumns] = useState(15)
 
   const layoutRef = useRef(null)
+  const rowsTimerRef = useRef(null)
+  const colsTimerRef = useRef(null)
+
+  useEffect(() => {
+    const rowsTimer = rowsTimerRef.current
+    const colsTimer = colsTimerRef.current
+    return () => {
+      clearTimeout(rowsTimer)
+      clearTimeout(colsTimer)
+    }
+  }, [])
 
   // Initialize: load screen for editing, or blank for new
   useEffect(() => {
@@ -140,6 +153,8 @@ const ScreenDesignerPage = () => {
       )
       setScreenName(screen.name)
       setLayout(migrated)
+      setInputRows(migrated.rows)
+      setInputColumns(migrated.columns)
       setPricing({
         premium: screen.premium_price,
         gold: screen.gold_price,
@@ -176,6 +191,32 @@ const ScreenDesignerPage = () => {
   useEffect(() => {
     if (!isEditing) {
       initializeSeats()
+    } else {
+      // In edit mode: preserve existing seat configs, add new seats for expanded dimensions
+      setLayout((prev) => {
+        const newSeats = []
+        for (let row = 0; row < prev.rows; row++) {
+          for (let col = 0; col < prev.columns; col++) {
+            const id = `${row}-${col}`
+            const existing = prev.seats.find((s) => s.id === id)
+            if (existing) {
+              newSeats.push(existing)
+            } else {
+              const rowLetter = rowLabels[row] || String.fromCharCode(65 + row)
+              const colNumber = col + 1
+              newSeats.push({
+                id,
+                row: rowLetter,
+                column: colNumber,
+                label: `${rowLetter}-${colNumber}`,
+                type: "silver",
+                isBlocked: false,
+              })
+            }
+          }
+        }
+        return { ...prev, seats: newSeats }
+      })
     }
   }, [layout.rows, layout.columns]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -441,8 +482,15 @@ const ScreenDesignerPage = () => {
                   <Label className="text-sm font-medium">Rows</Label>
                   <Input
                     type="number"
-                    value={layout.rows}
-                    onChange={(e) => setLayout((prev) => ({ ...prev, rows: Number.parseInt(e.target.value) || 1 }))}
+                    value={inputRows}
+                    onChange={(e) => {
+                      const val = Math.min(20, Math.max(1, Number.parseInt(e.target.value) || 1))
+                      setInputRows(val)
+                      clearTimeout(rowsTimerRef.current)
+                      rowsTimerRef.current = setTimeout(() => {
+                        setLayout((prev) => ({ ...prev, rows: val }))
+                      }, 600)
+                    }}
                     min="1"
                     max="20"
                     className="mt-1"
@@ -452,8 +500,15 @@ const ScreenDesignerPage = () => {
                   <Label className="text-sm font-medium">Columns</Label>
                   <Input
                     type="number"
-                    value={layout.columns}
-                    onChange={(e) => setLayout((prev) => ({ ...prev, columns: Number.parseInt(e.target.value) || 1 }))}
+                    value={inputColumns}
+                    onChange={(e) => {
+                      const val = Math.min(30, Math.max(1, Number.parseInt(e.target.value) || 1))
+                      setInputColumns(val)
+                      clearTimeout(colsTimerRef.current)
+                      colsTimerRef.current = setTimeout(() => {
+                        setLayout((prev) => ({ ...prev, columns: val }))
+                      }, 600)
+                    }}
                     min="1"
                     max="30"
                     className="mt-1"
