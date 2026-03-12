@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon, RefreshCw } from "lucide-react"
 import { bookingAPI, screensAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -107,12 +107,24 @@ const Bookings = () => {
             <p className="text-sm text-muted-foreground">Manage and track all cinema bookings</p>
           </div>
         </div>
-        {total > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-            {total} booking{total !== 1 ? "s" : ""}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {total > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+              {total} booking{total !== 1 ? "s" : ""}
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchBookings({ date, search, status: status === "all" ? "" : status, screen_id: screenId === "all" ? "" : screenId, page })}
+            disabled={loading}
+            className="h-8 gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw } from "lucide-react"
 import { paymentAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -108,12 +108,24 @@ const PaymentOrders = () => {
             <p className="text-sm text-muted-foreground">Track all Razorpay payment orders</p>
           </div>
         </div>
-        {total > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
-            <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-            {total} order{total !== 1 ? "s" : ""}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {total > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+              {total} order{total !== 1 ? "s" : ""}
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchOrders({ date, status: status === "all" ? "" : status, customer, movie, page })}
+            disabled={loading}
+            className="h-8 gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
