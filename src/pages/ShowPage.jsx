@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,6 +63,9 @@ const ShowPage = () => {
     const renderSeatSection = (seats, sectionTitle, price) => {
         if (!seats.length) return null
 
+        const aisleAfterColumns = showData?.screen?.layout?.aisleAfterColumns || []
+        const aisleAfterRows = showData?.screen?.layout?.aisleAfterRows || []
+
         // Group seats by row
         const seatsByRow = seats.reduce((acc, seat) => {
             const row = seat.seat_label?.charAt(0) || "A"
@@ -81,27 +84,40 @@ const ShowPage = () => {
                 </div>
                 <div className="space-y-2">
                     {sortedRows.map((row) => (
-                        <div key={row} className="flex items-center justify-center gap-1">
-                            <div className="w-8 text-center text-sm font-medium mr-2">{row}</div>
-                            {seatsByRow[row]
-                                .sort((a, b) => {
-                                    const aNum = Number.parseInt(a.seat_label?.slice(1) || "0")
-                                    const bNum = Number.parseInt(b.seat_label?.slice(1) || "0")
-                                    return aNum - bNum
-                                })
-                                .map((seat, index) => (
-                                    <div
-                                        key={seat.id}
-                                        className={`
-                    w-8 h-8 text-xs text-center flex items-center justify-center font-medium rounded transition-all duration-200
-                    ${getSeatColor(seat)}
-                  `}
-                                        title={`${seat.seat_label} - ₹${price} - ${seat.status?.toUpperCase() || 'AVAILABLE'}`}
-                                    >
-                                        {seat.seat_label?.slice(1) || index + 1}
-                                    </div>
-                                ))}
-                        </div>
+                        <React.Fragment key={row}>
+                            <div className="flex items-center justify-center gap-1">
+                                <div className="w-8 text-center text-sm font-medium mr-2">{row}</div>
+                                {seatsByRow[row]
+                                    .sort((a, b) => {
+                                        const aNum = Number.parseInt(a.seat_label?.slice(1) || "0")
+                                        const bNum = Number.parseInt(b.seat_label?.slice(1) || "0")
+                                        return aNum - bNum
+                                    })
+                                    .map((seat, index) => {
+                                        const colNum = Number.parseInt(seat.seat_label?.slice(1) || "0")
+                                        const hasAisleAfterCol = aisleAfterColumns.includes(colNum)
+                                        return (
+                                            <React.Fragment key={seat.id}>
+                                                <div
+                                                    className={`
+                                                        w-8 h-8 text-xs text-center flex items-center justify-center font-medium rounded transition-all duration-200
+                                                        ${getSeatColor(seat)}
+                                                    `}
+                                                    title={`${seat.seat_label} - ₹${price} - ${seat.status?.toUpperCase() || 'AVAILABLE'}`}
+                                                >
+                                                    {seat.seat_label?.slice(1) || index + 1}
+                                                </div>
+                                                {hasAisleAfterCol && (
+                                                    <div className="w-3" aria-hidden="true" />
+                                                )}
+                                            </React.Fragment>
+                                        )
+                                    })}
+                            </div>
+                            {aisleAfterRows.includes(row) && (
+                                <div className="h-3" aria-hidden="true" />
+                            )}
+                        </React.Fragment>
                     ))}
                 </div>
             </div>
@@ -217,47 +233,47 @@ const ShowPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Seat Layout */}
-                                <div className="space-y-8">
-                                    {/* Premium Seats */}
-                                    {renderSeatSection(
-                                        categorizedSeats.premium,
-                                        "PREMIUM A (3D charges inclusive)",
-                                        showData.show_details.price_override?.premium || "190",
-                                    )}
-
-                                    {/* Passage Space */}
-                                    <div className="h-4"></div>
-
-                                    {/* Gold Seats */}
-                                    {renderSeatSection(
-                                        categorizedSeats.gold,
-                                        "GOLD (3D charges inclusive)",
-                                        showData.show_details.price_override?.gold || "170",
-                                    )}
-
-                                    {/* Passage Space */}
-                                    <div className="h-4"></div>
-
-                                    {/* Silver Seats */}
-                                    {renderSeatSection(
-                                        categorizedSeats.silver,
-                                        "SILVER (3D charges inclusive)",
-                                        showData.show_details.price_override?.silver || "150",
-                                    )}
-                                </div>
-
-                                {/* Screen */}
-                                <div className="mt-12 mb-4">
-                                    <div className="relative">
-                                        <div className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full mb-2"></div>
-                                        <div className="text-center">
-                                            <div className="inline-block bg-blue-50 px-4 py-1 rounded-full">
-                                                <span className="text-xs font-medium text-blue-600 tracking-wider">SCREEN THIS WAY</span>
+                                {(() => {
+                                    const screenPosition = showData.screen?.layout?.screenPosition || "bottom"
+                                    const screenIndicator = (
+                                        <div className="my-6">
+                                            <div className="relative">
+                                                <div className="h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full mb-2"></div>
+                                                <div className="text-center">
+                                                    <div className="inline-block bg-blue-50 px-4 py-1 rounded-full">
+                                                        <span className="text-xs font-medium text-blue-600 tracking-wider">SCREEN THIS WAY</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    )
+                                    const seatLayout = (
+                                        <div className="space-y-8">
+                                            {renderSeatSection(
+                                                categorizedSeats.premium,
+                                                "PREMIUM A (3D charges inclusive)",
+                                                showData.show_details.price_override?.premium || "190",
+                                            )}
+                                            <div className="h-4"></div>
+                                            {renderSeatSection(
+                                                categorizedSeats.gold,
+                                                "GOLD (3D charges inclusive)",
+                                                showData.show_details.price_override?.gold || "170",
+                                            )}
+                                            <div className="h-4"></div>
+                                            {renderSeatSection(
+                                                categorizedSeats.silver,
+                                                "SILVER (3D charges inclusive)",
+                                                showData.show_details.price_override?.silver || "150",
+                                            )}
+                                        </div>
+                                    )
+                                    return screenPosition === "top" ? (
+                                        <>{screenIndicator}{seatLayout}</>
+                                    ) : (
+                                        <>{seatLayout}{screenIndicator}</>
+                                    )
+                                })()}
                             </CardContent>
                         </Card>
                     </div>
