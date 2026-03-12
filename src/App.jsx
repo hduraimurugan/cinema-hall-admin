@@ -11,6 +11,7 @@ import Bookings from './pages/Bookings.jsx';
 import VerifyTicket from './pages/VerifyTicket.jsx';
 import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
+import ScreenDesignerPage from './pages/ScreenDesignerPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
@@ -43,6 +44,8 @@ function App() {
             
             <Route path="/movie/:id" element={<MoviePage />} />
             <Route path="/screens" element={<CinemaScreenDesigner />} />
+            <Route path="/screens/new" element={<ScreenDesignerPage />} />
+            <Route path="/screens/:id/edit" element={<ScreenDesignerPage />} />
             <Route path="/shows" element={<ShowsManagement />} />
             <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
