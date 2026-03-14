@@ -435,7 +435,7 @@ export default function AdsManagement() {
 
       {/* Create / Edit Modal */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>{editingAd ? 'Edit Ad' : 'New Ad'}</DialogTitle>
           </DialogHeader>
@@ -551,7 +551,7 @@ export default function AdsManagement() {
 
       {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Delete Ad</DialogTitle>
           </DialogHeader>
@@ -570,7 +570,7 @@ export default function AdsManagement() {
 
       {/* Click-through Details Modal */}
       <Dialog open={clicksOpen} onOpenChange={setClicksOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl md:min-w-2xl min-w-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MousePointerClick className="size-5 text-primary" />
