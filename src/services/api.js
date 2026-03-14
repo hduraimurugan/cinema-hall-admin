@@ -416,6 +416,55 @@ export const showsAPI = {
   },
 };
 
+export const adsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/ads`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  create: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/ads/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  update: async (id, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/ads/update/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  delete: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/ads/delete/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  getClicks: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/ads/${id}/clicks`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
   getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {
