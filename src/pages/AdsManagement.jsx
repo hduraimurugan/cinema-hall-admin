@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Megaphone, Plus, Pencil, Trash2, MousePointerClick, X, ExternalLink, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Megaphone, Plus, Pencil, Trash2, MousePointerClick, X, ExternalLink, ToggleLeft, ToggleRight, LayoutGrid, TableProperties } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { adsAPI } from '../services/api';
 
@@ -169,101 +170,268 @@ export default function AdsManagement() {
         </Button>
       </div>
 
-      {/* Ads Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card animate-pulse">
-              <div className="h-40 bg-muted rounded-t-xl" />
-              <div className="p-4 space-y-3">
-                <div className="h-4 bg-muted rounded w-3/4" />
-                <div className="h-3 bg-muted rounded w-1/2" />
-                <div className="h-8 bg-muted rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : ads.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Megaphone className="size-12 text-muted-foreground/30 mb-4" />
-          <p className="text-muted-foreground">No ads yet. Create your first ad.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ads.map((ad) => (
-            <div key={ad.id} className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
-              {/* Image preview */}
-              <div className="relative h-40 bg-muted overflow-hidden">
-                <img
-                  src={ad.image_url}
-                  alt={ad.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                {/* Placement badge */}
-                <span className={`absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full ${placementColor(ad.placement)}`}>
-                  {placementLabel(ad.placement)}
-                </span>
-                {/* Active indicator */}
-                <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${ad.is_active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-muted text-muted-foreground border border-border'}`}>
-                  {ad.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
+      <Tabs defaultValue="ads" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="ads" className="gap-2">
+            <LayoutGrid className="size-4" />
+            Ads
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2">
+            <TableProperties className="size-4" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
 
-              {/* Info */}
-              <div className="p-4 flex-1 flex flex-col gap-3">
-                <div>
-                  <h3 className="font-semibold text-foreground truncate">{ad.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {formatDate(ad.start_date)} – {formatDate(ad.end_date)}
-                  </p>
-                  {ad.click_url && (
-                    <a
-                      href={ad.click_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5 truncate"
+        {/* ── Tab 1: Card Grid ── */}
+        <TabsContent value="ads">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="rounded-xl border border-border bg-card animate-pulse">
+                  <div className="h-40 bg-muted rounded-t-xl" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-1/2" />
+                    <div className="h-8 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : ads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Megaphone className="size-12 text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground">No ads yet. Create your first ad.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {ads.map((ad) => (
+                <div key={ad.id} className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
+                  {/* Image preview */}
+                  <div className="relative h-40 bg-muted overflow-hidden">
+                    <img
+                      src={ad.image_url}
+                      alt={ad.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    {/* Placement badge */}
+                    <span className={`absolute top-2 left-2 text-xs font-semibold px-2 py-0.5 rounded-full ${placementColor(ad.placement)}`}>
+                      {placementLabel(ad.placement)}
+                    </span>
+                    {/* Active indicator */}
+                    <span className={`absolute top-2 right-2 text-xs font-semibold px-2 py-0.5 rounded-full ${ad.is_active ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-muted text-muted-foreground border border-border'}`}>
+                      {ad.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4 flex-1 flex flex-col gap-3">
+                    <div>
+                      <h3 className="font-semibold text-foreground truncate">{ad.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatDate(ad.start_date)} – {formatDate(ad.end_date)}
+                      </p>
+                      {ad.click_url && (
+                        <a
+                          href={ad.click_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center gap-1 mt-0.5 truncate"
+                        >
+                          <ExternalLink className="size-3 shrink-0" />
+                          <span className="truncate">{ad.click_url}</span>
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Click count */}
+                    <button
+                      onClick={() => openClicks(ad)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
                     >
-                      <ExternalLink className="size-3 shrink-0" />
-                      <span className="truncate">{ad.click_url}</span>
-                    </a>
-                  )}
-                </div>
+                      <MousePointerClick className="size-4 text-primary" />
+                      <span><strong className="text-foreground">{ad.click_count}</strong> click{ad.click_count !== 1 ? 's' : ''}</span>
+                    </button>
 
-                {/* Click count */}
-                <button
-                  onClick={() => openClicks(ad)}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                >
-                  <MousePointerClick className="size-4 text-primary" />
-                  <span><strong className="text-foreground">{ad.click_count}</strong> click{ad.click_count !== 1 ? 's' : ''}</span>
-                </button>
-
-                {/* Actions */}
-                <div className="flex gap-2 mt-auto pt-2 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 gap-1.5"
-                    onClick={() => openEdit(ad)}
-                  >
-                    <Pencil className="size-3.5" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
-                    onClick={() => setDeleteTarget(ad)}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
+                    {/* Actions */}
+                    <div className="flex gap-2 mt-auto pt-2 border-t border-border">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 gap-1.5"
+                        onClick={() => openEdit(ad)}
+                      >
+                        <Pencil className="size-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                        onClick={() => setDeleteTarget(ad)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* ── Tab 2: Analytics Table ── */}
+        <TabsContent value="analytics">
+          {loading ? (
+            <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
+              <div className="h-10 bg-muted" />
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-14 bg-muted/50 border-t border-border" />
+              ))}
+            </div>
+          ) : ads.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <Megaphone className="size-12 text-muted-foreground/30 mb-4" />
+              <p className="text-muted-foreground">No ads yet. Create your first ad.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Title</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Image URL</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Click-through URL</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Placement</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Status</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Start Date</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">End Date</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Clicks</th>
+                      <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {ads.map((ad) => (
+                      <tr key={ad.id} className="hover:bg-muted/30 transition-colors">
+                        {/* Title + thumbnail */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3 min-w-[160px]">
+                            <img
+                              src={ad.image_url}
+                              alt={ad.title}
+                              className="size-10 rounded-md object-cover border border-border shrink-0 bg-muted"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                            <span className="font-medium text-foreground line-clamp-2 max-w-[140px]">{ad.title}</span>
+                          </div>
+                        </td>
+
+                        {/* Image URL */}
+                        <td className="px-4 py-3 max-w-[160px]">
+                          <a
+                            href={ad.image_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline flex items-center gap-1 truncate"
+                            title={ad.image_url}
+                          >
+                            <ExternalLink className="size-3 shrink-0" />
+                            <span className="truncate">{ad.image_url}</span>
+                          </a>
+                        </td>
+
+                        {/* Click-through URL */}
+                        <td className="px-4 py-3 max-w-[160px]">
+                          {ad.click_url ? (
+                            <a
+                              href={ad.click_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1 truncate"
+                              title={ad.click_url}
+                            >
+                              <ExternalLink className="size-3 shrink-0" />
+                              <span className="truncate">{ad.click_url}</span>
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Placement */}
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${placementColor(ad.placement)}`}>
+                            {placementLabel(ad.placement)}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                            ad.is_active
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : 'bg-muted text-muted-foreground border border-border'
+                          }`}>
+                            {ad.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+
+                        {/* Start Date */}
+                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                          {formatDate(ad.start_date)}
+                        </td>
+
+                        {/* End Date */}
+                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                          {formatDate(ad.end_date)}
+                        </td>
+
+                        {/* Clicks */}
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => openClicks(ad)}
+                            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <MousePointerClick className="size-4 text-primary shrink-0" />
+                            <strong className="text-foreground">{ad.click_count}</strong>
+                          </button>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 h-8 px-2.5"
+                              onClick={() => openEdit(ad)}
+                            >
+                              <Pencil className="size-3.5" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 px-2.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                              onClick={() => setDeleteTarget(ad)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-2.5 border-t border-border bg-muted/20">
+                <p className="text-xs text-muted-foreground">{ads.length} ad{ads.length !== 1 ? 's' : ''} total · {ads.filter(a => a.is_active).length} active · {ads.reduce((s, a) => s + (a.click_count || 0), 0)} total clicks</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Create / Edit Modal */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
