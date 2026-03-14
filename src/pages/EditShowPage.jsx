@@ -5,8 +5,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { screensAPI, showsAPI } from "@/services/api"
 import MovieSearchDropdown from "@/components/MovieSearchDropdown"
 import { toast } from "sonner"
@@ -165,7 +168,7 @@ const EditShowPage = () => {
             </div>
 
             {/* Show Date */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>Show Date</Label>
               <Input
                 type="date"
@@ -173,6 +176,40 @@ const EditShowPage = () => {
                 onChange={(e) => setFormData((prev) => ({ ...prev, show_date: e.target.value }))}
                 required
               />
+            </div> */}
+             {/* Show Date */}
+            <div className="space-y-2">
+              <Label>Show Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.show_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.show_date
+                      ? dayjs(formData.show_date).format("MMM D, YYYY")
+                      : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.show_date ? dayjs(formData.show_date).toDate() : undefined}
+                    onSelect={(date) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        show_date: date ? dayjs(date).format("YYYY-MM-DD") : "",
+                      }))
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Start & End Time */}
