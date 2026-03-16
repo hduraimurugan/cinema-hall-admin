@@ -22,6 +22,7 @@ dayjs.extend(timezone)
 const AddMultipleShowsPage = () => {
   const navigate = useNavigate()
   const [screens, setScreens] = useState([])
+  const [movieLanguages, setMovieLanguages] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [sharedData, setSharedData] = useState({
@@ -135,13 +136,15 @@ const AddMultipleShowsPage = () => {
               <Label>Movie</Label>
               <MovieSearchDropdown
                 selectedMovieId={sharedData.movie_id}
-                onMovieSelect={(movie) =>
+                onMovieSelect={(movie) => {
+                  const langs = movie.language || []
+                  setMovieLanguages(langs)
                   setSharedData((prev) => ({
                     ...prev,
                     movie_id: movie.id,
-                    language_version: movie.language?.join(", ") || prev.language_version,
+                    language_version: langs.length === 1 ? langs[0] : "",
                   }))
-                }
+                }}
               />
             </div>
 
@@ -203,12 +206,29 @@ const AddMultipleShowsPage = () => {
             {/* Language Version */}
             <div className="space-y-2">
               <Label>Language Version</Label>
-              <Input
-                value={sharedData.language_version}
-                onChange={(e) => setSharedData((prev) => ({ ...prev, language_version: e.target.value }))}
-                placeholder="e.g., Tamil, English"
-                required
-              />
+              {movieLanguages.length > 1 ? (
+                <Select
+                  value={sharedData.language_version}
+                  onValueChange={(val) => setSharedData((prev) => ({ ...prev, language_version: val }))}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {movieLanguages.map((lang) => (
+                      <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={sharedData.language_version}
+                  onChange={(e) => setSharedData((prev) => ({ ...prev, language_version: e.target.value }))}
+                  placeholder="e.g., Tamil, English"
+                  required
+                />
+              )}
             </div>
 
             {/* Price Override */}
