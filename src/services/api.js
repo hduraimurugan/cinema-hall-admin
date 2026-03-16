@@ -465,6 +465,27 @@ export const adsAPI = {
   },
 }
 
+export const settingsAPI = {
+  getSettings: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/settings`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  updateSettings: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
   getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {
