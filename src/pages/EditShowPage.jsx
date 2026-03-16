@@ -24,6 +24,7 @@ const EditShowPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
   const [screens, setScreens] = useState([])
+  const [movieLanguages, setMovieLanguages] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -47,6 +48,7 @@ const EditShowPage = () => {
         setScreens(screenData || [])
 
         const { movie, screen, show_details } = showData
+        setMovieLanguages(movie.language || [])
         setFormData({
           movie_id: movie.id || "",
           screen_id: screen.id || "",
@@ -137,13 +139,15 @@ const EditShowPage = () => {
               <Label>Movie</Label>
               <MovieSearchDropdown
                 selectedMovieId={formData.movie_id}
-                onMovieSelect={(movie) =>
+                onMovieSelect={(movie) => {
+                  const langs = movie.language || []
+                  setMovieLanguages(langs)
                   setFormData((prev) => ({
                     ...prev,
                     movie_id: movie.id,
-                    language_version: movie.language?.join(", ") || prev.language_version,
+                    language_version: langs.length === 1 ? langs[0] : "",
                   }))
-                }
+                }}
               />
             </div>
 
@@ -237,12 +241,29 @@ const EditShowPage = () => {
             {/* Language Version */}
             <div className="space-y-2">
               <Label>Language Version</Label>
-              <Input
-                value={formData.language_version}
-                onChange={(e) => setFormData((prev) => ({ ...prev, language_version: e.target.value }))}
-                placeholder="e.g., Tamil, English"
-                required
-              />
+              {movieLanguages.length > 1 ? (
+                <Select
+                  value={formData.language_version}
+                  onValueChange={(val) => setFormData((prev) => ({ ...prev, language_version: val }))}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {movieLanguages.map((lang) => (
+                      <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={formData.language_version}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, language_version: e.target.value }))}
+                  placeholder="e.g., Tamil"
+                  required
+                />
+              )}
             </div>
 
             {/* Price Override */}
