@@ -213,7 +213,7 @@ const AddShowPage = () => {
                 <Input
                   value={formData.language_version}
                   onChange={(e) => setFormData((prev) => ({ ...prev, language_version: e.target.value }))}
-                  placeholder="e.g., Tamil, English"
+                  placeholder="e.g., Tamil"
                   required
                 />
               )}

@@ -225,7 +225,7 @@ const AddMultipleShowsPage = () => {
                 <Input
                   value={sharedData.language_version}
                   onChange={(e) => setSharedData((prev) => ({ ...prev, language_version: e.target.value }))}
-                  placeholder="e.g., Tamil, English"
+                  placeholder="e.g., Tamil"
                   required
                 />
               )}
