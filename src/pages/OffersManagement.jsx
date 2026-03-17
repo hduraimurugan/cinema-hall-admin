@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { createPortal } from "react-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import {
     Tag, Plus, Search, ChevronLeft, ChevronRight,
@@ -72,6 +72,12 @@ const OffersManagement = () => {
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [validUntilPickerOpen, setValidUntilPickerOpen] = useState(false)
+    const [validUntilPickerPos, setValidUntilPickerPos] = useState({ top: 0, left: 0 })
+    const validUntilBtnRef = useRef(null)
+    const [joinedAfterPickerOpen, setJoinedAfterPickerOpen] = useState(false)
+    const [joinedAfterPickerPos, setJoinedAfterPickerPos] = useState({ top: 0, left: 0 })
+    const joinedAfterBtnRef = useRef(null)
     const [editingOffer, setEditingOffer] = useState(null)
     const [form, setForm] = useState(EMPTY_FORM)
     const [saving, setSaving] = useState(false)
@@ -518,17 +524,19 @@ const OffersManagement = () => {
                         {/* Valid Until */}
                         <div className="space-y-1.5">
                             <Label>Valid Until <span className="text-destructive">*</span></Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.valid_until && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 w-4 h-4" />
-                                        {form.valid_until ? dayjs(form.valid_until).format("DD MMM YYYY") : "Pick expiry date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={form.valid_until} onSelect={d => setField("valid_until", d)} initialFocus />
-                                </PopoverContent>
-                            </Popover>
+                            <Button ref={validUntilBtnRef} variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.valid_until && "text-muted-foreground")} onClick={() => { const r = validUntilBtnRef.current.getBoundingClientRect(); setValidUntilPickerPos({ top: r.bottom + 4, left: r.left }); setValidUntilPickerOpen(true) }}>
+                                <CalendarIcon className="mr-2 w-4 h-4" />
+                                {form.valid_until ? dayjs(form.valid_until).format("DD MMM YYYY") : "Pick expiry date"}
+                            </Button>
+                            {validUntilPickerOpen && createPortal(
+                                <>
+                                    <div className="fixed inset-0 z-[100]" onClick={() => setValidUntilPickerOpen(false)} />
+                                    <div className="fixed z-[101] rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-auto animate-in fade-in-0 zoom-in-95" style={{ top: validUntilPickerPos.top, left: validUntilPickerPos.left }}>
+                                        <Calendar mode="single" selected={form.valid_until} onSelect={d => { setField("valid_until", d); setValidUntilPickerOpen(false) }} initialFocus />
+                                    </div>
+                                </>,
+                                document.body
+                            )}
                         </div>
 
                         {/* Scope */}
@@ -574,17 +582,19 @@ const OffersManagement = () => {
                         {form.user_eligibility === "joined_after" && (
                             <div className="space-y-1.5">
                                 <Label>Joined After <span className="text-destructive">*</span></Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.user_joined_after && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 w-4 h-4" />
-                                            {form.user_joined_after ? dayjs(form.user_joined_after).format("DD MMM YYYY") : "Pick date"}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={form.user_joined_after} onSelect={d => setField("user_joined_after", d)} initialFocus />
-                                    </PopoverContent>
-                                </Popover>
+                                <Button ref={joinedAfterBtnRef} variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.user_joined_after && "text-muted-foreground")} onClick={() => { const r = joinedAfterBtnRef.current.getBoundingClientRect(); setJoinedAfterPickerPos({ top: r.bottom + 4, left: r.left }); setJoinedAfterPickerOpen(true) }}>
+                                    <CalendarIcon className="mr-2 w-4 h-4" />
+                                    {form.user_joined_after ? dayjs(form.user_joined_after).format("DD MMM YYYY") : "Pick date"}
+                                </Button>
+                                {joinedAfterPickerOpen && createPortal(
+                                    <>
+                                        <div className="fixed inset-0 z-[100]" onClick={() => setJoinedAfterPickerOpen(false)} />
+                                        <div className="fixed z-[101] rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-auto animate-in fade-in-0 zoom-in-95" style={{ top: joinedAfterPickerPos.top, left: joinedAfterPickerPos.left }}>
+                                            <Calendar mode="single" selected={form.user_joined_after} onSelect={d => { setField("user_joined_after", d); setJoinedAfterPickerOpen(false) }} initialFocus />
+                                        </div>
+                                    </>,
+                                    document.body
+                                )}
                             </div>
                         )}
                     </div>
