@@ -519,6 +519,14 @@ export const offersAPI = {
     return response.json()
   },
 
+  getById: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/${id}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
   update: async (id, data) => {
     const response = await fetch(`${API_BASE_URL}/api/offers/update/${id}`, {
       method: 'PUT',

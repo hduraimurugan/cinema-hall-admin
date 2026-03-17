@@ -1,20 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from "react"
-import { createPortal } from "react-dom"
+import { useState, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Calendar } from "@/components/ui/calendar"
 import {
     Tag, Plus, Search, ChevronLeft, ChevronRight,
-    SlidersHorizontal, X, Pencil, Trash2, CalendarIcon,
+    SlidersHorizontal, X, Pencil, Trash2,
     RefreshCw, AlertCircle, BadgePercent, Ticket
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -40,47 +35,19 @@ const activeConfig = {
     false: { label: "Inactive", className: "bg-zinc-500/15 text-zinc-400 border border-zinc-500/25" },
 }
 
-const EMPTY_FORM = {
-    code: "",
-    title: "",
-    description: "",
-    discount_type: "percentage",
-    discount_value: "",
-    max_discount_amount: "",
-    min_booking_amount: "",
-    is_active: true,
-    valid_until: null,
-    scope: "global",
-    cinema_hall_id: "",
-    user_eligibility: "all",
-    user_joined_after: null,
-}
-
 const OffersManagement = () => {
+    const navigate = useNavigate()
     const [offers, setOffers] = useState([])
     const [total, setTotal] = useState(0)
     const [page, setPage] = useState(1)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
-    const [halls, setHalls] = useState([])
 
     // Filters
     const [searchInput, setSearchInput] = useState("")
     const [search, setSearch] = useState("")
     const [scopeFilter, setScopeFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
-
-    // Dialog state
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [validUntilPickerOpen, setValidUntilPickerOpen] = useState(false)
-    const [validUntilPickerPos, setValidUntilPickerPos] = useState({ top: 0, left: 0 })
-    const validUntilBtnRef = useRef(null)
-    const [joinedAfterPickerOpen, setJoinedAfterPickerOpen] = useState(false)
-    const [joinedAfterPickerPos, setJoinedAfterPickerPos] = useState({ top: 0, left: 0 })
-    const joinedAfterBtnRef = useRef(null)
-    const [editingOffer, setEditingOffer] = useState(null)
-    const [form, setForm] = useState(EMPTY_FORM)
-    const [saving, setSaving] = useState(false)
 
     // Delete state
     const [deleteTarget, setDeleteTarget] = useState(null)
@@ -99,12 +66,6 @@ const OffersManagement = () => {
             })
             .catch(err => setError(err?.error || err?.message || "Failed to load offers"))
             .finally(() => setLoading(false))
-    }, [])
-
-    useEffect(() => {
-        offersAPI.getCinemaHalls()
-            .then(data => setHalls(data.halls || []))
-            .catch(() => { })
     }, [])
 
     useEffect(() => {
@@ -132,83 +93,6 @@ const OffersManagement = () => {
         setPage(1)
     }
 
-    // ── Form helpers ────────────────────────────────────────────
-    const openCreate = () => {
-        setEditingOffer(null)
-        setForm(EMPTY_FORM)
-        setDialogOpen(true)
-    }
-
-    const openEdit = (offer) => {
-        setEditingOffer(offer)
-        setForm({
-            code: offer.code,
-            title: offer.title,
-            description: offer.description || "",
-            discount_type: offer.discount_type,
-            discount_value: String(offer.discount_value),
-            max_discount_amount: offer.max_discount_amount ? String(offer.max_discount_amount) : "",
-            min_booking_amount: offer.min_booking_amount ? String(offer.min_booking_amount) : "",
-            is_active: offer.is_active,
-            valid_until: offer.valid_until ? new Date(offer.valid_until) : null,
-            scope: offer.scope,
-            cinema_hall_id: offer.cinema_hall_id || "",
-            user_eligibility: offer.user_eligibility,
-            user_joined_after: offer.user_joined_after ? new Date(offer.user_joined_after) : null,
-        })
-        setDialogOpen(true)
-    }
-
-    const setField = (key, value) => setForm(f => ({ ...f, [key]: value }))
-
-    const handleSave = async () => {
-        if (!form.code || !form.title || !form.discount_value || !form.valid_until) {
-            toast.error("Code, title, discount value, and valid until are required.")
-            return
-        }
-        if (form.scope === "hall" && !form.cinema_hall_id) {
-            toast.error("Please select a cinema hall for hall-scoped offer.")
-            return
-        }
-        if (form.user_eligibility === "joined_after" && !form.user_joined_after) {
-            toast.error("Please select the joined-after date.")
-            return
-        }
-
-        const payload = {
-            code: form.code.toUpperCase().trim(),
-            title: form.title.trim(),
-            description: form.description.trim() || null,
-            discount_type: form.discount_type,
-            discount_value: parseFloat(form.discount_value),
-            max_discount_amount: form.max_discount_amount ? parseFloat(form.max_discount_amount) : null,
-            min_booking_amount: form.min_booking_amount ? parseFloat(form.min_booking_amount) : 0,
-            is_active: form.is_active,
-            valid_until: form.valid_until,
-            scope: form.scope,
-            cinema_hall_id: form.scope === "hall" ? form.cinema_hall_id : null,
-            user_eligibility: form.user_eligibility,
-            user_joined_after: form.user_eligibility === "joined_after" ? form.user_joined_after : null,
-        }
-
-        try {
-            setSaving(true)
-            if (editingOffer) {
-                await offersAPI.update(editingOffer.id, payload)
-                toast.success("Offer updated.")
-            } else {
-                await offersAPI.create(payload)
-                toast.success("Offer created.")
-            }
-            setDialogOpen(false)
-            fetchOffers({ search, scope: scopeFilter === "all" ? "" : scopeFilter, is_active: statusFilter === "all" ? "" : statusFilter === "active" ? "true" : "false", page })
-        } catch (err) {
-            toast.error(err?.error || "Failed to save offer.")
-        } finally {
-            setSaving(false)
-        }
-    }
-
     const handleDelete = async () => {
         if (!deleteTarget) return
         try {
@@ -216,7 +100,12 @@ const OffersManagement = () => {
             await offersAPI.delete(deleteTarget.id)
             toast.success("Offer deleted.")
             setDeleteTarget(null)
-            fetchOffers({ search, scope: scopeFilter === "all" ? "" : scopeFilter, is_active: statusFilter === "all" ? "" : statusFilter === "active" ? "true" : "false", page })
+            fetchOffers({
+                search,
+                scope: scopeFilter === "all" ? "" : scopeFilter,
+                is_active: statusFilter === "all" ? "" : statusFilter === "active" ? "true" : "false",
+                page,
+            })
         } catch (err) {
             toast.error(err?.error || "Failed to delete offer.")
         } finally {
@@ -224,11 +113,17 @@ const OffersManagement = () => {
         }
     }
 
-    // ── Discount display helper ─────────────────────────────────
     const formatDiscount = (offer) => {
         if (offer.discount_type === "fixed") return `₹${offer.discount_value} flat`
         const base = `${offer.discount_value}% off`
         return offer.max_discount_amount ? `${base} · max ₹${offer.max_discount_amount}` : base
+    }
+
+    const currentFilters = {
+        search,
+        scope: scopeFilter === "all" ? "" : scopeFilter,
+        is_active: statusFilter === "all" ? "" : statusFilter === "active" ? "true" : "false",
+        page,
     }
 
     return (
@@ -249,11 +144,11 @@ const OffersManagement = () => {
                         <Ticket className="w-3.5 h-3.5" />
                         {total} {total === 1 ? "offer" : "offers"}
                     </div>
-                    <Button size="sm" onClick={() => fetchOffers({ search, scope: scopeFilter === "all" ? "" : scopeFilter, is_active: statusFilter === "all" ? "" : statusFilter === "active" ? "true" : "false", page })} variant="outline" className="gap-1.5">
+                    <Button size="sm" onClick={() => fetchOffers(currentFilters)} variant="outline" className="gap-1.5">
                         <RefreshCw className="w-3.5 h-3.5" />
                         Refresh
                     </Button>
-                    <Button size="sm" onClick={openCreate} className="gap-1.5">
+                    <Button size="sm" onClick={() => navigate("/offers/new")} className="gap-1.5">
                         <Plus className="w-4 h-4" />
                         Create Offer
                     </Button>
@@ -416,7 +311,7 @@ const OffersManagement = () => {
                                             </TableCell>
                                             <TableCell className="pr-5 text-right">
                                                 <div className="flex items-center justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(offer)}>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/offers/${offer.id}/edit`)}>
                                                         <Pencil className="w-3.5 h-3.5" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(offer)}>
@@ -445,168 +340,6 @@ const OffersManagement = () => {
                     )}
                 </CardContent>
             </Card>
-
-            {/* Create / Edit Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>{editingOffer ? "Edit Offer" : "Create Offer"}</DialogTitle>
-                    </DialogHeader>
-
-                    <div className="space-y-4 py-2">
-                        {/* Code */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label htmlFor="code">Offer Code <span className="text-destructive">*</span></Label>
-                                <Input
-                                    id="code"
-                                    placeholder="e.g. SAVE50"
-                                    value={form.code}
-                                    onChange={e => setField("code", e.target.value.toUpperCase())}
-                                    className="font-mono uppercase"
-                                />
-                            </div>
-                            <div className="space-y-1.5 flex flex-col justify-end">
-                                <div className="flex items-center justify-between">
-                                    <Label>Active</Label>
-                                    <Switch checked={form.is_active} onCheckedChange={v => setField("is_active", v)} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Title */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
-                            <Input id="title" placeholder="e.g. New User Discount" value={form.title} onChange={e => setField("title", e.target.value)} />
-                        </div>
-
-                        {/* Description */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="desc">Description</Label>
-                            <Textarea id="desc" placeholder="Short description shown to users..." value={form.description} onChange={e => setField("description", e.target.value)} rows={2} />
-                        </div>
-
-                        {/* Discount Type + Value */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label>Discount Type <span className="text-destructive">*</span></Label>
-                                <Select value={form.discount_type} onValueChange={v => setField("discount_type", v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">Percentage (%)</SelectItem>
-                                        <SelectItem value="fixed">Fixed Amount (₹)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="disc_val">
-                                    {form.discount_type === "percentage" ? "Percentage (%)" : "Amount (₹)"}
-                                    <span className="text-destructive"> *</span>
-                                </Label>
-                                <Input id="disc_val" type="number" min="0" placeholder="e.g. 10" value={form.discount_value} onChange={e => setField("discount_value", e.target.value)} />
-                            </div>
-                        </div>
-
-                        {/* Max Discount Cap (only for percentage) */}
-                        {form.discount_type === "percentage" && (
-                            <div className="space-y-1.5">
-                                <Label htmlFor="max_cap">Max Discount Cap (₹) <span className="text-xs text-muted-foreground">optional</span></Label>
-                                <Input id="max_cap" type="number" min="0" placeholder="e.g. 150 — leave blank for no cap" value={form.max_discount_amount} onChange={e => setField("max_discount_amount", e.target.value)} />
-                            </div>
-                        )}
-
-                        {/* Min Booking Amount */}
-                        <div className="space-y-1.5">
-                            <Label htmlFor="min_amt">Minimum Booking Amount (₹) <span className="text-xs text-muted-foreground">optional</span></Label>
-                            <Input id="min_amt" type="number" min="0" placeholder="e.g. 300 — leave blank for no minimum" value={form.min_booking_amount} onChange={e => setField("min_booking_amount", e.target.value)} />
-                        </div>
-
-                        {/* Valid Until */}
-                        <div className="space-y-1.5">
-                            <Label>Valid Until <span className="text-destructive">*</span></Label>
-                            <Button ref={validUntilBtnRef} variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.valid_until && "text-muted-foreground")} onClick={() => { const r = validUntilBtnRef.current.getBoundingClientRect(); setValidUntilPickerPos({ top: r.bottom + 4, left: r.left }); setValidUntilPickerOpen(true) }}>
-                                <CalendarIcon className="mr-2 w-4 h-4" />
-                                {form.valid_until ? dayjs(form.valid_until).format("DD MMM YYYY") : "Pick expiry date"}
-                            </Button>
-                            {validUntilPickerOpen && createPortal(
-                                <>
-                                    <div className="fixed inset-0 z-[100]" onClick={() => setValidUntilPickerOpen(false)} />
-                                    <div className="fixed z-[101] rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-auto animate-in fade-in-0 zoom-in-95" style={{ top: validUntilPickerPos.top, left: validUntilPickerPos.left }}>
-                                        <Calendar mode="single" selected={form.valid_until} onSelect={d => { setField("valid_until", d); setValidUntilPickerOpen(false) }} initialFocus />
-                                    </div>
-                                </>,
-                                document.body
-                            )}
-                        </div>
-
-                        {/* Scope */}
-                        <div className="space-y-1.5">
-                            <Label>Scope</Label>
-                            <Select value={form.scope} onValueChange={v => setField("scope", v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="global">Global (all halls)</SelectItem>
-                                    <SelectItem value="hall">Hall-Specific</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Cinema Hall (only for hall scope) */}
-                        {form.scope === "hall" && (
-                            <div className="space-y-1.5">
-                                <Label>Cinema Hall <span className="text-destructive">*</span></Label>
-                                <Select value={form.cinema_hall_id} onValueChange={v => setField("cinema_hall_id", v)}>
-                                    <SelectTrigger><SelectValue placeholder="Select a hall..." /></SelectTrigger>
-                                    <SelectContent>
-                                        {halls.map(h => (
-                                            <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-
-                        {/* User Eligibility */}
-                        <div className="space-y-1.5">
-                            <Label>Applicable To</Label>
-                            <Select value={form.user_eligibility} onValueChange={v => setField("user_eligibility", v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Users</SelectItem>
-                                    <SelectItem value="joined_after">Users who joined after a date</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Joined After Date */}
-                        {form.user_eligibility === "joined_after" && (
-                            <div className="space-y-1.5">
-                                <Label>Joined After <span className="text-destructive">*</span></Label>
-                                <Button ref={joinedAfterBtnRef} variant="outline" className={cn("w-full justify-start text-left font-normal text-sm h-9", !form.user_joined_after && "text-muted-foreground")} onClick={() => { const r = joinedAfterBtnRef.current.getBoundingClientRect(); setJoinedAfterPickerPos({ top: r.bottom + 4, left: r.left }); setJoinedAfterPickerOpen(true) }}>
-                                    <CalendarIcon className="mr-2 w-4 h-4" />
-                                    {form.user_joined_after ? dayjs(form.user_joined_after).format("DD MMM YYYY") : "Pick date"}
-                                </Button>
-                                {joinedAfterPickerOpen && createPortal(
-                                    <>
-                                        <div className="fixed inset-0 z-[100]" onClick={() => setJoinedAfterPickerOpen(false)} />
-                                        <div className="fixed z-[101] rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-auto animate-in fade-in-0 zoom-in-95" style={{ top: joinedAfterPickerPos.top, left: joinedAfterPickerPos.left }}>
-                                            <Calendar mode="single" selected={form.user_joined_after} onSelect={d => { setField("user_joined_after", d); setJoinedAfterPickerOpen(false) }} initialFocus />
-                                        </div>
-                                    </>,
-                                    document.body
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter className="pt-2">
-                        <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>Cancel</Button>
-                        <Button onClick={handleSave} disabled={saving}>
-                            {saving ? "Saving..." : editingOffer ? "Save Changes" : "Create Offer"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             {/* Delete Confirmation */}
             <AlertDialog open={!!deleteTarget} onOpenChange={open => !open && setDeleteTarget(null)}>
