@@ -13,6 +13,7 @@ import {
   ScanLine,
   CreditCard,
   Megaphone,
+  Tag,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -26,6 +27,7 @@ const navigationItems = [
   { title: "Screens", url: "/screens", icon: Monitor },
   { title: "Movies", url: "/movies", icon: Film, roles: ["superAdmin"] },
   { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"] },
+  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"] },
   { title: "Showtimes", url: "/shows", icon: Calendar },
   { title: "Bookings", url: "/bookings", icon: Ticket },
   { title: "Payment Orders", url: "/payment-orders", icon: CreditCard },

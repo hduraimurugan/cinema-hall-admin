@@ -486,6 +486,60 @@ export const settingsAPI = {
   },
 }
 
+export const offersAPI = {
+  getCinemaHalls: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/cinema-halls`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  getAll: async ({ scope, is_active, search, page = 1 } = {}) => {
+    const params = new URLSearchParams()
+    if (scope) params.set('scope', scope)
+    if (is_active !== undefined && is_active !== '') params.set('is_active', is_active)
+    if (search) params.set('search', search)
+    params.set('page', page)
+    const response = await fetch(`${API_BASE_URL}/api/offers?${params}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  create: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  update: async (id, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/update/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  delete: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/delete/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
   getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {

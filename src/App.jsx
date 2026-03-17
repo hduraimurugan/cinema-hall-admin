@@ -23,6 +23,7 @@ import AddShowPage from './pages/AddShowPage.jsx';
 import EditShowPage from './pages/EditShowPage.jsx';
 import AddMultipleShowsPage from './pages/AddMultipleShowsPage.jsx';
 import AdsManagement from './pages/AdsManagement.jsx';
+import OffersManagement from './pages/OffersManagement.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -71,6 +72,7 @@ function App() {
           }>
             <Route path="/movies" element={<MovieManagement />} />
             <Route path="/ads" element={<AdsManagement />} />
+            <Route path="/offers" element={<OffersManagement />} />
           </Route>
 
           {/* Catch-all route - redirect to home */}
