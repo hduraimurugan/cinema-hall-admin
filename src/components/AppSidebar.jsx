@@ -14,6 +14,7 @@ import {
   CreditCard,
   Megaphone,
   Tag,
+  Building2,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -35,10 +36,11 @@ const navigationItems = [
 ]
 
 const managementItems = [
-  { title: "Customers", url: "/customers", icon: Users },
-  { title: "Revenue", url: "/revenue", icon: DollarSign },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Reviews", url: "/reviews", icon: Star },
+  { title: "Customers", url: "/customers", icon: Users, roles: ["superAdmin"] },
+  { title: "Hall Admins", url: "/admins", icon: Building2, roles: ["superAdmin"] },
+  // { title: "Revenue", url: "/revenue", icon: DollarSign },
+  // { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  // { title: "Reviews", url: "/reviews", icon: Star },
 ]
 
 

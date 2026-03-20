@@ -25,7 +25,9 @@ import AddMultipleShowsPage from './pages/AddMultipleShowsPage.jsx';
 import AdsManagement from './pages/AdsManagement.jsx';
 import OffersManagement from './pages/OffersManagement.jsx';
 import OfferFormPage from './pages/OfferFormPage.jsx';
-import BookingDetailPage from './pages/BookingDetailPage.jsx';
+import BookingDetailPage from './pages/BookingDetailPage.jsx'
+import UsersPage from './pages/UsersPage.jsx'
+import AdminsPage from './pages/AdminsPage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -78,6 +80,8 @@ function App() {
             <Route path="/offers" element={<OffersManagement />} />
             <Route path="/offers/new" element={<OfferFormPage />} />
             <Route path="/offers/:id/edit" element={<OfferFormPage />} />
+            <Route path="/customers" element={<UsersPage />} />
+            <Route path="/admins" element={<AdminsPage />} />
           </Route>
 
           {/* Catch-all route - redirect to home */}

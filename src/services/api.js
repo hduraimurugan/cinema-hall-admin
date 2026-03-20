@@ -559,6 +559,32 @@ export const offersAPI = {
   },
 }
 
+export const customersAPI = {
+  getAll: async ({ search, page = 1 } = {}) => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    params.set('page', page)
+    const response = await fetch(`${API_BASE_URL}/api/customers?${params}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
+export const adminsAPI = {
+  getAll: async ({ search, page = 1 } = {}) => {
+    const params = new URLSearchParams()
+    if (search) params.set('search', search)
+    params.set('page', page)
+    const response = await fetch(`${API_BASE_URL}/api/auth/admins?${params}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
   getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {

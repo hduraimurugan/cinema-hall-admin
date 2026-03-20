@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Users, RefreshCw, CheckCircle2, X } from "lucide-react"
-import { customersAPI } from "../services/api"
+import { Search, Building2, RefreshCw, X, MapPin } from "lucide-react"
+import { adminsAPI } from "../services/api"
 
 function debounce(fn, delay) {
   let t
@@ -29,34 +29,32 @@ function avatarColor(name = "") {
   return avatarColors[code % avatarColors.length]
 }
 
-const UsersPage = () => {
-  const [customers, setCustomers] = useState([])
+const AdminsPage = () => {
+  const [admins, setAdmins] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [stats, setStats] = useState(null)
   const [search, setSearch] = useState("")
   const [searchInput, setSearchInput] = useState("")
 
   const totalPages = Math.max(1, Math.ceil(total / 50))
 
-  const fetchCustomers = useCallback((filters) => {
+  const fetchAdmins = useCallback((filters) => {
     setLoading(true)
     setError(null)
-    customersAPI.getAll(filters)
+    adminsAPI.getAll(filters)
       .then(data => {
-        setCustomers(data.customers || [])
+        setAdmins(data.admins || [])
         setTotal(data.total || 0)
-        setStats(data.stats || null)
       })
-      .catch(err => setError(err?.error || err?.message || "Failed to load customers"))
+      .catch(err => setError(err?.error || err?.message || "Failed to load admins"))
       .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {
-    fetchCustomers({ search, page })
-  }, [search, page, fetchCustomers])
+    fetchAdmins({ search, page })
+  }, [search, page, fetchAdmins])
 
   const debouncedSearch = useCallback(
     debounce((val) => { setSearch(val); setPage(1) }, 400),
@@ -78,24 +76,24 @@ const UsersPage = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
-            <Users className="w-5 h-5 text-primary" />
+            <Building2 className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Customers</h1>
-            <p className="text-sm text-muted-foreground">All registered platform customers</p>
+            <h1 className="text-2xl font-bold tracking-tight">Cinema Hall Admins</h1>
+            <p className="text-sm text-muted-foreground">All registered cinema hall admins</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {total > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
               <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-              {total} customer{total !== 1 ? "s" : ""}
+              {total} admin{total !== 1 ? "s" : ""}
             </div>
           )}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchCustomers({ search, page })}
+            onClick={() => fetchAdmins({ search, page })}
             disabled={loading}
             className="h-8 gap-1.5"
           >
@@ -105,41 +103,6 @@ const UsersPage = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="border-border/60">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Customers</p>
-              <div className="p-1.5 rounded-md bg-primary/10">
-                <Users className="w-3.5 h-3.5 text-primary" />
-              </div>
-            </div>
-            {loading && !stats ? (
-              <Skeleton className="h-7 w-20" />
-            ) : (
-              <p className="text-2xl font-bold">{(stats?.total ?? 0).toLocaleString("en-IN")}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Verified</p>
-              <div className="p-1.5 rounded-md bg-emerald-500/10">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              </div>
-            </div>
-            {loading && !stats ? (
-              <Skeleton className="h-7 w-20" />
-            ) : (
-              <p className="text-2xl font-bold">{(stats?.verified ?? 0).toLocaleString("en-IN")}</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Search */}
       <Card className="border-border/60">
         <CardContent className="px-5 py-4">
@@ -147,7 +110,7 @@ const UsersPage = () => {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search by name, email or phone..."
+                placeholder="Search by name, email or hall name..."
                 value={searchInput}
                 onChange={handleSearchChange}
                 className="pl-8 h-9 text-sm"
@@ -166,10 +129,10 @@ const UsersPage = () => {
       <Card className="border-border/60">
         <CardHeader className="pb-0 pt-4 px-5">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">All Customers</CardTitle>
-            {!loading && customers.length > 0 && (
+            <CardTitle className="text-base font-semibold">All Cinema Hall Admins</CardTitle>
+            {!loading && admins.length > 0 && (
               <span className="text-xs text-muted-foreground">
-                Showing {customers.length} of {total}
+                Showing {admins.length} of {total}
               </span>
             )}
           </div>
@@ -177,7 +140,7 @@ const UsersPage = () => {
         <CardContent className="pt-3 px-5">
           {error ? (
             <div className="flex flex-col items-center py-16 text-destructive gap-2">
-              <Users className="w-10 h-10 opacity-40" />
+              <Building2 className="w-10 h-10 opacity-40" />
               <p className="text-sm">{error}</p>
             </div>
           ) : loading ? (
@@ -186,13 +149,13 @@ const UsersPage = () => {
                 <Skeleton key={i} className="h-14 w-full rounded-lg" />
               ))}
             </div>
-          ) : customers.length === 0 ? (
+          ) : admins.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-muted-foreground gap-3">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-                <Users className="w-8 h-8 opacity-40" />
+                <Building2 className="w-8 h-8 opacity-40" />
               </div>
               <div className="text-center">
-                <p className="font-medium text-foreground">No customers found</p>
+                <p className="font-medium text-foreground">No admins found</p>
                 {search && <p className="text-sm mt-1">Try a different search term</p>}
               </div>
               {search && (
@@ -203,57 +166,53 @@ const UsersPage = () => {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Admin</TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cinema Hall</TableHead>
                   <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Joined</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bookings</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Registered</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.map((c) => (
-                  <TableRow key={c.id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                {admins.map((a) => (
+                  <TableRow key={a.id} className="border-border/40 hover:bg-muted/30 transition-colors">
                     <TableCell>
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-full ${avatarColor(c.name || "")} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                          {getInitials(c.name)}
+                        <div className={`w-8 h-8 rounded-full ${avatarColor(a.name || "")} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+                          {getInitials(a.name)}
                         </div>
                         <div>
-                          <p className="font-medium text-sm leading-tight">{c.name || "—"}</p>
-                          <p className="text-xs text-muted-foreground leading-tight">{c.email}</p>
+                          <p className="font-medium text-sm leading-tight">{a.name || "—"}</p>
+                          <p className="text-xs text-muted-foreground leading-tight">{a.email}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{c.phone || "—"}</span>
+                      <span className="text-sm">{a.phone || "—"}</span>
                     </TableCell>
                     <TableCell>
-                      {c.district || c.state ? (
-                        <span className="text-sm">{[c.district, c.state].filter(Boolean).join(", ")}</span>
+                      {a.hall_name ? (
+                        <div className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium">{a.hall_name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No hall</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {a.location ? (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span className="text-sm">{[a.location, a.district, a.state].filter(Boolean).join(", ")}</span>
+                        </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {c.is_verified ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-                          <CheckCircle2 className="w-3 h-3" /> Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                          Unverified
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(c.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
-                        {c.booking_count}
+                        {new Date(a.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -284,4 +243,4 @@ const UsersPage = () => {
   )
 }
 
-export default UsersPage
+export default AdminsPage
