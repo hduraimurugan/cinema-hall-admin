@@ -117,7 +117,7 @@ const HomePage = () => {
   }))
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-8 space-y-6">
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
@@ -237,22 +237,22 @@ const HomePage = () => {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={chartData} barCategoryGap="30%">
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.4} vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.45)' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={v => v >= 1000 ? `₹${(v / 1000).toFixed(0)}k` : `₹${v}`}
                   width={48}
                 />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }} />
-                <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -276,7 +276,7 @@ const HomePage = () => {
                 variant="ghost"
                 size="sm"
                 className="h-7 text-xs text-muted-foreground gap-1 hover:text-foreground"
-                onClick={() => navigate('/showtimes')}
+                onClick={() => navigate('/shows')}
               >
                 View all <ArrowRight className="w-3 h-3" />
               </Button>
