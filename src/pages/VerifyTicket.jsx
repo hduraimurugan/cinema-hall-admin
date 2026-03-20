@@ -42,42 +42,44 @@ const VerifyTicket = () => {
     }
   }
 
-  const startScanner = async () => {
+  const startScanner = () => {
     setScanError(null)
     setScannerActive(true)
-    const html5QrCode = new Html5Qrcode("qr-reader")
-    html5QrCodeRef.current = html5QrCode
-    try {
-      await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decodedText) => {
-          stopScanner()
-          if (!UUID_REGEX.test(decodedText)) {
-            setScanError("Invalid QR code — not a booking ID")
-            return
-          }
-          setManualInput(decodedText)
-          fetchBooking(decodedText)
-        },
-        () => {} // ignore per-frame errors
-      )
-    } catch {
-      setScannerActive(false)
-      setScanError("Could not access camera. Please allow camera permission or use manual entry.")
-    }
   }
 
   const stopScanner = () => {
-    html5QrCodeRef.current?.stop().catch(() => {})
     setScannerActive(false)
   }
 
   useEffect(() => {
+    if (!scannerActive) return
+
+    const html5QrCode = new Html5Qrcode("qr-reader")
+    html5QrCodeRef.current = html5QrCode
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      (decodedText) => {
+        setScannerActive(false)
+        if (!UUID_REGEX.test(decodedText)) {
+          setScanError("Invalid QR code — not a booking ID")
+          return
+        }
+        setManualInput(decodedText)
+        fetchBooking(decodedText)
+      },
+      () => {}
+    ).catch(() => {
+      setScannerActive(false)
+      setScanError("Could not access camera. Please allow camera permission or use manual entry.")
+    })
+
     return () => {
-      html5QrCodeRef.current?.stop().catch(() => {})
+      html5QrCode.stop().catch(() => {})
+      html5QrCodeRef.current = null
     }
-  }, [])
+  }, [scannerActive])
 
   return (
     <div className="p-6 space-y-6">

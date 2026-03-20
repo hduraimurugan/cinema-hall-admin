@@ -38,8 +38,8 @@ const navigationItems = [
 const managementItems = [
   { title: "Customers", url: "/customers", icon: Users, roles: ["superAdmin"] },
   { title: "Hall Admins", url: "/admins", icon: Building2, roles: ["superAdmin"] },
-  // { title: "Revenue", url: "/revenue", icon: DollarSign },
-  // { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Revenue", url: "/revenue", icon: DollarSign },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
   // { title: "Reviews", url: "/reviews", icon: Star },
 ]
 
