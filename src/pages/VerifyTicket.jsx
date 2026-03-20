@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ScanLine, Search, Camera, CameraOff, CheckCircle2, XCircle } from "lucide-react"
+import { ScanLine, Search, Camera, CameraOff, CheckCircle2, XCircle, ImagePlus } from "lucide-react"
 import { bookingAPI } from "../services/api"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -22,7 +22,9 @@ const VerifyTicket = () => {
   const [fetchError, setFetchError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [scannerActive, setScannerActive] = useState(false)
+  const [imageScanning, setImageScanning] = useState(false)
   const html5QrCodeRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const fetchBooking = async (id) => {
     if (!UUID_REGEX.test(id)) {
@@ -70,7 +72,6 @@ const VerifyTicket = () => {
     Html5Qrcode.getCameras()
       .then((cameras) => {
         if (!cameras?.length) throw new Error("no-camera")
-        // prefer rear/back camera, fall back to first
         const cam = cameras.find((c) => /back|rear|environment/i.test(c.label)) ?? cameras[0]
         return html5QrCode.start(cam.id, { fps: 10, qrbox: { width: 220, height: 220 } }, onDecode, () => {})
       })
@@ -78,10 +79,10 @@ const VerifyTicket = () => {
         setScannerActive(false)
         setScanError(
           err?.message === "no-camera"
-            ? "No camera found on this device. Use manual entry."
+            ? "No camera found. Upload a QR image or use manual entry."
             : err?.name === "NotAllowedError"
-            ? "Camera permission denied. Allow access in browser settings."
-            : "Could not access camera. Please allow camera permission or use manual entry."
+            ? "Camera permission denied. Upload a QR image or use manual entry."
+            : "Could not access camera. Upload a QR image or use manual entry."
         )
       })
 
@@ -91,6 +92,30 @@ const VerifyTicket = () => {
     }
   }, [scannerActive])
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ""
+
+    setScanError(null)
+    setImageScanning(true)
+
+    const scanner = new Html5Qrcode("qr-file-reader")
+    try {
+      const result = await scanner.scanFile(file, true)
+      if (!UUID_REGEX.test(result)) {
+        setScanError("QR code found but it's not a valid booking ID.")
+        return
+      }
+      setManualInput(result)
+      fetchBooking(result)
+    } catch {
+      setScanError("No QR code found in the image. Try a clearer photo.")
+    } finally {
+      setImageScanning(false)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -98,8 +123,11 @@ const VerifyTicket = () => {
         <h1 className="text-2xl font-bold">Verify Ticket</h1>
       </div>
 
+      {/* hidden element required by Html5Qrcode for file scanning */}
+      <div id="qr-file-reader" className="hidden" />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Scanner + Manual Entry */}
+        {/* Left: Scanner + Upload + Manual Entry */}
         <div className="space-y-4">
           {/* Camera Scanner */}
           <Card>
@@ -123,17 +151,35 @@ const VerifyTicket = () => {
                   {scanError}
                 </p>
               )}
-              <Button
-                onClick={scannerActive ? stopScanner : startScanner}
-                variant={scannerActive ? "destructive" : "default"}
-                className="w-full"
-              >
-                {scannerActive ? (
-                  <><CameraOff className="w-4 h-4 mr-2" />Stop Camera</>
-                ) : (
-                  <><Camera className="w-4 h-4 mr-2" />Start Camera</>
-                )}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={scannerActive ? stopScanner : startScanner}
+                  variant={scannerActive ? "destructive" : "default"}
+                  className="flex-1"
+                >
+                  {scannerActive ? (
+                    <><CameraOff className="w-4 h-4 mr-2" />Stop Camera</>
+                  ) : (
+                    <><Camera className="w-4 h-4 mr-2" />Start Camera</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageScanning || scannerActive}
+                  title="Upload QR code image"
+                >
+                  <ImagePlus className="w-4 h-4 mr-2" />
+                  {imageScanning ? "Scanning…" : "Upload Image"}
+                </Button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
             </CardContent>
           </Card>
 
