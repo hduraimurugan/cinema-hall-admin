@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -41,6 +42,7 @@ function avatarColor(name = "") {
 }
 
 const Bookings = () => {
+  const navigate = useNavigate()
   const [bookings, setBookings] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -167,7 +169,7 @@ const Bookings = () => {
         <Card className="border-border/60">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Convenience Fees</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Convenience Fees Collected</p>
               <div className="p-1.5 rounded-md bg-sky-500/10">
                 <Receipt className="w-3.5 h-3.5 text-sky-500" />
               </div>
@@ -360,7 +362,7 @@ const Bookings = () => {
                   const sc = statusConfig[b.booking_status]
 
                   return (
-                    <TableRow key={b.id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                    <TableRow key={b.id} className="border-border/40 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => navigate(`/bookings/${b.id}`)}>
                       <TableCell>
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-full ${avatarColor(b.customer_name || "")} flex items-center justify-center text-white text-xs font-bold shrink-0`}>

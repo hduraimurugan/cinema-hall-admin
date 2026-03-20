@@ -25,6 +25,7 @@ import AddMultipleShowsPage from './pages/AddMultipleShowsPage.jsx';
 import AdsManagement from './pages/AdsManagement.jsx';
 import OffersManagement from './pages/OffersManagement.jsx';
 import OfferFormPage from './pages/OfferFormPage.jsx';
+import BookingDetailPage from './pages/BookingDetailPage.jsx';
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -59,6 +60,7 @@ function App() {
             <Route path="/shows/:id/edit" element={<EditShowPage />} />
             <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
+            <Route path="/bookings/:id" element={<BookingDetailPage />} />
             <Route path="/payment-orders" element={<PaymentOrders />} />
             <Route path="/verify-ticket" element={<VerifyTicket />} />
             <Route path="/profile" element={<ProfilePage />} />
