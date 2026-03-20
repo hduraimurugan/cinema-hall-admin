@@ -585,6 +585,16 @@ export const adminsAPI = {
   },
 }
 
+export const dashboardAPI = {
+  getStats: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/dashboard/stats`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+}
+
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
   getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {
