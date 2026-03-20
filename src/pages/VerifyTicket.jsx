@@ -57,26 +57,36 @@ const VerifyTicket = () => {
     const html5QrCode = new Html5Qrcode("qr-reader")
     html5QrCodeRef.current = html5QrCode
 
-    html5QrCode.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 220, height: 220 } },
-      (decodedText) => {
-        setScannerActive(false)
-        if (!UUID_REGEX.test(decodedText)) {
-          setScanError("Invalid QR code — not a booking ID")
-          return
-        }
-        setManualInput(decodedText)
-        fetchBooking(decodedText)
-      },
-      () => {}
-    ).catch(() => {
+    const onDecode = (decodedText) => {
       setScannerActive(false)
-      setScanError("Could not access camera. Please allow camera permission or use manual entry.")
-    })
+      if (!UUID_REGEX.test(decodedText)) {
+        setScanError("Invalid QR code — not a booking ID")
+        return
+      }
+      setManualInput(decodedText)
+      fetchBooking(decodedText)
+    }
+
+    Html5Qrcode.getCameras()
+      .then((cameras) => {
+        if (!cameras?.length) throw new Error("no-camera")
+        // prefer rear/back camera, fall back to first
+        const cam = cameras.find((c) => /back|rear|environment/i.test(c.label)) ?? cameras[0]
+        return html5QrCode.start(cam.id, { fps: 10, qrbox: { width: 220, height: 220 } }, onDecode, () => {})
+      })
+      .catch((err) => {
+        setScannerActive(false)
+        setScanError(
+          err?.message === "no-camera"
+            ? "No camera found on this device. Use manual entry."
+            : err?.name === "NotAllowedError"
+            ? "Camera permission denied. Allow access in browser settings."
+            : "Could not access camera. Please allow camera permission or use manual entry."
+        )
+      })
 
     return () => {
-      html5QrCode.stop().catch(() => {})
+      try { html5QrCode.stop().catch(() => {}) } catch { /* not running */ }
       html5QrCodeRef.current = null
     }
   }, [scannerActive])
