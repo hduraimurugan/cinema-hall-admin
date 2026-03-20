@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon, RefreshCw } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon, RefreshCw, IndianRupee, Receipt, Percent } from "lucide-react"
 import { bookingAPI, screensAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -46,6 +46,8 @@ const Bookings = () => {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [stats, setStats] = useState(null)
+  const [statsLoading, setStatsLoading] = useState(true)
 
   const [date, setDate] = useState("")
   const [search, setSearch] = useState("")
@@ -58,11 +60,14 @@ const Bookings = () => {
 
   const fetchBookings = useCallback((filters) => {
     setLoading(true)
+    setStatsLoading(true)
     setError(null)
     bookingAPI.getCinemaHallBookings(filters)
       .then(data => {
         setBookings(data.bookings || [])
         setTotal(data.total || 0)
+        setStats(data.stats || null)
+        setStatsLoading(false)
       })
       .catch(err => setError(err?.message || "Failed to load bookings"))
       .finally(() => setLoading(false))
@@ -125,6 +130,71 @@ const Bookings = () => {
             Refresh
           </Button>
         </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Bookings</p>
+              <div className="p-1.5 rounded-md bg-primary/10">
+                <Ticket className="w-3.5 h-3.5 text-primary" />
+              </div>
+            </div>
+            {statsLoading ? <Skeleton className="h-7 w-20" /> : (
+              <p className="text-2xl font-bold">{total.toLocaleString("en-IN")}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Revenue</p>
+              <div className="p-1.5 rounded-md bg-emerald-500/10">
+                <IndianRupee className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+            </div>
+            {statsLoading ? <Skeleton className="h-7 w-24" /> : (
+              <p className="text-2xl font-bold">
+                ₹{(stats?.total_revenue ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Convenience Fees</p>
+              <div className="p-1.5 rounded-md bg-sky-500/10">
+                <Receipt className="w-3.5 h-3.5 text-sky-500" />
+              </div>
+            </div>
+            {statsLoading ? <Skeleton className="h-7 w-24" /> : (
+              <p className="text-2xl font-bold">
+                ₹{(stats?.total_convenience_fee ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">GST Collected</p>
+              <div className="p-1.5 rounded-md bg-amber-500/10">
+                <Percent className="w-3.5 h-3.5 text-amber-500" />
+              </div>
+            </div>
+            {statsLoading ? <Skeleton className="h-7 w-24" /> : (
+              <p className="text-2xl font-bold">
+                ₹{(stats?.total_gst ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
