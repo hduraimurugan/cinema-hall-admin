@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react"
+import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 import { showsAPI } from "../services/api"
+import { toast } from "sonner"
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -56,6 +57,12 @@ const ShowsManagement = () => {
   const [showsData, setShowsData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  // Multi-select state
+  const [isSelecting, setIsSelecting] = useState(false)
+  // Map<showId, { id, show_date, start_time, screen_name }>
+  const [selectedShows, setSelectedShows] = useState(new Map())
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const fetchShows = async (date) => {
     setIsLoading(true)
     try {
@@ -84,6 +91,55 @@ const ShowsManagement = () => {
     }
   }
 
+  const toggleSelectMode = () => {
+    setIsSelecting((prev) => !prev)
+    setSelectedShows(new Map())
+  }
+
+  const toggleShowSelection = (show) => {
+    setSelectedShows((prev) => {
+      const next = new Map(prev)
+      if (next.has(show.id)) {
+        next.delete(show.id)
+      } else {
+        next.set(show.id, {
+          id: show.id,
+          show_date: show.show_date,
+          start_time: show.start_time,
+          screen_name: show.screen_name,
+        })
+      }
+      return next
+    })
+  }
+
+  const handleBulkDelete = async () => {
+    const count = selectedShows.size
+    if (!window.confirm(`Delete ${count} show${count !== 1 ? "s" : ""}? This cannot be undone.`)) return
+
+    setIsDeleting(true)
+    try {
+      await showsAPI.deleteMultipleShows([...selectedShows.keys()])
+      toast.success(`${count} show${count !== 1 ? "s" : ""} deleted`)
+      setSelectedShows(new Map())
+      setIsSelecting(false)
+      fetchShows(selectedDate)
+    } catch (err) {
+      toast.error(err.message || "Failed to delete shows")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  // Count selected shows per date (for date pill badges)
+  const selectedCountByDate = {}
+  for (const show of selectedShows.values()) {
+    selectedCountByDate[show.show_date] = (selectedCountByDate[show.show_date] ?? 0) + 1
+  }
+
+  // Unique dates that have selections (for "across X dates" label)
+  const selectedDateCount = Object.keys(selectedCountByDate).length
+
   return (
     <div className="max-w-7xl mx-auto">
 
@@ -94,6 +150,17 @@ const ShowsManagement = () => {
           <p className="text-muted-foreground text-sm mt-1">Manage your cinema shows and schedules</p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant={isSelecting ? "secondary" : "outline"}
+            onClick={toggleSelectMode}
+            className="gap-2"
+          >
+            {isSelecting ? (
+              <><Square className="h-4 w-4" /> Cancel Select</>
+            ) : (
+              <><CheckSquare className="h-4 w-4" /> Select</>
+            )}
+          </Button>
           <Button variant="outline" onClick={() => navigate("/shows/bulk")} className="gap-2">
             <CalendarPlus className="h-4 w-4" />
             Add Multiple
@@ -139,11 +206,13 @@ const ShowsManagement = () => {
               {getNextDates(weekOffset).map((date, index) => {
                 const { dow, day, month } = formatDateParts(date)
                 const isSelected = date.toDateString() === selectedDate.toDateString()
+                const dateStr = dayjs(date).format("YYYY-MM-DD")
+                const selCount = selectedCountByDate[dateStr] ?? 0
                 return (
                   <button
                     key={index}
                     onClick={() => setSelectedDate(date)}
-                    className={`w-14 flex-shrink-0 flex flex-col items-center justify-center py-2.5 rounded-lg transition-all duration-200 ${
+                    className={`relative w-14 flex-shrink-0 flex flex-col items-center justify-center py-2.5 rounded-lg transition-all duration-200 ${
                       isSelected
                         ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30"
                         : "border border-border text-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
@@ -152,6 +221,12 @@ const ShowsManagement = () => {
                     <span className="text-[10px] font-semibold tracking-wider leading-none">{dow}</span>
                     <span className="text-xl font-bold leading-tight mt-0.5">{day}</span>
                     <span className="text-[10px] font-semibold tracking-wider leading-none">{month}</span>
+                    {/* Selection badge */}
+                    {isSelecting && selCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center leading-none">
+                        {selCount}
+                      </span>
+                    )}
                   </button>
                 )
               })}
@@ -187,7 +262,7 @@ const ShowsManagement = () => {
       </div>
 
       {/* Shows Content */}
-      <div className="px-6 py-3 pb-10">
+      <div className="px-6 py-3 pb-24">
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
             {[1, 2].map((i) => (
@@ -263,52 +338,76 @@ const ShowsManagement = () => {
                   <div className="flex flex-wrap gap-3">
                     {[...movieGroup.shows]
                       .sort((a, b) => a.start_time.localeCompare(b.start_time))
-                      .map((show) => (
-                        <div key={show.id} className="group relative">
-                          {/* Show time button — BookMyShow style */}
-                          <button
-                            className="flex flex-col items-center justify-center px-4 py-2.5 min-w-[110px] border border-green-500 rounded-lg text-green-700 dark:text-green-400 hover:border-primary hover:text-primary transition-colors duration-150"
-                            onClick={() => navigate(`/show/${show.id}`)}
-                          >
-                            {/* Screen info */}
-                            <span className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
-                              <MapPin className="h-2.5 w-2.5" />
-                              <span className="truncate max-w-[80px]">{show.screen_name}</span>
-                              <span className="text-border opacity-60">·</span>
-                              <span>{show.total_seats}s</span>
-                            </span>
-                            {/* Time */}
-                            <span className="font-bold text-sm leading-tight">
-                              {formatTime(show.start_time)}
-                            </span>
-                            {/* Language & price */}
-                            <span className="flex items-center justify-between w-full text-[10px] text-muted-foreground mt-0.5 gap-2">
-                              <span className="truncate">{show.language_version}</span>
-                              <span>₹{show.price_override?.silver ?? "—"}</span>
-                            </span>
-                          </button>
+                      .map((show) => {
+                        const isChecked = selectedShows.has(show.id)
+                        return (
+                          <div key={show.id} className="group relative">
+                            {/* Show time button */}
+                            <button
+                              className={`flex flex-col items-center justify-center px-4 py-2.5 min-w-[110px] border rounded-lg transition-colors duration-150 ${
+                                isSelecting
+                                  ? isChecked
+                                    ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
+                                    : "border-green-500 text-green-700 dark:text-green-400 hover:border-primary hover:text-primary"
+                                  : "border-green-500 text-green-700 dark:text-green-400 hover:border-primary hover:text-primary"
+                              }`}
+                              onClick={() =>
+                                isSelecting
+                                  ? toggleShowSelection(show)
+                                  : navigate(`/show/${show.id}`)
+                              }
+                            >
+                              {/* Checkbox indicator in select mode */}
+                              {isSelecting && (
+                                <span className="self-start mb-1">
+                                  {isChecked
+                                    ? <CheckSquare className="h-3 w-3 text-primary" />
+                                    : <Square className="h-3 w-3 text-muted-foreground" />
+                                  }
+                                </span>
+                              )}
+                              {/* Screen info */}
+                              <span className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                                <MapPin className="h-2.5 w-2.5" />
+                                <span className="truncate max-w-[80px]">{show.screen_name}</span>
+                                <span className="text-border opacity-60">·</span>
+                                <span>{show.total_seats}s</span>
+                              </span>
+                              {/* Time */}
+                              <span className="font-bold text-sm leading-tight">
+                                {formatTime(show.start_time)}
+                              </span>
+                              {/* Language & price */}
+                              <span className="flex items-center justify-between w-full text-[10px] text-muted-foreground mt-0.5 gap-2">
+                                <span className="truncate">{show.language_version}</span>
+                                <span>₹{show.price_override?.silver ?? "—"}</span>
+                              </span>
+                            </button>
 
-                          {/* Edit / Delete hover actions */}
-                          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              className="h-6 w-6 p-0"
-                              onClick={() => navigate(`/shows/${show.id}/edit`)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="h-6 w-6 p-0"
-                              onClick={() => handleDeleteShow(show.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            {/* Edit / Delete hover actions — hidden in select mode */}
+                            {!isSelecting && (
+                              <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => navigate(`/shows/${show.id}/edit`)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => handleDeleteShow(show.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 </CardContent>
               </Card>
@@ -328,6 +427,43 @@ const ShowsManagement = () => {
           </Card>
         )}
       </div>
+
+      {/* Sticky bottom bar — shown when shows are selected */}
+      {selectedShows.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg px-6 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <p className="text-sm font-medium">
+              <span className="text-foreground font-bold">{selectedShows.size} show{selectedShows.size !== 1 ? "s" : ""}</span>
+              <span className="text-muted-foreground">
+                {" "}selected
+                {selectedDateCount > 1 ? ` across ${selectedDateCount} dates` : ""}
+              </span>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedShows(new Map())
+                  setIsSelecting(false)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {isDeleting ? "Deleting..." : `Delete ${selectedShows.size} Show${selectedShows.size !== 1 ? "s" : ""}`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

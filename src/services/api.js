@@ -377,6 +377,23 @@ export const showsAPI = {
     return response.json();
   },
 
+  // ✅ Bulk delete shows
+  deleteMultipleShows: async (ids) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/bulk`, {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to delete shows");
+    }
+
+    return response.json();
+  },
+
   // ✅ Get shows grouped by movie for a specific date
   getShowsByDate: async (date) => {
     const response = await fetch(`${API_BASE_URL}/api/shows/date/${date}`, {
