@@ -19,6 +19,14 @@ import timezone from "dayjs/plugin/timezone"
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+const TIME_PRESETS = [
+  { label: "Morning",    start_time: "09:00", end_time: "11:15" },
+  { label: "Matinee",    start_time: "11:45", end_time: "14:15" },
+  { label: "Afternoon",  start_time: "14:30", end_time: "17:15" },
+  { label: "Evening",    start_time: "18:30", end_time: "21:45" },
+  { label: "Night",      start_time: "22:30", end_time: "01:15" },
+]
+
 const AddMultipleShowsPage = () => {
   const navigate = useNavigate()
   const [screens, setScreens] = useState([])
@@ -28,11 +36,11 @@ const AddMultipleShowsPage = () => {
   const [sharedData, setSharedData] = useState({
     movie_id: "",
     screen_id: "",
-    show_date: "",
     language_version: "",
     price_override: { premium: "", gold: "", silver: "" },
   })
 
+  const [dateRange, setDateRange] = useState({ from: null, to: null })
   const [timeSlots, setTimeSlots] = useState([{ start_time: "", end_time: "" }])
 
   useEffect(() => {
@@ -79,12 +87,59 @@ const AddMultipleShowsPage = () => {
     setTimeSlots((prev) => prev.map((slot, i) => (i === index ? { ...slot, [field]: value } : slot)))
   }
 
+  const togglePreset = (preset) => {
+    const exists = timeSlots.some(
+      (s) => s.start_time === preset.start_time && s.end_time === preset.end_time
+    )
+    if (exists) {
+      // Remove matching slot (keep at least 1 empty if it's the last)
+      const filtered = timeSlots.filter(
+        (s) => !(s.start_time === preset.start_time && s.end_time === preset.end_time)
+      )
+      setTimeSlots(filtered.length > 0 ? filtered : [{ start_time: "", end_time: "" }])
+    } else {
+      // Fill first empty slot, or append
+      const emptyIndex = timeSlots.findIndex((s) => !s.start_time && !s.end_time)
+      if (emptyIndex !== -1) {
+        setTimeSlots((prev) =>
+          prev.map((s, i) => (i === emptyIndex ? { start_time: preset.start_time, end_time: preset.end_time } : s))
+        )
+      } else {
+        setTimeSlots((prev) => [...prev, { start_time: preset.start_time, end_time: preset.end_time }])
+      }
+    }
+  }
+
+  const isPresetActive = (preset) =>
+    timeSlots.some((s) => s.start_time === preset.start_time && s.end_time === preset.end_time)
+
+  // Generate all dates in range (inclusive)
+  const getDateRange = () => {
+    if (!dateRange.from) return []
+    const dates = []
+    let cur = dayjs(dateRange.from)
+    const end = dayjs(dateRange.to ?? dateRange.from)
+    while (!cur.isAfter(end)) {
+      dates.push(cur.format("YYYY-MM-DD"))
+      cur = cur.add(1, "day")
+    }
+    return dates
+  }
+
+
+  const filledSlots = timeSlots.filter((s) => s.start_time && s.end_time)
+  const numDates = getDateRange().length
+  const totalShows = numDates * filledSlots.length
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const filledSlots = timeSlots.filter((s) => s.start_time && s.end_time)
     if (filledSlots.length === 0) {
       toast.error("Add at least one time slot with start and end time")
+      return
+    }
+    if (numDates === 0) {
+      toast.error("Select a show date or date range")
       return
     }
 
@@ -93,14 +148,21 @@ const AddMultipleShowsPage = () => {
       const payload = {
         movie_id: sharedData.movie_id,
         screen_ids: [sharedData.screen_id],
-        dates: [sharedData.show_date],
+        dates: getDateRange(),
         time_slots: filledSlots,
         language_version: sharedData.language_version,
         price_override: sharedData.price_override,
       }
       const result = await showsAPI.createMultipleShows(payload)
-      const count = result.shows?.length ?? filledSlots.length
-      toast.success(`${count} show${count !== 1 ? "s" : ""} created successfully!`)
+      const count = result.shows?.length ?? totalShows
+      const skipped = result.skipped?.length ?? 0
+      if (count === 0) {
+        toast.warning("No shows created — all slots already exist or conflict")
+      } else if (skipped > 0) {
+        toast.success(`${count} show${count !== 1 ? "s" : ""} created, ${skipped} skipped (already exist)`)
+      } else {
+        toast.success(`${count} show${count !== 1 ? "s" : ""} created successfully!`)
+      }
       navigate("/shows")
     } catch (err) {
       toast.error(err.message || "Failed to create shows")
@@ -151,10 +213,7 @@ const AddMultipleShowsPage = () => {
             {/* Screen */}
             <div className="space-y-2">
               <Label>Screen</Label>
-              <Select
-                value={sharedData.screen_id}
-                onValueChange={handleScreenChange}
-              >
+              <Select value={sharedData.screen_id} onValueChange={handleScreenChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select screen" />
                 </SelectTrigger>
@@ -168,39 +227,76 @@ const AddMultipleShowsPage = () => {
               </Select>
             </div>
 
-            {/* Show Date */}
+            {/* Show Date Range */}
             <div className="space-y-2">
               <Label>Show Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !sharedData.show_date && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {sharedData.show_date
-                      ? dayjs(sharedData.show_date).format("MMM D, YYYY")
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={sharedData.show_date ? dayjs(sharedData.show_date).toDate() : undefined}
-                    onSelect={(date) =>
-                      setSharedData((prev) => ({
-                        ...prev,
-                        show_date: date ? dayjs(date).format("YYYY-MM-DD") : "",
-                      }))
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <div className="grid grid-cols-2 gap-3">
+                {/* From */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">From</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateRange.from && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.from ? dayjs(dateRange.from).format("MMM D, YYYY") : "Start date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from ?? undefined}
+                        onSelect={(date) =>
+                          setDateRange((prev) => ({
+                            from: date ?? null,
+                            to: prev.to && date && dayjs(prev.to).isBefore(dayjs(date)) ? null : prev.to,
+                          }))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* To */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">To</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dateRange.to && "text-muted-foreground"
+                        )}
+                        disabled={!dateRange.from}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange.to ? dayjs(dateRange.to).format("MMM D, YYYY") : "End date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to ?? undefined}
+                        onSelect={(date) => setDateRange((prev) => ({ ...prev, to: date ?? null }))}
+                        disabled={(date) => dateRange.from ? dayjs(date).isBefore(dayjs(dateRange.from), "day") : false}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+              {numDates > 1 && (
+                <p className="text-xs text-muted-foreground">{numDates} dates selected</p>
+              )}
             </div>
 
             {/* Language Version */}
@@ -263,42 +359,80 @@ const AddMultipleShowsPage = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {timeSlots.map((slot, index) => (
-              <div key={index} className="flex items-end gap-3">
-                <div className="flex-1 space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Slot {index + 1} — Start</Label>
-                  <Input
-                    type="time"
-                    value={slot.start_time}
-                    onChange={(e) => updateTimeSlot(index, "start_time", e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="flex-1 space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">End</Label>
-                  <Input
-                    type="time"
-                    value={slot.end_time}
-                    onChange={(e) => updateTimeSlot(index, "end_time", e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive hover:text-destructive mb-0.5"
-                  onClick={() => removeTimeSlot(index)}
-                  disabled={timeSlots.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+          <CardContent className="space-y-4">
+
+            {/* Preset chips */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Quick add</Label>
+              <div className="flex flex-wrap gap-2">
+                {TIME_PRESETS.map((preset) => {
+                  const active = isPresetActive(preset)
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => togglePreset(preset)}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-transparent text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      )}
+                    >
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      {preset.label}
+                      <span className="opacity-60">{preset.start_time}–{preset.end_time}</span>
+                    </button>
+                  )
+                })}
               </div>
-            ))}
+            </div>
+
+            {/* Manual slots */}
+            <div className="space-y-3">
+              {timeSlots.map((slot, index) => (
+                <div key={index} className="flex items-end gap-3">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Slot {index + 1} — Start</Label>
+                    <Input
+                      type="time"
+                      value={slot.start_time}
+                      onChange={(e) => updateTimeSlot(index, "start_time", e.target.value)}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">End</Label>
+                    <Input
+                      type="time"
+                      value={slot.end_time}
+                      onChange={(e) => updateTimeSlot(index, "end_time", e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive mb-0.5"
+                    onClick={() => removeTimeSlot(index)}
+                    disabled={timeSlots.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
 
             <p className="text-xs text-muted-foreground pt-1">
-              {timeSlots.length} slot{timeSlots.length !== 1 ? "s" : ""} → {timeSlots.length} show{timeSlots.length !== 1 ? "s" : ""} will be created
+              {numDates > 0 && filledSlots.length > 0 ? (
+                <>
+                  {numDates} date{numDates !== 1 ? "s" : ""} × {filledSlots.length} slot{filledSlots.length !== 1 ? "s" : ""}{" "}
+                  → <span className="font-medium text-foreground">{totalShows} show{totalShows !== 1 ? "s" : ""}</span> will be created
+                </>
+              ) : (
+                <>
+                  {filledSlots.length} slot{filledSlots.length !== 1 ? "s" : ""} → {filledSlots.length} show{filledSlots.length !== 1 ? "s" : ""} will be created
+                </>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -314,7 +448,9 @@ const AddMultipleShowsPage = () => {
             Cancel
           </Button>
           <Button type="submit" className="flex-1" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : `Create ${timeSlots.length} Show${timeSlots.length !== 1 ? "s" : ""}`}
+            {isSubmitting
+              ? "Creating..."
+              : `Create ${totalShows > 0 ? totalShows : filledSlots.length} Show${(totalShows > 1 || (totalShows === 0 && filledSlots.length !== 1)) ? "s" : ""}`}
           </Button>
         </div>
 
