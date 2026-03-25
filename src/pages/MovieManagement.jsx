@@ -397,6 +397,7 @@ const MovieManagement = () => {
   const [formData, setFormData] = useState({
     title: "", description: "", poster_url: "", trailer_url: "",
     duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null,
+    cast: [], vote_average: null, vote_count: null,
   })
   const [uploading, setUploading] = useState(false)
   const [existingTmdbIds, setExistingTmdbIds] = useState(new Set())
@@ -472,6 +473,9 @@ const MovieManagement = () => {
       .find((v) => v.site === "YouTube" && v.type === "Trailer")
     const releaseDate = tmdbMovie.release_date || ""
     const isPast = releaseDate && new Date(releaseDate) <= new Date()
+    const cast = (details?.credits?.cast || [])
+      .slice(0, 10)
+      .map(({ name, character, profile_path }) => ({ name, character, profile_path }))
     setFormData({
       title: tmdbMovie.title || "",
       description: tmdbMovie.overview || "",
@@ -483,6 +487,9 @@ const MovieManagement = () => {
       release_date: releaseDate,
       status: isPast ? "now_showing" : "upcoming",
       tmdb_id: tmdbMovie.id,
+      cast,
+      vote_average: details?.vote_average ?? null,
+      vote_count: details?.vote_count ?? null,
     })
     setEditingMovie(null)
     setIsAddModalOpen(true)
@@ -495,6 +502,7 @@ const MovieManagement = () => {
       poster_url: movie.poster_url || "", trailer_url: movie.trailer_url || "",
       duration_mins: movie.duration_mins || "", genre: movie.genre || [],
       language: movie.language || [], release_date: movie.release_date || "",
+      cast: movie.cast || [], vote_average: movie.vote_average ?? null, vote_count: movie.vote_count ?? null,
     })
     setIsEditModalOpen(true)
   }
@@ -512,7 +520,7 @@ const MovieManagement = () => {
   }
 
   const resetForm = () =>
-    setFormData({ title: "", description: "", poster_url: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null })
+    setFormData({ title: "", description: "", poster_url: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null, cast: [], vote_average: null, vote_count: null })
 
   const clearFilters = () =>
     setFilters({ genre: [], language: [], release_date: "", page: 1, limit: 12 })
