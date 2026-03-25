@@ -557,7 +557,7 @@ const MovieManagement = () => {
             <Database className="w-3.5 h-3.5" /> My Movies
           </TabsTrigger>
           <TabsTrigger value="browse-tmdb" className="text-xs flex items-center gap-1.5 h-7 data-[state=active]:bg-background">
-            <Tv2 className="w-3.5 h-3.5" /> Browse TMDB
+            <Tv2 className="w-3.5 h-3.5" /> Browse Movies
           </TabsTrigger>
         </TabsList>
       </div>
