@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Calendar as CalendarIcon, Upload } from "lucide-react"
+import { Calendar as CalendarIcon, Upload, Plus, X, User } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,8 @@ export const MovieForm = ({
     editingMovie
 }) => {
     const [datePickerOpen, setDatePickerOpen] = useState(false)
+    const [newCast, setNewCast] = useState({ name: "", character: "", profile_path: "" })
+    const [showCastForm, setShowCastForm] = useState(false)
 
     return (
         <>
@@ -231,6 +233,142 @@ export const MovieForm = ({
                                 className="w-32 h-48 object-cover rounded"
                             />
                         </div>
+                    )}
+                </div>
+
+                {/* Vote Average & Vote Count */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="vote_average">TMDB Rating</Label>
+                        <Input
+                            id="vote_average"
+                            type="number"
+                            min="0"
+                            max="10"
+                            step="0.1"
+                            value={formData.vote_average ?? ""}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    vote_average: e.target.value === "" ? null : parseFloat(e.target.value),
+                                }))
+                            }
+                            placeholder="0.0 – 10.0"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="vote_count">Vote Count</Label>
+                        <Input
+                            id="vote_count"
+                            type="number"
+                            min="0"
+                            value={formData.vote_count ?? ""}
+                            onChange={(e) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    vote_count: e.target.value === "" ? null : parseInt(e.target.value, 10),
+                                }))
+                            }
+                            placeholder="e.g. 1200"
+                        />
+                    </div>
+                </div>
+
+                {/* Cast */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label>Cast</Label>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => setShowCastForm((v) => !v)}
+                        >
+                            <Plus className="w-3 h-3" /> Add Member
+                        </Button>
+                    </div>
+
+                    {/* Inline add-cast form */}
+                    {showCastForm && (
+                        <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                    placeholder="Name *"
+                                    value={newCast.name}
+                                    onChange={(e) => setNewCast((p) => ({ ...p, name: e.target.value }))}
+                                    className="h-8 text-sm"
+                                />
+                                <Input
+                                    placeholder="Character"
+                                    value={newCast.character}
+                                    onChange={(e) => setNewCast((p) => ({ ...p, character: e.target.value }))}
+                                    className="h-8 text-sm"
+                                />
+                            </div>
+                            <Input
+                                placeholder="Profile image URL (optional)"
+                                value={newCast.profile_path}
+                                onChange={(e) => setNewCast((p) => ({ ...p, profile_path: e.target.value }))}
+                                className="h-8 text-sm"
+                            />
+                            <div className="flex justify-end gap-2">
+                                <Button
+                                    type="button" variant="ghost" size="sm" className="h-7 text-xs"
+                                    onClick={() => { setShowCastForm(false); setNewCast({ name: "", character: "", profile_path: "" }) }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="button" size="sm" className="h-7 text-xs bg-primary hover:bg-primary/90"
+                                    disabled={!newCast.name.trim()}
+                                    onClick={() => {
+                                        setFormData((prev) => ({ ...prev, cast: [...(prev.cast || []), { name: newCast.name.trim(), character: newCast.character.trim(), profile_path: newCast.profile_path.trim() || null }] }))
+                                        setNewCast({ name: "", character: "", profile_path: "" })
+                                        setShowCastForm(false)
+                                    }}
+                                >
+                                    Add
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Cast list */}
+                    {formData.cast?.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {formData.cast.map((member, i) => {
+                                const imgSrc = member.profile_path
+                                    ? member.profile_path.startsWith("http")
+                                        ? member.profile_path
+                                        : `https://image.tmdb.org/t/p/w92${member.profile_path}`
+                                    : null
+                                return (
+                                    <div key={i} className="flex items-center gap-2.5 rounded-lg border border-border/50 bg-card px-3 py-2 group">
+                                        {imgSrc ? (
+                                            <img src={imgSrc} alt={member.name} className="w-8 h-8 rounded-full object-cover shrink-0" />
+                                        ) : (
+                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                                <User className="w-4 h-4 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium truncate">{member.name}</p>
+                                            {member.character && <p className="text-[10px] text-muted-foreground truncate">{member.character}</p>}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                            onClick={() => setFormData((prev) => ({ ...prev, cast: prev.cast.filter((_, idx) => idx !== i) }))}
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">No cast members added. Import from TMDB or add manually.</p>
                     )}
                 </div>
 
