@@ -487,7 +487,7 @@ const MovieManagement = () => {
   return (
     <div className="flex min-h-full bg-background">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 sticky top-0 h-[calc(100vh-4rem)] overflow-hidden bg-card/30">
+      <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 sticky top-0 min-h-full overflow-hidden bg-card/30">
         <FilterPanel {...filterProps} />
       </aside>
 
