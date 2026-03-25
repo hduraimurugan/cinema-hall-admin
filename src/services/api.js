@@ -644,6 +644,13 @@ export const tmdbAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+  getInTheatres: async ({ page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/in-theatres?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
   getUpcoming: async ({ page = 1, language = '' } = {}) => {
     const params = new URLSearchParams({ page })
     if (language) params.set('with_original_language', language)

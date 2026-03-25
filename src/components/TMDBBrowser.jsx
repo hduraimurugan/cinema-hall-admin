@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Search, Star, Clock, ChevronLeft, ChevronRight,
-  Download, CheckCircle, Flame, Play, CalendarDays, TrendingUp, Globe
+  Download, CheckCircle, Flame, Play, CalendarDays, TrendingUp, Globe, Clapperboard
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { tmdbAPI } from "../services/api.js"
@@ -27,6 +27,7 @@ const LANG_OPTIONS = [
 
 const SECTIONS = [
   { key: "popular", label: "Popular", icon: Flame },
+  { key: "in_theatres", label: "In Theatres", icon: Clapperboard },
   { key: "now_playing", label: "Now Playing", icon: Play },
   { key: "upcoming", label: "Upcoming", icon: CalendarDays },
   { key: "top_rated", label: "Top Rated", icon: TrendingUp },
@@ -179,6 +180,7 @@ export const TMDBBrowser = ({ onImport, existingTmdbIds }) => {
       let data
       const opts = { page, language: selectedLanguage === "all" ? "" : selectedLanguage }
       if (activeSection === "popular") data = await tmdbAPI.getPopular(opts)
+      else if (activeSection === "in_theatres") data = await tmdbAPI.getInTheatres(opts)
       else if (activeSection === "now_playing") data = await tmdbAPI.getNowPlaying(opts)
       else if (activeSection === "upcoming") data = await tmdbAPI.getUpcoming(opts)
       else if (activeSection === "top_rated") data = await tmdbAPI.getTopRated(opts)

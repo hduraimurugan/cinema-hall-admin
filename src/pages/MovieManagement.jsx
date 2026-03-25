@@ -539,7 +539,7 @@ const MovieManagement = () => {
   return (
     <Tabs defaultValue="my-movies" className="flex flex-col min-h-full bg-background">
       {/* ── Top tab bar ── */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-0 flex items-center gap-4">
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-3 flex items-center gap-4">
         <div className="flex items-center gap-2 mr-2">
           <Film className="w-5 h-5 text-primary shrink-0" />
           <h1 className="text-lg sm:text-xl font-bold">Movie Management</h1>
