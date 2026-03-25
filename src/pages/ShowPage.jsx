@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Users, ArrowLeft } from "lucide-react"
-import { showsAPI } from "../services/api"
+import { showsAPI, settingsAPI } from "../services/api"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 
@@ -13,6 +13,7 @@ const ShowPage = () => {
     const navigate = useNavigate()
     const [showData, setShowData] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [settings, setSettings] = useState({ convenience_fee_per_ticket: 15, gst_percentage: 18 })
 
     useEffect(() => {
         const fetchShowData = async () => {
@@ -25,10 +26,31 @@ const ShowPage = () => {
                 setLoading(false)
             }
         }
+        const fetchSettings = async () => {
+            try {
+                const data = await settingsAPI.getSettings()
+                setSettings({
+                    convenience_fee_per_ticket: Number(data.convenience_fee_per_ticket ?? 15),
+                    gst_percentage: Number(data.gst_percentage ?? 18),
+                })
+            } catch {
+                // fall back to defaults
+            }
+        }
         if (id) {
             fetchShowData()
+            fetchSettings()
         }
     }, [id])
+
+    const getPrice = (type) => {
+        const override = showData?.show_details?.price_override
+        const layoutPricing = showData?.screen?.layout?.pricing
+        return Number(override?.[type] ?? layoutPricing?.[type] ?? 0)
+    }
+
+    const formatCurrency = (amount) =>
+        `₹${Math.round(amount).toLocaleString("en-IN")}`
 
     const getSeatColor = (seat) => {
         if (seat.type === "passage" || seat.isBlocked || seat.status === "blocked") {
@@ -337,6 +359,79 @@ const ShowPage = () => {
                                                 </>
                                             )}
                                         </>
+                                    )
+                                })()}
+
+                                <Separator />
+
+                                {/* Revenue Breakdown */}
+                                {(() => {
+                                    const seats = showData?.screen?.layout?.seats || []
+                                    const categories = ["premium", "gold", "silver"]
+                                    const bookedByCategory = categories.reduce((acc, type) => {
+                                        acc[type] = seats.filter(
+                                            (s) => s.type === type && (s.status === "booked" || s.status === "BOOKED")
+                                        )
+                                        return acc
+                                    }, {})
+
+                                    const ticketRevenue = categories.reduce(
+                                        (sum, type) => sum + bookedByCategory[type].length * getPrice(type),
+                                        0
+                                    )
+                                    const totalBooked = categories.reduce(
+                                        (sum, type) => sum + bookedByCategory[type].length,
+                                        0
+                                    )
+                                    const convFee = totalBooked * settings.convenience_fee_per_ticket
+                                    const gst = convFee * (settings.gst_percentage / 100)
+                                    const grandTotal = ticketRevenue + convFee + gst
+
+                                    return (
+                                        <div>
+                                            <h4 className="font-medium mb-3">Revenue Breakdown</h4>
+                                            <div className="space-y-2 text-sm">
+                                                {categories.map((type) => {
+                                                    const count = bookedByCategory[type].length
+                                                    if (!count) return null
+                                                    const price = getPrice(type)
+                                                    return (
+                                                        <div key={type} className="flex justify-between items-center">
+                                                            <span className="text-muted-foreground capitalize">
+                                                                {type} ({count} × ₹{price.toLocaleString("en-IN")})
+                                                            </span>
+                                                            <span className="font-medium">{formatCurrency(count * price)}</span>
+                                                        </div>
+                                                    )
+                                                })}
+
+                                                <div className="flex justify-between items-center pt-1 border-t border-dashed">
+                                                    <span className="text-muted-foreground">Ticket Revenue</span>
+                                                    <span className="font-medium">{formatCurrency(ticketRevenue)}</span>
+                                                </div>
+
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">
+                                                        Conv. Fee (₹{settings.convenience_fee_per_ticket} × {totalBooked})
+                                                    </span>
+                                                    <span className="font-medium">{formatCurrency(convFee)}</span>
+                                                </div>
+
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-muted-foreground">
+                                                        GST ({settings.gst_percentage}% on conv.)
+                                                    </span>
+                                                    <span className="font-medium">{formatCurrency(gst)}</span>
+                                                </div>
+
+                                                <Separator />
+
+                                                <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                                                    <span className="font-semibold text-green-700 dark:text-green-400">Total Revenue</span>
+                                                    <span className="text-lg font-bold text-green-600">{formatCurrency(grandTotal)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     )
                                 })()}
 
