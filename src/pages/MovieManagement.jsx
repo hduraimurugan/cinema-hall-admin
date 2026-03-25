@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
@@ -16,7 +16,7 @@ import { CalendarIcon } from 'lucide-react'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
-import { moviesAPI } from "../services/api.js"
+import { moviesAPI, tmdbAPI } from "../services/api.js"
 import { uploadImageToCloudinary } from "../services/cloudinary"
 import { cn } from "@/lib/utils"
 import { formatStatus, genres, getStatusColor, languages } from "../utils/utils.js"
@@ -24,6 +24,9 @@ import { useNavigate } from "react-router-dom"
 import { MovieForm } from "./MovieForm.jsx"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { TMDBBrowser } from "../components/TMDBBrowser.jsx"
+import { Database, Tv2 } from "lucide-react"
 
 const genreIcons = {
   Action: Swords,
@@ -368,6 +371,17 @@ const SkeletonCard = () => (
   </Card>
 )
 
+// ── TMDB → DB mapping helpers ────────────────────────────────────────────────
+const TMDB_GENRE_MAP = {
+  28: "Action", 35: "Comedy", 18: "Drama", 9648: "Mystery", 14: "Fantasy",
+  10749: "Romance", 27: "Horror", 53: "Thriller", 878: "Sci-Fi",
+  12: "Adventure", 10402: "Musical", 36: "Period",
+}
+const TMDB_LANG_MAP = {
+  en: "English", ta: "Tamil", hi: "Hindi", te: "Telugu",
+  ml: "Malayalam", kn: "Kannada", mr: "Marathi",
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const MovieManagement = () => {
   const navigate = useNavigate()
@@ -382,9 +396,19 @@ const MovieManagement = () => {
   const [expandedFilters, setExpandedFilters] = useState({ languages: true, genres: false, releaseDate: false })
   const [formData, setFormData] = useState({
     title: "", description: "", poster_url: "", trailer_url: "",
-    duration_mins: "", genre: [], language: [], release_date: "",
+    duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null,
   })
   const [uploading, setUploading] = useState(false)
+  const [existingTmdbIds, setExistingTmdbIds] = useState(new Set())
+
+  const fetchTmdbIds = async () => {
+    try {
+      const data = await tmdbAPI.getTmdbIds()
+      setExistingTmdbIds(new Set(data.tmdb_ids || []))
+    } catch {
+      // non-critical, silently ignore
+    }
+  }
 
   const fetchMovies = async () => {
     setLoading(true)
@@ -401,6 +425,8 @@ const MovieManagement = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchMovies() }, [filters])
+
+  useEffect(() => { fetchTmdbIds() }, [])
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0]
@@ -427,6 +453,7 @@ const MovieManagement = () => {
       } else {
         await moviesAPI.addMovie(formData)
         setIsAddModalOpen(false)
+        fetchTmdbIds() // refresh duplicate badges after import
       }
       resetForm()
       fetchMovies()
@@ -434,6 +461,31 @@ const MovieManagement = () => {
       console.error("Error saving movie:", error)
       alert("Failed to save movie")
     }
+  }
+
+  const handleTMDBImport = (tmdbMovie, details) => {
+    const genreNames = (details?.genres || [])
+      .map((g) => TMDB_GENRE_MAP[g.id])
+      .filter(Boolean)
+    const mappedLang = TMDB_LANG_MAP[details?.original_language]
+    const trailer = (details?.videos?.results || [])
+      .find((v) => v.site === "YouTube" && v.type === "Trailer")
+    const releaseDate = tmdbMovie.release_date || ""
+    const isPast = releaseDate && new Date(releaseDate) <= new Date()
+    setFormData({
+      title: tmdbMovie.title || "",
+      description: tmdbMovie.overview || "",
+      poster_url: tmdbMovie.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}` : "",
+      trailer_url: trailer ? `https://youtube.com/watch?v=${trailer.key}` : "",
+      duration_mins: details?.runtime || "",
+      genre: genreNames,
+      language: mappedLang ? [mappedLang] : [],
+      release_date: releaseDate,
+      status: isPast ? "now_showing" : "upcoming",
+      tmdb_id: tmdbMovie.id,
+    })
+    setEditingMovie(null)
+    setIsAddModalOpen(true)
   }
 
   const handleEdit = (movie) => {
@@ -460,7 +512,7 @@ const MovieManagement = () => {
   }
 
   const resetForm = () =>
-    setFormData({ title: "", description: "", poster_url: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "" })
+    setFormData({ title: "", description: "", poster_url: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null })
 
   const clearFilters = () =>
     setFilters({ genre: [], language: [], release_date: "", page: 1, limit: 12 })
@@ -485,163 +537,187 @@ const MovieManagement = () => {
   }
 
   return (
-    <div className="flex min-h-full bg-background">
-      {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 sticky top-0 min-h-full overflow-hidden bg-card/30">
-        <FilterPanel {...filterProps} />
-      </aside>
+    <Tabs defaultValue="my-movies" className="flex flex-col min-h-full bg-background">
+      {/* ── Top tab bar ── */}
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-0 flex items-center gap-4">
+        <div className="flex items-center gap-2 mr-2">
+          <Film className="w-5 h-5 text-primary shrink-0" />
+          <h1 className="text-lg sm:text-xl font-bold">Movie Management</h1>
+        </div>
+        <TabsList className="h-9 bg-muted/60 rounded-lg">
+          <TabsTrigger value="my-movies" className="text-xs flex items-center gap-1.5 h-7 data-[state=active]:bg-background">
+            <Database className="w-3.5 h-3.5" /> My Movies
+          </TabsTrigger>
+          <TabsTrigger value="browse-tmdb" className="text-xs flex items-center gap-1.5 h-7 data-[state=active]:bg-background">
+            <Tv2 className="w-3.5 h-3.5" /> Browse TMDB
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
-      {/* ── Main ── */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Page Header */}
-        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
-          <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              {/* Mobile filter trigger */}
-              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="lg:hidden shrink-0 h-9 w-9 relative">
-                    <SlidersHorizontal className="w-4 h-4" />
-                    {activeFilterCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 w-72">
-                  <SheetHeader className="sr-only">
-                    <SheetTitle>Filters</SheetTitle>
-                  </SheetHeader>
-                  <FilterPanel {...filterProps} />
-                </SheetContent>
-              </Sheet>
+      {/* ── My Movies Tab ── */}
+      <TabsContent value="my-movies" className="flex-1 flex mt-0">
+        <div className="flex w-full min-h-full">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 sticky top-0 min-h-full overflow-hidden bg-card/30">
+            <FilterPanel {...filterProps} />
+          </aside>
 
-              <div className="flex items-center gap-2 min-w-0">
-                <Film className="w-5 h-5 text-primary shrink-0" />
-                <h1 className="text-lg sm:text-xl font-bold truncate">Movie Management</h1>
-              </div>
+          {/* Main */}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Sub-header */}
+            <div className="sticky top-[53px] z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
+              <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  {/* Mobile filter trigger */}
+                  <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" className="lg:hidden shrink-0 h-9 w-9 relative">
+                        <SlidersHorizontal className="w-4 h-4" />
+                        {activeFilterCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                            {activeFilterCount}
+                          </span>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="p-0 w-72">
+                      <SheetHeader className="sr-only">
+                        <SheetTitle>Filters</SheetTitle>
+                      </SheetHeader>
+                      <FilterPanel {...filterProps} />
+                    </SheetContent>
+                  </Sheet>
 
-              {/* Movie count */}
-              {!loading && movies.length > 0 && (
-                <span className="hidden sm:inline-flex items-center text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
-                  {movies.length} shown
-                </span>
-              )}
-            </div>
+                  {!loading && movies.length > 0 && (
+                    <span className="hidden sm:inline-flex items-center text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full shrink-0">
+                      {movies.length} shown
+                    </span>
+                  )}
+                </div>
 
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 shrink-0 h-9">
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 shrink-0 h-9"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
                   <Plus className="w-4 h-4 sm:mr-1.5" />
                   <span className="hidden sm:inline">Add Movie</span>
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Movie</DialogTitle>
-                  <DialogDescription>Fill in the details below to add a new movie to your collection.</DialogDescription>
-                </DialogHeader>
-                <MovieForm
-                  formData={formData} setFormData={setFormData} onSubmit={handleSubmit}
-                  onCancel={() => { setIsAddModalOpen(false); resetForm() }}
-                  uploading={uploading} handleImageUpload={handleImageUpload} editingMovie={null}
-                />
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="px-4 sm:px-6 pb-3 flex flex-wrap gap-1.5">
-              {filters.language.map((lang) => (
-                <ActiveChip key={lang} label={lang} onRemove={() =>
-                  setFilters((p) => ({ ...p, language: p.language.filter((l) => l !== lang), page: 1 }))
-                } />
-              ))}
-              {filters.genre.map((gen) => (
-                <ActiveChip key={gen} label={gen} onRemove={() =>
-                  setFilters((p) => ({ ...p, genre: p.genre.filter((g) => g !== gen), page: 1 }))
-                } />
-              ))}
-              {filters.release_date && (
-                <ActiveChip label={filters.release_date} onRemove={() =>
-                  setFilters((p) => ({ ...p, release_date: "", page: 1 }))
-                } />
-              )}
-              <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-primary transition-colors px-1">
-                Clear all
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 p-4 sm:p-6">
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
-              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : movies.length === 0 ? (
-            <EmptyState activeFilterCount={activeFilterCount} onClearFilters={clearFilters} onAddMovie={() => setIsAddModalOpen(true)} />
-          ) : (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
-                {movies.map((movie) => (
-                  <MovieCard
-                    key={movie.id}
-                    movie={movie}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onClick={() => navigate(`/movie/${movie.id}`)}
-                  />
-                ))}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-1.5 pb-2">
-                  <Button
-                    variant="outline" size="icon"
-                    className="h-8 w-8"
-                    disabled={filters.page === 1}
-                    onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-
-                  {filters.page > 3 && (
-                    <>
-                      <PageBtn page={1} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
-                      {filters.page > 4 && <span className="text-muted-foreground text-sm px-1">…</span>}
-                    </>
-                  )}
-
-                  {getPaginationRange().map((page) => (
-                    <PageBtn key={page} page={page} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
+              {/* Active filter chips */}
+              {activeFilterCount > 0 && (
+                <div className="px-4 sm:px-6 pb-3 flex flex-wrap gap-1.5">
+                  {filters.language.map((lang) => (
+                    <ActiveChip key={lang} label={lang} onRemove={() =>
+                      setFilters((p) => ({ ...p, language: p.language.filter((l) => l !== lang), page: 1 }))
+                    } />
                   ))}
-
-                  {filters.page < totalPages - 2 && (
-                    <>
-                      {filters.page < totalPages - 3 && <span className="text-muted-foreground text-sm px-1">…</span>}
-                      <PageBtn page={totalPages} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
-                    </>
+                  {filters.genre.map((gen) => (
+                    <ActiveChip key={gen} label={gen} onRemove={() =>
+                      setFilters((p) => ({ ...p, genre: p.genre.filter((g) => g !== gen), page: 1 }))
+                    } />
+                  ))}
+                  {filters.release_date && (
+                    <ActiveChip label={filters.release_date} onRemove={() =>
+                      setFilters((p) => ({ ...p, release_date: "", page: 1 }))
+                    } />
                   )}
-
-                  <Button
-                    variant="outline" size="icon"
-                    className="h-8 w-8"
-                    disabled={filters.page === totalPages}
-                    onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                  <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-primary transition-colors px-1">
+                    Clear all
+                  </button>
                 </div>
               )}
-            </>
-          )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 p-4 sm:p-6">
+              {loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
+                  {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
+              ) : movies.length === 0 ? (
+                <EmptyState activeFilterCount={activeFilterCount} onClearFilters={clearFilters} onAddMovie={() => setIsAddModalOpen(true)} />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
+                    {movies.map((movie) => (
+                      <MovieCard
+                        key={movie.id}
+                        movie={movie}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onClick={() => navigate(`/movie/${movie.id}`)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-1.5 pb-2">
+                      <Button
+                        variant="outline" size="icon"
+                        className="h-8 w-8"
+                        disabled={filters.page === 1}
+                        onClick={() => setFilters((p) => ({ ...p, page: p.page - 1 }))}
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+
+                      {filters.page > 3 && (
+                        <>
+                          <PageBtn page={1} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
+                          {filters.page > 4 && <span className="text-muted-foreground text-sm px-1">…</span>}
+                        </>
+                      )}
+
+                      {getPaginationRange().map((page) => (
+                        <PageBtn key={page} page={page} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
+                      ))}
+
+                      {filters.page < totalPages - 2 && (
+                        <>
+                          {filters.page < totalPages - 3 && <span className="text-muted-foreground text-sm px-1">…</span>}
+                          <PageBtn page={totalPages} current={filters.page} onClick={(p) => setFilters((prev) => ({ ...prev, page: p }))} />
+                        </>
+                      )}
+
+                      <Button
+                        variant="outline" size="icon"
+                        className="h-8 w-8"
+                        disabled={filters.page === totalPages}
+                        onClick={() => setFilters((p) => ({ ...p, page: p.page + 1 }))}
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </TabsContent>
+
+      {/* ── Browse TMDB Tab ── */}
+      <TabsContent value="browse-tmdb" className="flex-1 mt-0 p-4 sm:p-6">
+        <TMDBBrowser onImport={handleTMDBImport} existingTmdbIds={existingTmdbIds} />
+      </TabsContent>
+
+      {/* ── Shared Add/Edit Dialogs ── */}
+      <Dialog open={isAddModalOpen} onOpenChange={(open) => { if (!open) { setIsAddModalOpen(false); resetForm() } }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Movie</DialogTitle>
+            <DialogDescription>Review and confirm the movie details below before saving.</DialogDescription>
+          </DialogHeader>
+          <MovieForm
+            formData={formData} setFormData={setFormData} onSubmit={handleSubmit}
+            onCancel={() => { setIsAddModalOpen(false); resetForm() }}
+            uploading={uploading} handleImageUpload={handleImageUpload} editingMovie={null}
+          />
+        </DialogContent>
+      </Dialog>
 
       <EditMovieDialog
         open={isEditModalOpen}
@@ -651,7 +727,7 @@ const MovieManagement = () => {
         uploading={uploading} handleImageUpload={handleImageUpload}
         editingMovie={editingMovie}
       />
-    </div>
+    </Tabs>
   )
 }
 

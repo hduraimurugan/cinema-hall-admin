@@ -628,3 +628,51 @@ export const paymentAPI = {
     return response.json()
   },
 };
+
+export const tmdbAPI = {
+  getPopular: async ({ page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/popular?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  getNowPlaying: async ({ page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/now-playing?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  getUpcoming: async ({ page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/upcoming?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  getTopRated: async ({ page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/top-rated?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  search: async ({ query, page = 1, language = '' } = {}) => {
+    const params = new URLSearchParams({ query, page })
+    if (language) params.set('with_original_language', language)
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/search?${params}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  getMovieDetails: async (tmdbId) => {
+    const response = await fetch(`${API_BASE_URL}/api/tmdb/movie/${tmdbId}`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+  getTmdbIds: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/movies/tmdb-ids`, { credentials: 'include' })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+};
