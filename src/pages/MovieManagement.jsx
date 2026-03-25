@@ -537,9 +537,9 @@ const MovieManagement = () => {
   }
 
   return (
-    <Tabs defaultValue="my-movies" className="flex flex-col min-h-full bg-background">
+    <Tabs defaultValue="my-movies" className="flex flex-col h-[calc(100vh-4rem)] bg-background">
       {/* ── Top tab bar ── */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-3 flex items-center gap-4">
+      <div className="shrink-0 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-3 flex items-center gap-4">
         <div className="flex items-center gap-2 mr-2">
           <Film className="w-5 h-5 text-primary shrink-0" />
           <h1 className="text-lg sm:text-xl font-bold">Movie Management</h1>
@@ -555,17 +555,17 @@ const MovieManagement = () => {
       </div>
 
       {/* ── My Movies Tab ── */}
-      <TabsContent value="my-movies" className="flex-1 flex mt-0">
-        <div className="flex w-full min-h-full">
+      <TabsContent value="my-movies" className="flex-1 flex min-h-0 mt-0">
+        <div className="flex h-full w-full min-h-0">
           {/* Desktop Sidebar */}
-          <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 sticky top-0 min-h-full overflow-hidden bg-card/30">
+          <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-border/50 overflow-y-auto bg-card/30">
             <FilterPanel {...filterProps} />
           </aside>
 
           {/* Main */}
-          <div className="flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
             {/* Sub-header */}
-            <div className="sticky top-[53px] z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
+            <div className="shrink-0 z-20 bg-background/80 backdrop-blur-md border-b border-border/50">
               <div className="px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   {/* Mobile filter trigger */}
@@ -631,7 +631,7 @@ const MovieManagement = () => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               {loading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
                   {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -700,7 +700,7 @@ const MovieManagement = () => {
       </TabsContent>
 
       {/* ── Browse TMDB Tab ── */}
-      <TabsContent value="browse-tmdb" className="flex-1 mt-0 p-4 sm:p-6">
+      <TabsContent value="browse-tmdb" className="flex-1 min-h-0 mt-0 overflow-y-auto p-4 sm:p-6">
         <TMDBBrowser onImport={handleTMDBImport} existingTmdbIds={existingTmdbIds} />
       </TabsContent>
 
