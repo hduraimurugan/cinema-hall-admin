@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronUp, Plus, Edit, Trash2, Clock, Star, ThumbsUp,
   MoreVertical, Globe, Clapperboard, Swords, Heart, Laugh, Ghost,
   Rocket, Music, Trophy, Sparkles, Users, Zap, SlidersHorizontal,
-  Film, ChevronLeft, ChevronRight, X
+  Film, ChevronLeft, ChevronRight, X, RefreshCw
 } from 'lucide-react'
 import { CalendarIcon } from 'lucide-react'
 import { Calendar } from "@/components/ui/calendar"
@@ -27,6 +27,7 @@ import "react-lazy-load-image-component/src/effects/blur.css"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { TMDBBrowser } from "../components/TMDBBrowser.jsx"
 import { Database, Tv2 } from "lucide-react"
+import { toast } from "sonner"
 
 const genreIcons = {
   Action: Swords,
@@ -46,7 +47,7 @@ const genreIcons = {
   Western: Clapperboard,
 }
 
-const EditMovieDialog = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie }) => (
+const EditMovieDialog = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie, onSyncFromTMDB, syncing }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
@@ -56,7 +57,7 @@ const EditMovieDialog = ({ open, onOpenChange, formData, setFormData, onSubmit, 
       <MovieForm
         formData={formData} setFormData={setFormData} onSubmit={onSubmit}
         onCancel={onCancel} uploading={uploading} handleImageUpload={handleImageUpload}
-        editingMovie={editingMovie}
+        editingMovie={editingMovie} onSyncFromTMDB={onSyncFromTMDB} syncing={syncing}
       />
     </DialogContent>
   </Dialog>
@@ -406,6 +407,7 @@ const MovieManagement = () => {
     cast: [], vote_average: null, vote_count: null,
   })
   const [uploading, setUploading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [existingTmdbIds, setExistingTmdbIds] = useState(new Set())
 
   const fetchTmdbIds = async () => {
@@ -509,8 +511,45 @@ const MovieManagement = () => {
       duration_mins: movie.duration_mins || "", genre: movie.genre || [],
       language: movie.language || [], release_date: movie.release_date || "",
       cast: movie.cast || [], vote_average: movie.vote_average ?? null, vote_count: movie.vote_count ?? null,
+      tmdb_id: movie.tmdb_id ?? null,
     })
     setIsEditModalOpen(true)
+  }
+
+  const handleSyncFromTMDB = async () => {
+    if (!formData.tmdb_id) return
+    setSyncing(true)
+    try {
+      const details = await tmdbAPI.getMovieDetails(formData.tmdb_id)
+      setFormData((prev) => {
+        const updates = {}
+        if (!prev.cast?.length) {
+          updates.cast = (details?.credits?.cast || [])
+            .slice(0, 10)
+            .map(({ name, character, profile_path }) => ({ name, character, profile_path }))
+        }
+        if (prev.vote_average == null && details?.vote_average != null)
+          updates.vote_average = details.vote_average
+        if (prev.vote_count == null && details?.vote_count != null)
+          updates.vote_count = details.vote_count
+        if (!prev.trailer_url) {
+          const trailer = (details?.videos?.results || [])
+            .find((v) => v.site === "YouTube" && v.type === "Trailer")
+          if (trailer) updates.trailer_url = `https://youtube.com/watch?v=${trailer.key}`
+        }
+        if (!prev.duration_mins && details?.runtime)
+          updates.duration_mins = details.runtime
+        if (!prev.poster_url && details?.poster_path)
+          updates.poster_url = `https://image.tmdb.org/t/p/w500${details.poster_path}`
+        return { ...prev, ...updates }
+      })
+      toast.success("Synced missing fields from TMDB")
+    } catch (err) {
+      console.error("TMDB sync error:", err)
+      toast.error("Failed to sync from TMDB")
+    } finally {
+      setSyncing(false)
+    }
   }
 
   const handleDelete = async (movieId) => {
@@ -740,6 +779,7 @@ const MovieManagement = () => {
         onSubmit={handleSubmit} onCancel={handleEditModalClose}
         uploading={uploading} handleImageUpload={handleImageUpload}
         editingMovie={editingMovie}
+        onSyncFromTMDB={handleSyncFromTMDB} syncing={syncing}
       />
     </Tabs>
   )

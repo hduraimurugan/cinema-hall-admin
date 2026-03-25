@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Calendar as CalendarIcon, Upload, Plus, X, User } from "lucide-react"
+import { Calendar as CalendarIcon, Upload, Plus, X, User, RefreshCw } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,9 @@ export const MovieForm = ({
     onCancel,
     uploading,
     handleImageUpload,
-    editingMovie
+    editingMovie,
+    onSyncFromTMDB,
+    syncing = false,
 }) => {
     const [datePickerOpen, setDatePickerOpen] = useState(false)
     const [newCast, setNewCast] = useState({ name: "", character: "", profile_path: "" })
@@ -27,6 +29,28 @@ export const MovieForm = ({
     return (
         <>
             <form onSubmit={onSubmit} className="space-y-6">
+                {/* Sync from TMDB banner — Edit mode only, when tmdb_id exists */}
+                {editingMovie && formData.tmdb_id && onSyncFromTMDB && (
+                    <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                            <RefreshCw className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <span className="text-xs text-muted-foreground">
+                                Linked to TMDB <span className="font-medium text-foreground">#{formData.tmdb_id}</span> — fill empty fields from TMDB
+                            </span>
+                        </div>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1.5 border-primary/30 hover:bg-primary/10 shrink-0"
+                            onClick={onSyncFromTMDB}
+                            disabled={syncing}
+                        >
+                            <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
+                            {syncing ? "Syncing…" : "Sync from TMDB"}
+                        </Button>
+                    </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title *</Label>
