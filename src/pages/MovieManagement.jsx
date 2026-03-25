@@ -542,7 +542,7 @@ const MovieManagement = () => {
       <div className="shrink-0 bg-background/80 backdrop-blur-md border-b border-border/50 px-4 sm:px-6 pt-3 pb-3 flex items-center gap-4">
         <div className="flex items-center gap-2 mr-2">
           <Film className="w-5 h-5 text-primary shrink-0" />
-          <h1 className="text-lg sm:text-xl font-bold">Movie Management</h1>
+          <h1 className="hidden sm:block text-lg sm:text-xl font-bold">Movie Management</h1>
         </div>
         <TabsList className="h-9 bg-muted/60 rounded-lg">
           <TabsTrigger value="my-movies" className="text-xs flex items-center gap-1.5 h-7 data-[state=active]:bg-background">
