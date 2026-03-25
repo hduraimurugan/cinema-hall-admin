@@ -311,14 +311,20 @@ const MovieCard = ({ movie, onEdit, onDelete, onClick }) => (
 
       {/* Bottom stats */}
       <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
-          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-          <span className="text-white text-xs font-semibold">8.5</span>
-        </div>
-        <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
-          <ThumbsUp className="w-3 h-3 text-emerald-400" />
-          <span className="text-white text-xs font-semibold">2.5K</span>
-        </div>
+        {movie.vote_average != null ? (
+          <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+            <span className="text-white text-xs font-semibold">{Number(movie.vote_average).toFixed(1)}</span>
+          </div>
+        ) : <span />}
+        {movie.vote_count != null ? (
+          <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5">
+            <ThumbsUp className="w-3 h-3 text-emerald-400" />
+            <span className="text-white text-xs font-semibold">
+              {movie.vote_count >= 1000 ? `${(movie.vote_count / 1000).toFixed(1)}K` : movie.vote_count}
+            </span>
+          </div>
+        ) : <span />}
       </div>
     </div>
 
