@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Calendar, Clock, Globe, Play, Star } from "lucide-react"
+import { Calendar, Clock, Globe, Play, Star, Users, ThumbsUp } from "lucide-react"
 import { moviesAPI } from "../services/api"
 import { formatStatus, getStatusColor } from "../utils/utils"
 import { Label } from "@/components/ui/label"
@@ -293,13 +293,51 @@ const MoviePage = () => {
                 </div>
             )}
 
+            {/* Cast Section */}
+            {movie.cast && movie.cast.length > 0 && (
+                <div className="container mx-auto md:px-4 px-10 pb-10">
+                    <Card className="shadow-xl">
+                        <CardContent className="p-6">
+                            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                                <Users className="w-6 h-6 text-purple-500" />
+                                Cast
+                            </h3>
+                            <div className="flex flex-wrap gap-5">
+                                {movie.cast.map((member, index) => (
+                                    <div key={index} className="flex flex-col items-center text-center w-24">
+                                        <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-purple-400/40 shadow-md mb-2 bg-slate-200">
+                                            {member.profile_path ? (
+                                                <LazyLoadImage
+                                                    src={`https://image.tmdb.org/t/p/w185${member.profile_path}`}
+                                                    alt={member.name}
+                                                    effect="blur"
+                                                    width="100%"
+                                                    height="100%"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-slate-300 text-slate-600 text-xl font-bold">
+                                                    {member.name.charAt(0)}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-sm font-semibold leading-tight">{member.name}</span>
+                                        <span className="text-xs text-muted-foreground leading-tight mt-0.5">{member.character}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
             {/* Additional Info Section */}
             <div className="container mx-auto md:px-4 px-10 pb-16">
                 <div className="grid md:grid-cols-2 gap-8">
-                    <Card className=" shadow-xl">
+                    <Card className="shadow-xl">
                         <CardContent className="p-6">
                             <h3 className="text-2xl font-bold mb-4">Movie Details</h3>
-                            <div className="space-y-3 ">
+                            <div className="space-y-3">
                                 <div className="flex justify-between">
                                     <span className="font-medium">Duration:</span>
                                     <span>{movie.duration_mins} minutes</span>
@@ -318,11 +356,32 @@ const MoviePage = () => {
                                     <span className="font-medium">Added:</span>
                                     <span>{formatDate(movie.created_at)}</span>
                                 </div>
+                                {(movie.vote_average !== undefined || movie.vote_count !== undefined) && (
+                                    <>
+                                        <div className="flex justify-between items-center pt-2 border-t">
+                                            <span className="font-medium flex items-center gap-1.5">
+                                                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                                Rating:
+                                            </span>
+                                            <span className="font-semibold text-yellow-500">
+                                                {parseFloat(movie.vote_average).toFixed(1)}
+                                                <span className="text-muted-foreground font-normal text-sm"> / 10</span>
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-medium flex items-center gap-1.5">
+                                                <ThumbsUp className="w-4 h-4 text-blue-400" />
+                                                Votes:
+                                            </span>
+                                            <span>{movie.vote_count.toLocaleString()}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className=" shadow-xl">
+                    <Card className="shadow-xl">
                         <CardContent className="p-6">
                             <h3 className="text-2xl font-bold mb-4">Synopsis</h3>
                             <p className="leading-relaxed">{movie.description}</p>
