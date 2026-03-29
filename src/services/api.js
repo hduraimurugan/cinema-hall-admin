@@ -474,6 +474,40 @@ export const showsAPI = {
 
     return response.json();
   },
+
+  // Bulk cancel shows
+  bulkCancelShows: async (ids) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-cancel`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to cancel shows");
+    }
+
+    return response.json();
+  },
+
+  // Bulk open booking for shows
+  bulkOpenBooking: async (ids) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-booking-open`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to open booking for shows");
+    }
+
+    return response.json();
+  },
 };
 
 export const adsAPI = {

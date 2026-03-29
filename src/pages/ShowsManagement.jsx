@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square, BookOpen, RotateCcw, XCircle } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
@@ -78,6 +88,15 @@ const ShowsManagement = () => {
   // Map<showId, { id, show_date, start_time, screen_name }>
   const [selectedShows, setSelectedShows] = useState(new Map())
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isBulkCancelling, setIsBulkCancelling] = useState(false)
+  const [isBulkOpening, setIsBulkOpening] = useState(false)
+
+  // Confirm dialog state
+  const [confirmDialog, setConfirmDialog] = useState(null)
+  // confirmDialog: { title, description, actionLabel, actionVariant, onConfirm } | null
+
+  const openConfirm = (opts) => setConfirmDialog(opts)
+  const closeConfirm = () => setConfirmDialog(null)
 
   const fetchShows = async (date) => {
     setIsLoading(true)
@@ -96,15 +115,21 @@ const ShowsManagement = () => {
     fetchShows(selectedDate)
   }, [selectedDate])
 
-  const handleDeleteShow = async (showId) => {
-    if (window.confirm("Are you sure you want to delete this show?")) {
-      try {
-        await showsAPI.deleteShow(showId)
-        fetchShows(selectedDate)
-      } catch (error) {
-        console.error("Error deleting show:", error)
-      }
-    }
+  const handleDeleteShow = (showId) => {
+    openConfirm({
+      title: "Delete Show",
+      description: "Are you sure you want to delete this show?",
+      actionLabel: "Delete",
+      actionVariant: "destructive",
+      onConfirm: async () => {
+        try {
+          await showsAPI.deleteShow(showId)
+          fetchShows(selectedDate)
+        } catch (error) {
+          console.error("Error deleting show:", error)
+        }
+      },
+    })
   }
 
   const handleOpenBooking = async (showId) => {
@@ -117,26 +142,40 @@ const ShowsManagement = () => {
     }
   }
 
-  const handleRevertBooking = async (showId) => {
-    if (!window.confirm("Revert this show back to Scheduled? This will close bookings.")) return
-    try {
-      await showsAPI.updateBookingStatus(showId, "revert")
-      toast.success("Show reverted to Scheduled")
-      fetchShows(selectedDate)
-    } catch (err) {
-      toast.error(err.message || "Failed to revert show")
-    }
+  const handleRevertBooking = (showId) => {
+    openConfirm({
+      title: "Revert to Scheduled",
+      description: "Revert this show back to Scheduled? This will close bookings.",
+      actionLabel: "Revert",
+      actionVariant: "default",
+      onConfirm: async () => {
+        try {
+          await showsAPI.updateBookingStatus(showId, "revert")
+          toast.success("Show reverted to Scheduled")
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to revert show")
+        }
+      },
+    })
   }
 
-  const handleCancelShow = async (showId) => {
-    if (!window.confirm("Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.")) return
-    try {
-      const result = await showsAPI.cancelShow(showId)
-      toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
-      fetchShows(selectedDate)
-    } catch (err) {
-      toast.error(err.message || "Failed to cancel show")
-    }
+  const handleCancelShow = (showId) => {
+    openConfirm({
+      title: "Cancel Show",
+      description: "Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.",
+      actionLabel: "Cancel Show",
+      actionVariant: "destructive",
+      onConfirm: async () => {
+        try {
+          const result = await showsAPI.cancelShow(showId)
+          toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to cancel show")
+        }
+      },
+    })
   }
 
   const toggleSelectMode = () => {
@@ -161,22 +200,76 @@ const ShowsManagement = () => {
     })
   }
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     const count = selectedShows.size
-    if (!window.confirm(`Delete ${count} show${count !== 1 ? "s" : ""}? This cannot be undone.`)) return
+    openConfirm({
+      title: `Delete ${count} Show${count !== 1 ? "s" : ""}`,
+      description: `This will permanently delete ${count} show${count !== 1 ? "s" : ""}. This cannot be undone.`,
+      actionLabel: "Delete",
+      actionVariant: "destructive",
+      onConfirm: async () => {
+        setIsDeleting(true)
+        try {
+          await showsAPI.deleteMultipleShows([...selectedShows.keys()])
+          toast.success(`${count} show${count !== 1 ? "s" : ""} deleted`)
+          setSelectedShows(new Map())
+          setIsSelecting(false)
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to delete shows")
+        } finally {
+          setIsDeleting(false)
+        }
+      },
+    })
+  }
 
-    setIsDeleting(true)
-    try {
-      await showsAPI.deleteMultipleShows([...selectedShows.keys()])
-      toast.success(`${count} show${count !== 1 ? "s" : ""} deleted`)
-      setSelectedShows(new Map())
-      setIsSelecting(false)
-      fetchShows(selectedDate)
-    } catch (err) {
-      toast.error(err.message || "Failed to delete shows")
-    } finally {
-      setIsDeleting(false)
-    }
+  const handleBulkCancel = () => {
+    const count = selectedShows.size
+    openConfirm({
+      title: `Cancel ${count} Show${count !== 1 ? "s" : ""}`,
+      description: `Cancel ${count} show${count !== 1 ? "s" : ""}? All confirmed bookings will be cancelled and refunds will be initiated.`,
+      actionLabel: "Cancel Shows",
+      actionVariant: "destructive",
+      onConfirm: async () => {
+        setIsBulkCancelling(true)
+        try {
+          const result = await showsAPI.bulkCancelShows([...selectedShows.keys()])
+          toast.success(result.message)
+          setSelectedShows(new Map())
+          setIsSelecting(false)
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to cancel shows")
+        } finally {
+          setIsBulkCancelling(false)
+        }
+      },
+    })
+  }
+
+  const handleBulkOpenBooking = () => {
+    const count = selectedShows.size
+    openConfirm({
+      title: `Open Booking for ${count} Show${count !== 1 ? "s" : ""}`,
+      description: `Start booking for ${count} show${count !== 1 ? "s" : ""}? Only shows with "Scheduled" status will be updated.`,
+      actionLabel: "Open Booking",
+      actionVariant: "default",
+      onConfirm: async () => {
+        setIsBulkOpening(true)
+        try {
+          const result = await showsAPI.bulkOpenBooking([...selectedShows.keys()])
+          toast.success(result.message)
+          setSelectedShows(new Map())
+          setIsSelecting(false)
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to open booking")
+        } finally {
+          setIsBulkOpening(false)
+        }
+      },
+    })
   }
 
   // Count selected shows per date (for date pill badges)
@@ -518,6 +611,25 @@ const ShowsManagement = () => {
         )}
       </div>
 
+      {/* Confirm Dialog */}
+      <AlertDialog open={!!confirmDialog} onOpenChange={(open) => { if (!open) closeConfirm() }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirmDialog?.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={confirmDialog?.actionVariant === "destructive" ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+              onClick={() => { confirmDialog?.onConfirm(); closeConfirm() }}
+            >
+              {confirmDialog?.actionLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Sticky bottom bar — shown when shows are selected */}
       {selectedShows.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-lg px-6 py-3">
@@ -539,6 +651,26 @@ const ShowsManagement = () => {
                 }}
               >
                 Cancel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkOpenBooking}
+                disabled={isBulkOpening}
+                className="gap-1.5 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                {isBulkOpening ? "Opening..." : "Open Booking"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkCancel}
+                disabled={isBulkCancelling}
+                className="gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                {isBulkCancelling ? "Cancelling..." : "Cancel Shows"}
               </Button>
               <Button
                 variant="destructive"
