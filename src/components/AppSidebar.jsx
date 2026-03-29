@@ -26,7 +26,7 @@ import { formatRole } from "../utils/utils"
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Screens", url: "/screens", icon: Monitor },
-  { title: "Movies", url: "/movies", icon: Film, roles: ["superAdmin"] },
+  { title: "Movies", url: "/movies", icon: Film },
   { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"] },
   { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"] },
   { title: "Showtimes", url: "/shows", icon: Calendar },

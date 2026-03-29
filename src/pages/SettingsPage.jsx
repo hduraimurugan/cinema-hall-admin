@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { settingsAPI } from "@/services/api"
 import { toast } from "sonner"
+import { useAuth } from "@/context/AuthContext"
 
 export const SettingsPage = () => {
+  const { isSuperAdmin } = useAuth()
   const [convenienceFee, setConvenienceFee] = useState("")
   const [gstPercentage, setGstPercentage] = useState("")
   const [loading, setLoading] = useState(true)
@@ -74,7 +76,7 @@ export const SettingsPage = () => {
         <CardContent className="space-y-5">
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : (
+          ) : isSuperAdmin ? (
             <>
               <div className="space-y-1.5">
                 <Label htmlFor="conv-fee">Convenience Fee (₹ per ticket)</Label>
@@ -125,6 +127,44 @@ export const SettingsPage = () => {
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? "Saving..." : "Save Settings"}
               </Button>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <Label>Convenience Fee (₹ per ticket)</Label>
+                <p className="text-sm px-3 py-2 rounded-md border border-border bg-secondary/30">
+                  ₹{previewConvFee.toLocaleString('en-IN')}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>GST Percentage (%)</Label>
+                <p className="text-sm px-3 py-2 rounded-md border border-border bg-secondary/30">
+                  {previewGst}%
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-secondary/40 px-4 py-3 text-sm space-y-1.5">
+                <p className="font-medium text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Preview (per ticket)
+                </p>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Convenience fee</span>
+                  <span>₹{previewConvFee.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GST ({previewGst}%)</span>
+                  <span>₹{previewGstAmount.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-semibold border-t border-border pt-1.5 mt-1">
+                  <span>Total per ticket</span>
+                  <span>₹{previewTotal.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Only Super Admins can modify booking fee settings.
+              </p>
             </>
           )}
         </CardContent>

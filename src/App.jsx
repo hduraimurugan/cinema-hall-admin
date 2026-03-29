@@ -52,6 +52,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
             
+            <Route path="/movies" element={<MovieManagement />} />
             <Route path="/movie/:id" element={<MoviePage />} />
             <Route path="/screens" element={<CinemaScreenDesigner />} />
             <Route path="/screens/new" element={<ScreenDesignerPage />} />
@@ -75,7 +76,6 @@ function App() {
               <CinemaLayout />
             </AdminProtectedRoute>
           }>
-            <Route path="/movies" element={<MovieManagement />} />
             <Route path="/ads" element={<AdsManagement />} />
             <Route path="/offers" element={<OffersManagement />} />
             <Route path="/offers/new" element={<OfferFormPage />} />
