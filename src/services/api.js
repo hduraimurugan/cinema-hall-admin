@@ -442,6 +442,38 @@ export const showsAPI = {
 
     return response.json();
   },
+
+  // Cancel a show (marks bookings cancelled + initiates refunds)
+  cancelShow: async (showId) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/cancel/${showId}`, {
+      method: "PUT",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to cancel show");
+    }
+
+    return response.json();
+  },
+
+  // Open or revert booking status for a show
+  updateBookingStatus: async (showId, action) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/booking-status/${showId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ action }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update booking status");
+    }
+
+    return response.json();
+  },
 };
 
 export const adsAPI = {

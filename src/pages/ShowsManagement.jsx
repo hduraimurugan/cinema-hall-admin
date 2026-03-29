@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react"
+import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square, BookOpen, RotateCcw, XCircle } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 import { showsAPI } from "../services/api"
@@ -30,6 +30,22 @@ const formatDuration = (minutes) => {
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
   return `${hours}h ${mins}m`
+}
+
+const STATUS_CONFIG = {
+  scheduled:       { label: "Scheduled",       color: "bg-muted text-muted-foreground border-border" },
+  booking_started: { label: "Booking Open",     color: "bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-700" },
+  in_progress:     { label: "In Progress",      color: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-700" },
+  show_ended:      { label: "Show Ended",       color: "bg-muted text-muted-foreground border-border" },
+  cancelled:       { label: "Cancelled",        color: "bg-red-100 text-red-600 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-700" },
+}
+
+const SHOW_BORDER_COLOR = {
+  scheduled:       "border-border text-foreground",
+  booking_started: "border-green-500 text-green-700 dark:text-green-400",
+  in_progress:     "border-blue-500 text-blue-700 dark:text-blue-400",
+  show_ended:      "border-border text-muted-foreground",
+  cancelled:       "border-red-400 text-red-500",
 }
 
 const formatDateParts = (date) => ({
@@ -88,6 +104,38 @@ const ShowsManagement = () => {
       } catch (error) {
         console.error("Error deleting show:", error)
       }
+    }
+  }
+
+  const handleOpenBooking = async (showId) => {
+    try {
+      await showsAPI.updateBookingStatus(showId, "open")
+      toast.success("Booking opened for this show")
+      fetchShows(selectedDate)
+    } catch (err) {
+      toast.error(err.message || "Failed to open booking")
+    }
+  }
+
+  const handleRevertBooking = async (showId) => {
+    if (!window.confirm("Revert this show back to Scheduled? This will close bookings.")) return
+    try {
+      await showsAPI.updateBookingStatus(showId, "revert")
+      toast.success("Show reverted to Scheduled")
+      fetchShows(selectedDate)
+    } catch (err) {
+      toast.error(err.message || "Failed to revert show")
+    }
+  }
+
+  const handleCancelShow = async (showId) => {
+    if (!window.confirm("Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.")) return
+    try {
+      const result = await showsAPI.cancelShow(showId)
+      toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
+      fetchShows(selectedDate)
+    } catch (err) {
+      toast.error(err.message || "Failed to cancel show")
     }
   }
 
@@ -340,6 +388,9 @@ const ShowsManagement = () => {
                       .sort((a, b) => a.start_time.localeCompare(b.start_time))
                       .map((show) => {
                         const isChecked = selectedShows.has(show.id)
+                        const statusCfg = STATUS_CONFIG[show.status] || STATUS_CONFIG.scheduled
+                        const borderColor = SHOW_BORDER_COLOR[show.status] || SHOW_BORDER_COLOR.scheduled
+                        const isActionable = show.status === "scheduled" || show.status === "booking_started"
                         return (
                           <div key={show.id} className="group relative">
                             {/* Show time button */}
@@ -348,8 +399,8 @@ const ShowsManagement = () => {
                                 isSelecting
                                   ? isChecked
                                     ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/30"
-                                    : "border-green-500 text-green-700 dark:text-green-400 hover:border-primary hover:text-primary"
-                                  : "border-green-500 text-green-700 dark:text-green-400 hover:border-primary hover:text-primary"
+                                    : `${borderColor} hover:border-primary hover:text-primary`
+                                  : `${borderColor} hover:border-primary hover:text-primary`
                               }`}
                               onClick={() =>
                                 isSelecting
@@ -382,9 +433,13 @@ const ShowsManagement = () => {
                                 <span className="truncate">{show.language_version}</span>
                                 <span>₹{show.price_override?.silver ?? "—"}</span>
                               </span>
+                              {/* Status badge */}
+                              <span className={`mt-1.5 text-[9px] font-semibold px-1.5 py-0.5 rounded border ${statusCfg.color}`}>
+                                {statusCfg.label}
+                              </span>
                             </button>
 
-                            {/* Edit / Delete hover actions — hidden in select mode */}
+                            {/* Hover actions — hidden in select mode */}
                             {!isSelecting && (
                               <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
                                 <Button
@@ -392,14 +447,49 @@ const ShowsManagement = () => {
                                   variant="secondary"
                                   className="h-6 w-6 p-0"
                                   onClick={() => navigate(`/shows/${show.id}/edit`)}
+                                  title="Edit show"
                                 >
                                   <Edit className="h-3 w-3" />
                                 </Button>
+                                {show.status === "scheduled" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-green-500 text-green-600 hover:bg-green-50"
+                                    onClick={() => handleOpenBooking(show.id)}
+                                    title="Open booking"
+                                  >
+                                    <BookOpen className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                {show.status === "booking_started" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-amber-500 text-amber-600 hover:bg-amber-50"
+                                    onClick={() => handleRevertBooking(show.id)}
+                                    title="Revert to scheduled"
+                                  >
+                                    <RotateCcw className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                {isActionable && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-red-400 text-red-500 hover:bg-red-50"
+                                    onClick={() => handleCancelShow(show.id)}
+                                    title="Cancel show"
+                                  >
+                                    <XCircle className="h-3 w-3" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   className="h-6 w-6 p-0"
                                   onClick={() => handleDeleteShow(show.id)}
+                                  title="Delete show"
                                 >
                                   <Trash2 className="h-3 w-3" />
                                 </Button>

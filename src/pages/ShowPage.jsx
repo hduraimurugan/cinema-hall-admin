@@ -3,10 +3,19 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Users, ArrowLeft } from "lucide-react"
+import { ArrowLeft, BookOpen, RotateCcw, XCircle } from "lucide-react"
 import { showsAPI, settingsAPI } from "../services/api"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
+import { toast } from "sonner"
+
+const STATUS_CONFIG = {
+    scheduled:       { label: "Scheduled",    color: "bg-muted text-muted-foreground border-border" },
+    booking_started: { label: "Booking Open", color: "bg-green-100 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-400 dark:border-green-700" },
+    in_progress:     { label: "In Progress",  color: "bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-700" },
+    show_ended:      { label: "Show Ended",   color: "bg-muted text-muted-foreground border-border" },
+    cancelled:       { label: "Cancelled",    color: "bg-red-100 text-red-600 border-red-300 dark:bg-red-950 dark:text-red-400 dark:border-red-700" },
+}
 
 const ShowPage = () => {
     const { id } = useParams()
@@ -42,6 +51,38 @@ const ShowPage = () => {
             fetchSettings()
         }
     }, [id])
+
+    const handleOpenBooking = async () => {
+        try {
+            await showsAPI.updateBookingStatus(id, "open")
+            toast.success("Booking opened for this show")
+            setShowData(prev => ({ ...prev, show_details: { ...prev.show_details, status: "booking_started" } }))
+        } catch (err) {
+            toast.error(err.message || "Failed to open booking")
+        }
+    }
+
+    const handleRevertBooking = async () => {
+        if (!window.confirm("Revert this show back to Scheduled? This will close bookings.")) return
+        try {
+            await showsAPI.updateBookingStatus(id, "revert")
+            toast.success("Show reverted to Scheduled")
+            setShowData(prev => ({ ...prev, show_details: { ...prev.show_details, status: "scheduled" } }))
+        } catch (err) {
+            toast.error(err.message || "Failed to revert show")
+        }
+    }
+
+    const handleCancelShow = async () => {
+        if (!window.confirm("Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.")) return
+        try {
+            const result = await showsAPI.cancelShow(id)
+            toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
+            setShowData(prev => ({ ...prev, show_details: { ...prev.show_details, status: "cancelled" } }))
+        } catch (err) {
+            toast.error(err.message || "Failed to cancel show")
+        }
+    }
 
     const getPrice = (type) => {
         const override = showData?.show_details?.price_override
@@ -178,7 +219,7 @@ const ShowPage = () => {
                         <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate('/shows')}>
                             <ArrowLeft className="w-4 h-4" />
                         </Button>
-                        <div className="flex gap-4 p-4 rounded-xl items-center">
+                        <div className="flex gap-4 p-4 rounded-xl items-center flex-1">
                             {/* Poster */}
                             <div className="h-20 w-14 rounded-md overflow-hidden flex-shrink-0 bg-muted border border-border">
                                 {showData.movie.poster_url ? (
@@ -196,12 +237,23 @@ const ShowPage = () => {
 
                             {/* Movie Info */}
                             <div className="flex-1">
-                                <h1 className="text-lg font-semibold  mb-1">
-                                    {showData.movie.title}{" "}
-                                    <span className="text-muted-foreground text-sm font-medium">
-                                        • {showData.movie.language?.join(", ") || "English"}
-                                    </span>
-                                </h1>
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                    <h1 className="text-lg font-semibold">
+                                        {showData.movie.title}{" "}
+                                        <span className="text-muted-foreground text-sm font-medium">
+                                            • {showData.movie.language?.join(", ") || "English"}
+                                        </span>
+                                    </h1>
+                                    {/* Status badge */}
+                                    {(() => {
+                                        const cfg = STATUS_CONFIG[showData.show_details.status] || STATUS_CONFIG.scheduled
+                                        return (
+                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${cfg.color}`}>
+                                                {cfg.label}
+                                            </span>
+                                        )
+                                    })()}
+                                </div>
 
                                 <p className="text-sm text-muted-foreground mb-0.5">
                                     📅 {showData.show_details.show_date}
@@ -210,6 +262,43 @@ const ShowPage = () => {
                                 <p className="text-sm text-muted-foreground">
                                     🏟️ {showData.screen.name}
                                 </p>
+                            </div>
+
+                            {/* Status action buttons */}
+                            <div className="flex gap-2 flex-shrink-0">
+                                {showData.show_details.status === "scheduled" && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1.5 border-green-500 text-green-600 hover:bg-green-50"
+                                        onClick={handleOpenBooking}
+                                    >
+                                        <BookOpen className="h-3.5 w-3.5" />
+                                        Open Booking
+                                    </Button>
+                                )}
+                                {showData.show_details.status === "booking_started" && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1.5 border-amber-500 text-amber-600 hover:bg-amber-50"
+                                        onClick={handleRevertBooking}
+                                    >
+                                        <RotateCcw className="h-3.5 w-3.5" />
+                                        Revert to Scheduled
+                                    </Button>
+                                )}
+                                {(showData.show_details.status === "scheduled" || showData.show_details.status === "booking_started") && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1.5 border-red-400 text-red-500 hover:bg-red-50"
+                                        onClick={handleCancelShow}
+                                    >
+                                        <XCircle className="h-3.5 w-3.5" />
+                                        Cancel Show
+                                    </Button>
+                                )}
                             </div>
                         </div>
 
