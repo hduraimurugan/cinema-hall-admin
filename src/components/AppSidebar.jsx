@@ -58,8 +58,8 @@ export function AppSidebar({ collapsed = false }) {
     const linkContent = (
       <Link
         to={url}
-        className={`group flex items-center rounded-md text-xs font-medium transition-all duration-200 ${
-          collapsed ? "justify-center p-1.5" : "gap-2.5 px-2.5 py-1.5"
+        className={`group flex items-center rounded-md text-sm font-medium transition-all duration-200 ${
+          collapsed ? "justify-center p-2" : "gap-3 px-3 py-2"
         } ${
           active
             ? "bg-primary/10 text-primary"
@@ -67,19 +67,19 @@ export function AppSidebar({ collapsed = false }) {
         }`}
       >
         <span
-          className={`flex items-center justify-center rounded p-0.5 transition-colors duration-200 ${
+          className={`flex items-center justify-center rounded p-1 transition-colors duration-200 ${
             active
               ? "bg-primary/15 text-primary"
               : "text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
           }`}
         >
-          <Icon className="size-3.5" />
+          <Icon className="size-4" />
         </span>
         {!collapsed && (
           <span className={active ? "font-semibold" : ""}>{title}</span>
         )}
         {!collapsed && active && (
-          <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
+          <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
         )}
       </Link>
     )
