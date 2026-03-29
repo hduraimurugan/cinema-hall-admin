@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square, BookOpen, RotateCcw, XCircle } from "lucide-react"
+import { Plus, Edit, Clock, MapPin, Trash2, Calendar, Play, CalendarPlus, ChevronLeft, ChevronRight, CheckSquare, Square, BookOpen, RotateCcw, XCircle, Undo2 } from "lucide-react"
 import { LazyLoadImage } from "react-lazy-load-image-component"
 import "react-lazy-load-image-component/src/effects/blur.css"
 import { showsAPI } from "../services/api"
@@ -90,6 +90,7 @@ const ShowsManagement = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isBulkCancelling, setIsBulkCancelling] = useState(false)
   const [isBulkOpening, setIsBulkOpening] = useState(false)
+  const [isBulkRestoring, setIsBulkRestoring] = useState(false)
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState(null)
@@ -267,6 +268,48 @@ const ShowsManagement = () => {
           toast.error(err.message || "Failed to open booking")
         } finally {
           setIsBulkOpening(false)
+        }
+      },
+    })
+  }
+
+  const handleRestoreShow = (showId) => {
+    openConfirm({
+      title: "Restore Show",
+      description: "Restore this cancelled show back to Scheduled?",
+      actionLabel: "Restore",
+      actionVariant: "default",
+      onConfirm: async () => {
+        try {
+          await showsAPI.updateBookingStatus(showId, "restore")
+          toast.success("Show restored to Scheduled")
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to restore show")
+        }
+      },
+    })
+  }
+
+  const handleBulkRestore = () => {
+    const count = selectedShows.size
+    openConfirm({
+      title: `Restore ${count} Show${count !== 1 ? "s" : ""}`,
+      description: `Restore ${count} cancelled show${count !== 1 ? "s" : ""} back to Scheduled? Only cancelled shows will be affected.`,
+      actionLabel: "Restore",
+      actionVariant: "default",
+      onConfirm: async () => {
+        setIsBulkRestoring(true)
+        try {
+          const result = await showsAPI.bulkRestoreShows([...selectedShows.keys()])
+          toast.success(result.message)
+          setSelectedShows(new Map())
+          setIsSelecting(false)
+          fetchShows(selectedDate)
+        } catch (err) {
+          toast.error(err.message || "Failed to restore shows")
+        } finally {
+          setIsBulkRestoring(false)
         }
       },
     })
@@ -577,6 +620,17 @@ const ShowsManagement = () => {
                                     <XCircle className="h-3 w-3" />
                                   </Button>
                                 )}
+                                {show.status === "cancelled" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-6 w-6 p-0 border-blue-400 text-blue-500 hover:bg-blue-50"
+                                    onClick={() => handleRestoreShow(show.id)}
+                                    title="Restore to scheduled"
+                                  >
+                                    <Undo2 className="h-3 w-3" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="destructive"
@@ -651,6 +705,16 @@ const ShowsManagement = () => {
                 }}
               >
                 Cancel
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBulkRestore}
+                disabled={isBulkRestoring}
+                className="gap-1.5 border-blue-400 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950"
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+                {isBulkRestoring ? "Restoring..." : "Restore"}
               </Button>
               <Button
                 variant="outline"

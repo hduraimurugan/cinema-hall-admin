@@ -492,6 +492,23 @@ export const showsAPI = {
     return response.json();
   },
 
+  // Bulk restore cancelled shows to scheduled
+  bulkRestoreShows: async (ids) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-restore`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ ids }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to restore shows");
+    }
+
+    return response.json();
+  },
+
   // Bulk open booking for shows
   bulkOpenBooking: async (ids) => {
     const response = await fetch(`${API_BASE_URL}/api/shows/bulk-booking-open`, {
