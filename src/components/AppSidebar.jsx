@@ -58,7 +58,7 @@ export function AppSidebar({ collapsed = false }) {
     const linkContent = (
       <Link
         to={url}
-        className={`group flex items-center rounded-md text-sm font-medium transition-all duration-200 ${
+        className={`group flex items-center overflow-hidden rounded-md text-sm font-medium transition-all duration-200 ${
           collapsed ? "justify-center p-2" : "gap-3 px-3 py-2"
         } ${
           active
@@ -76,7 +76,7 @@ export function AppSidebar({ collapsed = false }) {
           <Icon className="size-4" />
         </span>
         {!collapsed && (
-          <span className={active ? "font-semibold" : ""}>{title}</span>
+          <span className={`truncate ${active ? "font-semibold" : ""}`}>{title}</span>
         )}
         {!collapsed && active && (
           <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
