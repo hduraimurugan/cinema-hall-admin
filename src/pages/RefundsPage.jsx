@@ -104,19 +104,32 @@ const RefundsPage = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Refunds</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track refund status for cancelled show bookings</p>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <IndianRupee className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Refunds</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Track refund status for cancelled show bookings</p>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })}
-          className="gap-1.5"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          {!loading && total > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium">
+              <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+              {total} refund{total !== 1 ? "s" : ""}
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })}
+            className="gap-1.5"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Summary cards */}
