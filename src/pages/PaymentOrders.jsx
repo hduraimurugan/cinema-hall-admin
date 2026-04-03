@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw, Copy, Check } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, ChevronDown, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw, Copy, Check } from "lucide-react"
 import { paymentAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -103,6 +103,7 @@ const PaymentOrders = () => {
 
   const hasFilters = fromDate || toDate || customer || movie || status !== "all"
   const activeFilterCount = [fromDate, toDate, customer, movie, status !== "all" ? status : ""].filter(Boolean).length
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   return (
     <div className="p-6 space-y-6">
@@ -139,138 +140,147 @@ const PaymentOrders = () => {
 
       {/* Filters */}
       <Card className="border-border/60">
-        <CardHeader className="pb-3 pt-4 px-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </div>
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={handleClear} className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-                <X className="w-3 h-3" /> Clear all
-              </Button>
+        <div
+          className="flex items-center justify-between px-4 py-2.5 cursor-pointer select-none"
+          onClick={() => setFiltersOpen(o => !o)}
+        >
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold leading-none">
+                {activeFilterCount}
+              </span>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {/* From Date */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" /> From Date
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left text-sm font-normal",
-                      !fromDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {fromDate ? dayjs(fromDate).format("MMM D, YYYY") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate ? dayjs(fromDate).toDate() : undefined}
-                    onSelect={handleFromDateChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* To Date */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" /> To Date
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      "h-9 w-full justify-start text-left text-sm font-normal",
-                      !toDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {toDate ? dayjs(toDate).format("MMM D, YYYY") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate ? dayjs(toDate).toDate() : undefined}
-                    onSelect={handleToDateChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Customer search */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <User className="w-3 h-3" /> Customer
-              </label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Name or email..."
-                  value={customerInput}
-                  onChange={handleCustomerChange}
-                  className="pl-8 h-9 text-sm"
-                />
+          <div className="flex items-center gap-1">
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); handleClear() }}
+                className="h-6 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3 h-3" /> Clear
+              </Button>
+            )}
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${filtersOpen ? "rotate-180" : ""}`} />
+          </div>
+        </div>
+        {filtersOpen && (
+          <div className="px-4 pb-3 pt-2 border-t border-border/40">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5">
+              {/* From Date */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3" /> From Date
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "h-8 w-full justify-start text-left text-xs font-normal",
+                        !fromDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-1.5 h-3 w-3" />
+                      {fromDate ? dayjs(fromDate).format("MMM D, YYYY") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={fromDate ? dayjs(fromDate).toDate() : undefined}
+                      onSelect={handleFromDateChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-            </div>
 
-            {/* Movie search */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Search className="w-3 h-3" /> Movie
-              </label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                <Input
-                  placeholder="Search by movie..."
-                  value={movieInput}
-                  onChange={handleMovieChange}
-                  className="pl-8 h-9 text-sm"
-                />
+              {/* To Date */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3" /> To Date
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "h-8 w-full justify-start text-left text-xs font-normal",
+                        !toDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-1.5 h-3 w-3" />
+                      {toDate ? dayjs(toDate).format("MMM D, YYYY") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={toDate ? dayjs(toDate).toDate() : undefined}
+                      onSelect={handleToDateChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-            </div>
 
-            {/* Status */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> Status
-              </label>
-              <Select value={status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="created">Created</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Customer search */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <User className="w-3 h-3" /> Customer
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Name or email..."
+                    value={customerInput}
+                    onChange={handleCustomerChange}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Movie search */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Search className="w-3 h-3" /> Movie
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by movie..."
+                    value={movieInput}
+                    onChange={handleMovieChange}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> Status
+                </label>
+                <Select value={status} onValueChange={handleStatusChange}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="created">Created</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </CardContent>
+        )}
       </Card>
 
       {/* Table */}
@@ -292,11 +302,62 @@ const PaymentOrders = () => {
               <p className="text-sm">{error}</p>
             </div>
           ) : loading ? (
-            <div className="space-y-2.5 py-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-lg" />
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-border/50">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Movie</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Show</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Seats</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Amount</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Order ID</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Payment ID</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <TableRow key={i} className="border-border/40">
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3.5 w-28 rounded" />
+                          <Skeleton className="h-3 w-36 rounded" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-28 rounded" /></TableCell>
+                    <TableCell>
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-3.5 w-20 rounded" />
+                        <Skeleton className="h-3 w-12 rounded" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Skeleton className="h-5 w-8 rounded" />
+                        <Skeleton className="h-5 w-8 rounded" />
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-16 rounded" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-5 w-32 rounded" />
+                        <Skeleton className="h-3.5 w-3.5 rounded" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Skeleton className="h-5 w-28 rounded" />
+                        <Skeleton className="h-3.5 w-3.5 rounded" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : orders.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-muted-foreground gap-3">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
