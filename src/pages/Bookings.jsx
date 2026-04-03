@@ -149,7 +149,7 @@ const Bookings = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-border/60">
-          <CardContent className="p-4">
+          <CardContent className="p-2 px-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Bookings</p>
               <div className="p-1.5 rounded-md bg-primary/10">
