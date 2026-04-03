@@ -5,10 +5,30 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import {
   ArrowLeft, User, CreditCard, Ticket, Monitor,
-  CalendarDays, Clock, Tag, IndianRupee, Receipt, Percent
+  CalendarDays, Clock, Tag, IndianRupee, Receipt, Percent,
+  RefreshCw, CheckCircle2, AlertCircle, ExternalLink
 } from "lucide-react"
-import { bookingAPI } from "../services/api"
+import { bookingAPI, refundAPI } from "../services/api"
+import { toast } from "sonner"
 import dayjs from "dayjs"
+
+const refundStatusConfig = {
+  initiated: {
+    label: "Refund Initiated",
+    className: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
+    icon: Clock,
+  },
+  settled: {
+    label: "Refund Settled",
+    className: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25",
+    icon: CheckCircle2,
+  },
+  failed: {
+    label: "Refund Failed",
+    className: "bg-red-500/15 text-red-400 border border-red-500/25",
+    icon: AlertCircle,
+  },
+}
 
 const statusConfig = {
   confirmed: { label: "Confirmed", className: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25" },
@@ -67,13 +87,30 @@ const BookingDetailPage = () => {
   const [booking, setBooking] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [settling, setSettling] = useState(false)
 
-  useEffect(() => {
+  const loadBooking = () => {
     bookingAPI.getBookingById(id)
       .then(data => setBooking(data.booking))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-  }, [id])
+  }
+
+  useEffect(() => { loadBooking() }, [id])
+
+  const handleSettle = async () => {
+    if (!booking?.refund_id) return
+    setSettling(true)
+    try {
+      await refundAPI.settleRefund(booking.refund_id)
+      toast.success("Refund marked as settled")
+      loadBooking()
+    } catch (err) {
+      toast.error(err.message || "Failed to settle refund")
+    } finally {
+      setSettling(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -315,6 +352,91 @@ const BookingDetailPage = () => {
                   <span className="text-sm text-muted-foreground">Discount</span>
                   <span className="text-sm font-semibold text-emerald-500">- ₹{fmt(discountAmount)}</span>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Refund Info — shown only for cancelled bookings */}
+          {booking.booking_status === "cancelled" && (
+            <Card className="border-border/60">
+              <CardHeader className="pb-2 pt-4 px-5">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 text-primary" /> Refund
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-4 space-y-0">
+                {booking.refund_status ? (
+                  <>
+                    {(() => {
+                      const rc = refundStatusConfig[booking.refund_status] || refundStatusConfig.initiated
+                      const RIcon = rc.icon
+                      return (
+                        <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                          <span className="text-sm text-muted-foreground">Status</span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${rc.className}`}>
+                            <RIcon className="w-3 h-3" />
+                            {rc.label}
+                          </span>
+                        </div>
+                      )
+                    })()}
+                    <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                      <span className="text-sm text-muted-foreground">Refund Amount</span>
+                      <span className="text-sm font-semibold">₹{fmt(booking.refund_amount)}</span>
+                    </div>
+                    {booking.razorpay_refund_id && (
+                      <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40">
+                        <span className="text-sm text-muted-foreground">Refund ID</span>
+                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
+                          {booking.razorpay_refund_id}
+                        </code>
+                      </div>
+                    )}
+                    {booking.refund_initiated_at && (
+                      <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                        <span className="text-sm text-muted-foreground">Initiated</span>
+                        <span className="text-sm">{dayjs(booking.refund_initiated_at).format("DD MMM YYYY, h:mm A")}</span>
+                      </div>
+                    )}
+                    {booking.refund_settled_at && (
+                      <div className="flex items-center justify-between py-2.5 border-b border-border/40">
+                        <span className="text-sm text-muted-foreground">Settled</span>
+                        <span className="text-sm text-emerald-500 font-medium">{dayjs(booking.refund_settled_at).format("DD MMM YYYY, h:mm A")}</span>
+                      </div>
+                    )}
+                    {booking.refund_failure_reason && (
+                      <div className="py-2.5 border-b border-border/40">
+                        <span className="text-sm text-muted-foreground block mb-1">Failure Reason</span>
+                        <span className="text-xs text-red-400">{booking.refund_failure_reason}</span>
+                      </div>
+                    )}
+                    {booking.refund_status === "initiated" && (
+                      <div className="pt-3 flex flex-col gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full gap-1.5 border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10"
+                          disabled={settling}
+                          onClick={handleSettle}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {settling ? "Settling…" : "Mark as Settled"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full gap-1.5 text-muted-foreground"
+                          onClick={() => navigate("/refunds")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          View All Refunds
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">No refund record found for this booking.</p>
+                )}
               </CardContent>
             </Card>
           )}

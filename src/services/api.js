@@ -780,3 +780,29 @@ export const tmdbAPI = {
     return response.json()
   },
 };
+
+export const refundAPI = {
+  getRefunds: async ({ status, page } = {}) => {
+    const params = new URLSearchParams()
+    if (status && status !== "all") params.set("status", status)
+    if (page) params.set("page", page)
+    const response = await fetch(`${API_BASE_URL}/api/refunds?${params}`, { credentials: "include" })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to fetch refunds") }
+    return response.json()
+  },
+
+  getRefundByBooking: async (bookingId) => {
+    const response = await fetch(`${API_BASE_URL}/api/refunds/booking/${bookingId}`, { credentials: "include" })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Refund not found") }
+    return response.json()
+  },
+
+  settleRefund: async (refundId) => {
+    const response = await fetch(`${API_BASE_URL}/api/refunds/${refundId}/settle`, {
+      method: "POST",
+      credentials: "include",
+    })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to settle refund") }
+    return response.json()
+  },
+};

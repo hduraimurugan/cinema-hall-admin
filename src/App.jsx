@@ -26,6 +26,7 @@ import AdsManagement from './pages/AdsManagement.jsx';
 import OffersManagement from './pages/OffersManagement.jsx';
 import OfferFormPage from './pages/OfferFormPage.jsx';
 import BookingDetailPage from './pages/BookingDetailPage.jsx'
+import RefundsPage from './pages/RefundsPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 import AdminsPage from './pages/AdminsPage.jsx';
 
@@ -64,6 +65,7 @@ function App() {
             <Route path="/show/:id" element={<ShowPage/>} />
             <Route path="/bookings" element={<Bookings />} />
             <Route path="/bookings/:id" element={<BookingDetailPage />} />
+            <Route path="/refunds" element={<RefundsPage />} />
             <Route path="/payment-orders" element={<PaymentOrders />} />
             <Route path="/verify-ticket" element={<VerifyTicket />} />
             <Route path="/profile" element={<ProfilePage />} />
