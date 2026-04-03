@@ -3,6 +3,16 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ArrowLeft, BookOpen, RotateCcw, XCircle } from "lucide-react"
 import { showsAPI, settingsAPI } from "../services/api"
 import { LazyLoadImage } from "react-lazy-load-image-component"
@@ -23,6 +33,10 @@ const ShowPage = () => {
     const [showData, setShowData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [settings, setSettings] = useState({ convenience_fee_per_ticket: 15, gst_percentage: 18 })
+    const [confirmDialog, setConfirmDialog] = useState(null)
+
+    const openConfirm = (opts) => setConfirmDialog(opts)
+    const closeConfirm = () => setConfirmDialog(null)
 
     useEffect(() => {
         const fetchShowData = async () => {
@@ -74,14 +88,32 @@ const ShowPage = () => {
     }
 
     const handleCancelShow = async () => {
-        if (!window.confirm("Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.")) return
+        let bookingInfo = { booking_count: 0, total_amount: 0 }
         try {
-            const result = await showsAPI.cancelShow(id)
-            toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
-            setShowData(prev => ({ ...prev, show_details: { ...prev.show_details, status: "cancelled" } }))
-        } catch (err) {
-            toast.error(err.message || "Failed to cancel show")
+            bookingInfo = await showsAPI.getShowBookingCount(id)
+        } catch {
+            // proceed with default — don't block the cancel dialog
         }
+
+        const hasBookings = bookingInfo.booking_count > 0
+        const description = hasBookings
+            ? `⚠ This show has ${bookingInfo.booking_count} confirmed booking${bookingInfo.booking_count !== 1 ? "s" : ""}. Refunds totalling ₹${bookingInfo.total_amount.toFixed(2)} will be initiated for all customers.`
+            : "No confirmed bookings for this show. The show will be cancelled."
+
+        openConfirm({
+            title: "Cancel Show",
+            description,
+            actionLabel: "Cancel Show",
+            onConfirm: async () => {
+                try {
+                    const result = await showsAPI.cancelShow(id)
+                    toast.success(`Show cancelled. ${result.bookings_cancelled} booking(s) cancelled.`)
+                    setShowData(prev => ({ ...prev, show_details: { ...prev.show_details, status: "cancelled" } }))
+                } catch (err) {
+                    toast.error(err.message || "Failed to cancel show")
+                }
+            },
+        })
     }
 
     const getPrice = (type) => {
@@ -211,6 +243,7 @@ const ShowPage = () => {
     const categorizedSeats = generateSeatsByCategory()
 
     return (
+        <>
         <div className="min-h-screen">
             {/* Header */}
             <div className="bg-background shadow-sm border-b sticky top-0 z-50">
@@ -537,6 +570,26 @@ const ShowPage = () => {
                 </div>
             </div>
         </div>
+
+        {/* Confirm Dialog */}
+        <AlertDialog open={!!confirmDialog} onOpenChange={(open) => { if (!open) closeConfirm() }}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>{confirmDialog?.title}</AlertDialogTitle>
+                    <AlertDialogDescription>{confirmDialog?.description}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={() => { confirmDialog?.onConfirm(); closeConfirm() }}
+                    >
+                        {confirmDialog?.actionLabel}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }
 
