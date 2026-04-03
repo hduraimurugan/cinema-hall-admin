@@ -443,6 +443,20 @@ export const showsAPI = {
     return response.json();
   },
 
+  // Get confirmed booking count + total refund amount for a show (used by cancel dialog)
+  getShowBookingCount: async (showId) => {
+    const response = await fetch(`${API_BASE_URL}/api/shows/booking-count/${showId}`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch booking count");
+    }
+
+    return response.json();
+  },
+
   // Cancel a show (marks bookings cancelled + initiates refunds)
   cancelShow: async (showId) => {
     const response = await fetch(`${API_BASE_URL}/api/shows/cancel/${showId}`, {

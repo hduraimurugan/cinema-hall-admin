@@ -161,10 +161,22 @@ const ShowsManagement = () => {
     })
   }
 
-  const handleCancelShow = (showId) => {
+  const handleCancelShow = async (showId) => {
+    let bookingInfo = { booking_count: 0, total_amount: 0 }
+    try {
+      bookingInfo = await showsAPI.getShowBookingCount(showId)
+    } catch {
+      // proceed with default — don't block the cancel dialog
+    }
+
+    const hasBookings = bookingInfo.booking_count > 0
+    const description = hasBookings
+      ? `⚠ This show has ${bookingInfo.booking_count} confirmed booking${bookingInfo.booking_count !== 1 ? "s" : ""}. Refunds totalling ₹${bookingInfo.total_amount.toFixed(2)} will be initiated for all customers.`
+      : "No confirmed bookings for this show. The show will be cancelled."
+
     openConfirm({
       title: "Cancel Show",
-      description: "Cancel this show? All confirmed bookings will be cancelled and refunds will be initiated.",
+      description,
       actionLabel: "Cancel Show",
       actionVariant: "destructive",
       onConfirm: async () => {
@@ -225,17 +237,36 @@ const ShowsManagement = () => {
     })
   }
 
-  const handleBulkCancel = () => {
+  const handleBulkCancel = async () => {
     const count = selectedShows.size
+    const showIds = [...selectedShows.keys()]
+
+    let totalBookings = 0
+    let totalAmount = 0
+    try {
+      const counts = await Promise.all(showIds.map((id) => showsAPI.getShowBookingCount(id)))
+      counts.forEach((c) => {
+        totalBookings += c.booking_count
+        totalAmount += c.total_amount
+      })
+    } catch {
+      // proceed with default description if count fetch fails
+    }
+
+    const description =
+      totalBookings > 0
+        ? `⚠ ${count} show${count !== 1 ? "s" : ""} have ${totalBookings} confirmed booking${totalBookings !== 1 ? "s" : ""} in total. Refunds totalling ₹${totalAmount.toFixed(2)} will be initiated for all customers.`
+        : `Cancel ${count} show${count !== 1 ? "s" : ""}? No confirmed bookings found for the selected shows.`
+
     openConfirm({
       title: `Cancel ${count} Show${count !== 1 ? "s" : ""}`,
-      description: `Cancel ${count} show${count !== 1 ? "s" : ""}? All confirmed bookings will be cancelled and refunds will be initiated.`,
+      description,
       actionLabel: "Cancel Shows",
       actionVariant: "destructive",
       onConfirm: async () => {
         setIsBulkCancelling(true)
         try {
-          const result = await showsAPI.bulkCancelShows([...selectedShows.keys()])
+          const result = await showsAPI.bulkCancelShows(showIds)
           toast.success(result.message)
           setSelectedShows(new Map())
           setIsSelecting(false)
