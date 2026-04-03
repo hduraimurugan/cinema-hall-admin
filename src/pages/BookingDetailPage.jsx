@@ -296,7 +296,7 @@ const BookingDetailPage = () => {
               <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40">
                 <span className="text-sm text-muted-foreground">Payment ID</span>
                 <div className="flex items-center gap-1.5">
-                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
+                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[90%]">
                     {booking.payment_id || "—"}
                   </code>
                   {booking.payment_id && (
@@ -414,7 +414,7 @@ const BookingDetailPage = () => {
                       <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40">
                         <span className="text-sm text-muted-foreground">Refund ID</span>
                         <div className="flex items-center gap-1.5">
-                          <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
+                          <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[90%]">
                             {booking.razorpay_refund_id}
                           </code>
                           <button
