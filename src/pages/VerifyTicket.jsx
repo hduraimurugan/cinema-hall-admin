@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { ScanLine, Search, Camera, CameraOff, CheckCircle2, XCircle, ImagePlus } from "lucide-react"
+import { ScanLine, Search, Camera, CameraOff, CheckCircle2, XCircle, ImagePlus, Copy, Check } from "lucide-react"
 import { bookingAPI } from "../services/api"
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -23,6 +23,13 @@ const VerifyTicket = () => {
   const [loading, setLoading] = useState(false)
   const [scannerActive, setScannerActive] = useState(false)
   const [imageScanning, setImageScanning] = useState(false)
+  const [idCopied, setIdCopied] = useState(false)
+
+  const copyId = (id) => {
+    navigator.clipboard.writeText(id)
+    setIdCopied(true)
+    setTimeout(() => setIdCopied(false), 2000)
+  }
   const html5QrCodeRef = useRef(null)
   const fileInputRef = useRef(null)
 
@@ -272,7 +279,16 @@ const VerifyTicket = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">Booking ID</p>
-                    <p className="text-xs font-mono text-muted-foreground">{bookingResult.id}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-xs font-mono text-muted-foreground">{bookingResult.id}</p>
+                      <button
+                        onClick={() => copyId(bookingResult.id)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        title="Copy Booking ID"
+                      >
+                        {idCopied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
                   </div>
                   <p className="text-2xl font-bold">₹{bookingResult.total_amount}</p>
                 </div>

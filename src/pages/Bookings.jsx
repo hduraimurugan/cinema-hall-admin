@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon, RefreshCw, IndianRupee, Receipt, Percent } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, Ticket, SlidersHorizontal, X, Monitor, CalendarDays, CalendarIcon, RefreshCw, IndianRupee, Receipt, Percent, Copy, Check } from "lucide-react"
 import { bookingAPI, screensAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -50,6 +50,15 @@ const Bookings = () => {
   const [error, setError] = useState(null)
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(true)
+
+  const [copiedId, setCopiedId] = useState(null)
+
+  const copyBookingId = (e, id) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(id)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   const [fromDate, setFromDate] = useState("")
   const [toDate, setToDate] = useState("")
@@ -436,9 +445,18 @@ const Bookings = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {b.id?.substring(0, 8)}
-                        </code>
+                        <div className="flex items-center gap-1.5">
+                          <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {b.id?.substring(0, 8)}
+                          </code>
+                          <button
+                            onClick={(e) => copyBookingId(e, b.id)}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            title="Copy full Booking ID"
+                          >
+                            {copiedId === b.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )

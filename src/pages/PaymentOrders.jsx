@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw } from "lucide-react"
+import { Search, ChevronLeft, ChevronRight, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw, Copy, Check } from "lucide-react"
 import { paymentAPI } from "../services/api"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
@@ -57,6 +57,13 @@ const PaymentOrders = () => {
   const [movieInput, setMovieInput] = useState("")
 
   const totalPages = Math.max(1, Math.ceil(total / 50))
+
+  const [copiedId, setCopiedId] = useState(null)
+  const copyId = (val) => {
+    navigator.clipboard.writeText(val)
+    setCopiedId(val)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   const fetchOrders = useCallback((filters) => {
     setLoading(true)
@@ -363,15 +370,27 @@ const PaymentOrders = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {o.order_id?.substring(0, 18)}
-                        </code>
+                        <div className="flex items-center gap-1.5">
+                          <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {o.order_id?.substring(0, 18)}
+                          </code>
+                          {o.order_id && (
+                            <button onClick={() => copyId(o.order_id)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copy Order ID">
+                              {copiedId === o.order_id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {o.payment_id ? (
-                          <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {o.payment_id.substring(0, 12)}
-                          </code>
+                          <div className="flex items-center gap-1.5">
+                            <code className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {o.payment_id.substring(0, 12)}
+                            </code>
+                            <button onClick={() => copyId(o.payment_id)} className="text-muted-foreground hover:text-foreground transition-colors" title="Copy Payment ID">
+                              {copiedId === o.payment_id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
                         )}

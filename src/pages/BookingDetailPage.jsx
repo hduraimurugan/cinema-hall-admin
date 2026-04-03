@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import {
   ArrowLeft, User, CreditCard, Ticket, Monitor,
   CalendarDays, Clock, Tag, IndianRupee, Receipt, Percent,
-  RefreshCw, CheckCircle2, AlertCircle, ExternalLink
+  RefreshCw, CheckCircle2, AlertCircle, ExternalLink, Copy, Check
 } from "lucide-react"
 import { bookingAPI, refundAPI } from "../services/api"
 import { toast } from "sonner"
@@ -88,6 +88,14 @@ const BookingDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [settling, setSettling] = useState(false)
+  const [copiedField, setCopiedField] = useState(null)
+
+  const copyValue = (field, value, label = "Copied!") => {
+    navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    toast.success(label)
+    setTimeout(() => setCopiedField(null), 2000)
+  }
 
   const loadBooking = () => {
     bookingAPI.getBookingById(id)
@@ -185,10 +193,17 @@ const BookingDetailPage = () => {
               {sc?.label || booking.booking_status}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Booking ID:{" "}
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-sm text-muted-foreground">Booking ID:</span>
             <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{booking.id}</code>
-          </p>
+            <button
+              onClick={() => copyValue("bookingId", booking.id, "Booking ID copied!")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              title="Copy Booking ID"
+            >
+              {copiedField === "bookingId" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -280,9 +295,20 @@ const BookingDetailPage = () => {
               </div>
               <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40">
                 <span className="text-sm text-muted-foreground">Payment ID</span>
-                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
-                  {booking.payment_id || "—"}
-                </code>
+                <div className="flex items-center gap-1.5">
+                  <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
+                    {booking.payment_id || "—"}
+                  </code>
+                  {booking.payment_id && (
+                    <button
+                      onClick={() => copyValue("paymentId", booking.payment_id, "Payment ID copied!")}
+                      className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                      title="Copy Payment ID"
+                    >
+                      {copiedField === "paymentId" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex items-start justify-between gap-4 py-2.5">
                 <span className="text-sm text-muted-foreground">Booked at</span>
@@ -387,9 +413,18 @@ const BookingDetailPage = () => {
                     {booking.razorpay_refund_id && (
                       <div className="flex items-start justify-between gap-4 py-2.5 border-b border-border/40">
                         <span className="text-sm text-muted-foreground">Refund ID</span>
-                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
-                          {booking.razorpay_refund_id}
-                        </code>
+                        <div className="flex items-center gap-1.5">
+                          <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono break-all text-right max-w-[60%]">
+                            {booking.razorpay_refund_id}
+                          </code>
+                          <button
+                            onClick={() => copyValue("refundId", booking.razorpay_refund_id, "Refund ID copied!")}
+                            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                            title="Copy Refund ID"
+                          >
+                            {copiedField === "refundId" ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     )}
                     {booking.refund_initiated_at && (
