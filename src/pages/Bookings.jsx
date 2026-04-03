@@ -51,7 +51,8 @@ const Bookings = () => {
   const [stats, setStats] = useState(null)
   const [statsLoading, setStatsLoading] = useState(true)
 
-  const [date, setDate] = useState("")
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState("all")
   const [screenId, setScreenId] = useState("all")
@@ -80,8 +81,8 @@ const Bookings = () => {
   }, [])
 
   useEffect(() => {
-    fetchBookings({ date, search, status: status === "all" ? "" : status, screen_id: screenId === "all" ? "" : screenId, page })
-  }, [date, search, status, screenId, page, fetchBookings])
+    fetchBookings({ from_date: fromDate, to_date: toDate, search, status: status === "all" ? "" : status, screen_id: screenId === "all" ? "" : screenId, page })
+  }, [fromDate, toDate, search, status, screenId, page, fetchBookings])
 
   const debouncedSearch = useCallback(
     debounce((val) => { setSearch(val); setPage(1) }, 400),
@@ -89,17 +90,18 @@ const Bookings = () => {
   )
 
   const handleSearchChange = (e) => { setSearchInput(e.target.value); debouncedSearch(e.target.value) }
-  const handleDateChange = (d) => { setDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+  const handleFromDateChange = (d) => { setFromDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+  const handleToDateChange = (d) => { setToDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
   const handleStatusChange = (val) => { setStatus(val); setPage(1) }
   const handleScreenChange = (val) => { setScreenId(val); setPage(1) }
 
   const handleClear = () => {
-    setDate(""); setSearch(""); setSearchInput("")
+    setFromDate(""); setToDate(""); setSearch(""); setSearchInput("")
     setStatus("all"); setScreenId("all"); setPage(1)
   }
 
-  const hasFilters = date || search || status !== "all" || screenId !== "all"
-  const activeFilterCount = [date, search, status !== "all" ? status : "", screenId !== "all" ? screenId : ""].filter(Boolean).length
+  const hasFilters = fromDate || toDate || search || status !== "all" || screenId !== "all"
+  const activeFilterCount = [fromDate, toDate, search, status !== "all" ? status : "", screenId !== "all" ? screenId : ""].filter(Boolean).length
 
   return (
     <div className="p-6 space-y-6">
@@ -124,7 +126,7 @@ const Bookings = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchBookings({ date, search, status: status === "all" ? "" : status, screen_id: screenId === "all" ? "" : screenId, page })}
+            onClick={() => fetchBookings({ from_date: fromDate, to_date: toDate, search, status: status === "all" ? "" : status, screen_id: screenId === "all" ? "" : screenId, page })}
             disabled={loading}
             className="h-8 gap-1.5"
           >
@@ -220,10 +222,10 @@ const Bookings = () => {
           </div>
         </CardHeader>
         <CardContent className="px-5 pb-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" /> Show Date
+                <CalendarDays className="w-3 h-3" /> From Date
               </label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -232,18 +234,47 @@ const Bookings = () => {
                     variant="outline"
                     className={cn(
                       "h-9 w-full justify-start text-left text-sm font-normal",
-                      !date && "text-muted-foreground"
+                      !fromDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {date ? dayjs(date).format("MMM D, YYYY") : "Pick a date"}
+                    {fromDate ? dayjs(fromDate).format("MMM D, YYYY") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={date ? dayjs(date).toDate() : undefined}
-                    onSelect={handleDateChange}
+                    selected={fromDate ? dayjs(fromDate).toDate() : undefined}
+                    onSelect={handleFromDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" /> To Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-9 w-full justify-start text-left text-sm font-normal",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? dayjs(toDate).format("MMM D, YYYY") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={toDate ? dayjs(toDate).toDate() : undefined}
+                    onSelect={handleToDateChange}
                     initialFocus
                   />
                 </PopoverContent>

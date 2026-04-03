@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronLeft, ChevronRight, RefreshCw, RotateCcw, IndianRupee, CheckCircle2, AlertCircle, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, RefreshCw, IndianRupee, CheckCircle2, AlertCircle, Clock, CalendarDays, CalendarIcon, SlidersHorizontal, X } from "lucide-react"
 import { refundAPI } from "../services/api"
 import { toast } from "sonner"
 import dayjs from "dayjs"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 
 const refundStatusConfig = {
   initiated: {
@@ -52,6 +55,8 @@ const RefundsPage = () => {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState("all")
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
   const [loading, setLoading] = useState(true)
   const [settling, setSettling] = useState(null) // refund_id being settled
 
@@ -69,20 +74,24 @@ const RefundsPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchRefunds({ status, page })
-  }, [status, page, fetchRefunds])
+    fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })
+  }, [status, fromDate, toDate, page, fetchRefunds])
 
-  const handleStatusChange = (val) => {
-    setStatus(val)
-    setPage(1)
-  }
+  const handleStatusChange = (val) => { setStatus(val); setPage(1) }
+  const handleFromDateChange = (d) => { setFromDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+  const handleToDateChange = (d) => { setToDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+
+  const hasFilters = status !== "all" || fromDate || toDate
+  const activeFilterCount = [fromDate, toDate, status !== "all" ? status : ""].filter(Boolean).length
+
+  const handleClear = () => { setStatus("all"); setFromDate(""); setToDate(""); setPage(1) }
 
   const handleSettle = async (refundId) => {
     setSettling(refundId)
     try {
       await refundAPI.settleRefund(refundId)
       toast.success("Refund marked as settled")
-      fetchRefunds({ status, page })
+      fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })
     } catch (err) {
       toast.error(err.message || "Failed to settle refund")
     } finally {
@@ -101,7 +110,7 @@ const RefundsPage = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => fetchRefunds({ status, page })}
+          onClick={() => fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })}
           className="gap-1.5"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -130,23 +139,85 @@ const RefundsPage = () => {
 
       {/* Filters */}
       <Card className="border-border/60">
-        <CardContent className="px-5 py-3 flex items-center gap-3">
-          <Select value={status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-44 h-9">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="initiated">Initiated</SelectItem>
-              <SelectItem value="settled">Settled</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-            </SelectContent>
-          </Select>
-          {status !== "all" && (
-            <Button variant="ghost" size="sm" onClick={() => handleStatusChange("all")} className="h-9 gap-1.5 text-muted-foreground">
-              <RotateCcw className="w-3.5 h-3.5" /> Clear
-            </Button>
-          )}
+        <CardHeader className="pb-3 pt-4 px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={handleClear} className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                <X className="w-3 h-3" /> Clear all
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="px-5 pb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" /> From Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left text-sm font-normal", !fromDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {fromDate ? dayjs(fromDate).format("MMM D, YYYY") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={fromDate ? dayjs(fromDate).toDate() : undefined} onSelect={handleFromDateChange} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" /> To Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left text-sm font-normal", !toDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? dayjs(toDate).format("MMM D, YYYY") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={toDate ? dayjs(toDate).toDate() : undefined} onSelect={handleToDateChange} initialFocus />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-muted-foreground/40 inline-block" /> Status
+              </label>
+              <Select value={status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="initiated">Initiated</SelectItem>
+                  <SelectItem value="settled">Settled</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

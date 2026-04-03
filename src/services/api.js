@@ -264,9 +264,10 @@ export const moviesAPI = {
 }
 
 export const bookingAPI = {
-  getCinemaHallBookings: async ({ date, search, status, screen_id, page = 1 } = {}) => {
+  getCinemaHallBookings: async ({ from_date, to_date, search, status, screen_id, page = 1 } = {}) => {
     const params = new URLSearchParams();
-    if (date) params.append("date", date);
+    if (from_date) params.append("from_date", from_date);
+    if (to_date) params.append("to_date", to_date);
     if (search) params.append("search", search);
     if (status) params.append("status", status);
     if (screen_id) params.append("screen_id", screen_id);
@@ -711,9 +712,10 @@ export const dashboardAPI = {
 
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
-  getOrders: async ({ date, status, customer, movie, page = 1 } = {}) => {
+  getOrders: async ({ from_date, to_date, status, customer, movie, page = 1 } = {}) => {
     const params = new URLSearchParams()
-    if (date) params.set("date", date)
+    if (from_date) params.set("from_date", from_date)
+    if (to_date) params.set("to_date", to_date)
     if (status && status !== "all") params.set("status", status)
     if (customer) params.set("customer", customer)
     if (movie) params.set("movie", movie)
@@ -782,9 +784,11 @@ export const tmdbAPI = {
 };
 
 export const refundAPI = {
-  getRefunds: async ({ status, page } = {}) => {
+  getRefunds: async ({ status, from_date, to_date, page } = {}) => {
     const params = new URLSearchParams()
     if (status && status !== "all") params.set("status", status)
+    if (from_date) params.set("from_date", from_date)
+    if (to_date) params.set("to_date", to_date)
     if (page) params.set("page", page)
     const response = await fetch(`${API_BASE_URL}/api/refunds?${params}`, { credentials: "include" })
     if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to fetch refunds") }

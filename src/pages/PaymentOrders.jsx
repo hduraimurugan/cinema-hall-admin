@@ -48,7 +48,8 @@ const PaymentOrders = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [date, setDate] = useState("")
+  const [fromDate, setFromDate] = useState("")
+  const [toDate, setToDate] = useState("")
   const [status, setStatus] = useState("all")
   const [customer, setCustomer] = useState("")
   const [customerInput, setCustomerInput] = useState("")
@@ -70,8 +71,8 @@ const PaymentOrders = () => {
   }, [])
 
   useEffect(() => {
-    fetchOrders({ date, status: status === "all" ? "" : status, customer, movie, page })
-  }, [date, status, customer, movie, page, fetchOrders])
+    fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page })
+  }, [fromDate, toDate, status, customer, movie, page, fetchOrders])
 
   const debouncedCustomer = useCallback(
     debounce((val) => { setCustomer(val); setPage(1) }, 400), []
@@ -80,20 +81,21 @@ const PaymentOrders = () => {
     debounce((val) => { setMovie(val); setPage(1) }, 400), []
   )
 
-  const handleCustomerChange = (e) => { setCustomerInput(e.target.value); debouncedCustomer(e.target.value) }
-  const handleMovieChange    = (e) => { setMovieInput(e.target.value);    debouncedMovie(e.target.value) }
-  const handleDateChange     = (d) => { setDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
-  const handleStatusChange   = (val) => { setStatus(val); setPage(1) }
+  const handleCustomerChange  = (e) => { setCustomerInput(e.target.value); debouncedCustomer(e.target.value) }
+  const handleMovieChange     = (e) => { setMovieInput(e.target.value);    debouncedMovie(e.target.value) }
+  const handleFromDateChange  = (d) => { setFromDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+  const handleToDateChange    = (d) => { setToDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
+  const handleStatusChange    = (val) => { setStatus(val); setPage(1) }
 
   const handleClear = () => {
-    setDate(""); setStatus("all")
+    setFromDate(""); setToDate(""); setStatus("all")
     setCustomer(""); setCustomerInput("")
     setMovie(""); setMovieInput("")
     setPage(1)
   }
 
-  const hasFilters = date || customer || movie || status !== "all"
-  const activeFilterCount = [date, customer, movie, status !== "all" ? status : ""].filter(Boolean).length
+  const hasFilters = fromDate || toDate || customer || movie || status !== "all"
+  const activeFilterCount = [fromDate, toDate, customer, movie, status !== "all" ? status : ""].filter(Boolean).length
 
   return (
     <div className="p-6 space-y-6">
@@ -118,7 +120,7 @@ const PaymentOrders = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchOrders({ date, status: status === "all" ? "" : status, customer, movie, page })}
+            onClick={() => fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page })}
             disabled={loading}
             className="h-8 gap-1.5"
           >
@@ -149,11 +151,11 @@ const PaymentOrders = () => {
           </div>
         </CardHeader>
         <CardContent className="px-5 pb-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Date */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {/* From Date */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <CalendarDays className="w-3 h-3" /> Order Date
+                <CalendarDays className="w-3 h-3" /> From Date
               </label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -162,18 +164,48 @@ const PaymentOrders = () => {
                     variant="outline"
                     className={cn(
                       "h-9 w-full justify-start text-left text-sm font-normal",
-                      !date && "text-muted-foreground"
+                      !fromDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {date ? dayjs(date).format("MMM D, YYYY") : "Pick a date"}
+                    {fromDate ? dayjs(fromDate).format("MMM D, YYYY") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={date ? dayjs(date).toDate() : undefined}
-                    onSelect={handleDateChange}
+                    selected={fromDate ? dayjs(fromDate).toDate() : undefined}
+                    onSelect={handleFromDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* To Date */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <CalendarDays className="w-3 h-3" /> To Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-9 w-full justify-start text-left text-sm font-normal",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? dayjs(toDate).format("MMM D, YYYY") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={toDate ? dayjs(toDate).toDate() : undefined}
+                    onSelect={handleToDateChange}
                     initialFocus
                   />
                 </PopoverContent>
