@@ -222,15 +222,55 @@ const OffersManagement = () => {
                 </CardHeader>
                 <CardContent className="px-0 pb-0">
                     {loading ? (
-                        <div className="space-y-2 px-5 pb-4">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-12 w-full rounded-md" />
-                            ))}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-border bg-muted/40">
+                                        <th className="pl-5 py-3"><Skeleton className="h-3 w-10 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-12 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-20 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-12 rounded" /></th>
+                                        <th className="pr-5 py-3"><Skeleton className="h-3 w-14 rounded ml-auto" /></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {Array.from({ length: 6 }).map((_, i) => (
+                                        <tr key={i}>
+                                            <td className="pl-5 py-3.5"><Skeleton className="h-6 w-16 rounded" /></td>
+                                            <td className="py-3.5 pr-4">
+                                                <Skeleton className="h-4 w-32 rounded mb-1.5" />
+                                                <Skeleton className="h-3 w-20 rounded" />
+                                            </td>
+                                            <td className="py-3.5 pr-4">
+                                                <Skeleton className="h-4 w-24 rounded mb-1.5" />
+                                                <Skeleton className="h-3 w-14 rounded" />
+                                            </td>
+                                            <td className="py-3.5 pr-4"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                                            <td className="py-3.5 pr-4"><Skeleton className="h-4 w-24 rounded" /></td>
+                                            <td className="py-3.5 pr-4"><Skeleton className="h-4 w-20 rounded" /></td>
+                                            <td className="py-3.5 pr-4"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                                            <td className="pr-5 py-3.5">
+                                                <div className="flex justify-end gap-1.5">
+                                                    <Skeleton className="h-7 w-7 rounded" />
+                                                    <Skeleton className="h-7 w-7 rounded" />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     ) : error ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
+                        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
                             <AlertCircle className="w-8 h-8 text-destructive" />
                             <p className="text-sm">{error}</p>
+                            <Button variant="outline" size="sm" onClick={() => fetchOffers(currentFilters)} className="gap-1.5">
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Try Again
+                            </Button>
                         </div>
                     ) : offers.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
