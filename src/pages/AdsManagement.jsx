@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { adsAPI } from '../services/api';
@@ -433,13 +434,15 @@ export default function AdsManagement() {
         </TabsContent>
       </Tabs>
 
-      {/* Create / Edit Modal */}
-      <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>{editingAd ? 'Edit Ad' : 'New Ad'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleFormSubmit} className="space-y-4 mt-2">
+      {/* Create / Edit Sheet */}
+      <Sheet open={formOpen} onOpenChange={setFormOpen}>
+        <SheetContent side="right" className="sm:max-w-xl overflow-hidden flex flex-col p-0" overlayClassName="backdrop-blur-sm">
+          <SheetHeader className="px-6 py-4 border-b shrink-0">
+            <SheetTitle>{editingAd ? 'Edit Ad' : 'New Ad'}</SheetTitle>
+            <SheetDescription>{editingAd ? 'Update the ad details below.' : 'Fill in the details to create a new ad.'}</SheetDescription>
+          </SheetHeader>
+          <div className="overflow-y-auto flex-1 px-6 py-4">
+            <form id="ad-form" onSubmit={handleFormSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">Title *</label>
               <input
@@ -537,17 +540,18 @@ export default function AdsManagement() {
               </label>
             </div>
 
-            <DialogFooter className="gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={formLoading}>
-                {formLoading ? 'Saving...' : editingAd ? 'Save Changes' : 'Create Ad'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </div>
+          <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
+            <Button type="button" variant="outline" className="min-w-[100px]" onClick={() => setFormOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="ad-form" className="min-w-[100px]" disabled={formLoading}>
+              {formLoading ? 'Saving...' : editingAd ? 'Save Changes' : 'Create Ad'}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
