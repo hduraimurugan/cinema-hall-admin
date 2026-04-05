@@ -21,6 +21,8 @@ export const MovieForm = ({
     editingMovie,
     onSyncFromTMDB,
     syncing = false,
+    hideActions = false,
+    formId,
 }) => {
     const [datePickerOpen, setDatePickerOpen] = useState(false)
     const [newCast, setNewCast] = useState({ name: "", character: "", profile_path: "" })
@@ -28,7 +30,7 @@ export const MovieForm = ({
 
     return (
         <>
-            <form onSubmit={onSubmit} className="space-y-6">
+            <form id={formId} onSubmit={onSubmit} className="space-y-6">
                 {/* Sync from TMDB banner — Edit mode only, when tmdb_id exists */}
                 {editingMovie && formData.tmdb_id && onSyncFromTMDB && (
                     <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
@@ -397,12 +399,16 @@ export const MovieForm = ({
                 </div>
 
                 <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" className="bg-primary hover:bg-primary/90">
-                        {editingMovie ? "Update Movie" : "Add Movie"}
-                    </Button>
+                    {!hideActions && (
+                        <>
+                            <Button type="button" variant="outline" onClick={onCancel}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="bg-primary hover:bg-primary/90">
+                                {editingMovie ? "Update Movie" : "Add Movie"}
+                            </Button>
+                        </>
+                    )}
                 </div>
             </form>
         </>

@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import {
   ChevronDown, ChevronUp, Plus, Edit, Trash2, Clock, Star, ThumbsUp,
   MoreVertical, Globe, Clapperboard, Swords, Heart, Laugh, Ghost,
@@ -47,20 +46,27 @@ const genreIcons = {
   Western: Clapperboard,
 }
 
-const EditMovieDialog = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie, onSyncFromTMDB, syncing }) => (
-  <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>Edit Movie</DialogTitle>
-        <DialogDescription>Update the movie information below and save your changes.</DialogDescription>
-      </DialogHeader>
-      <MovieForm
-        formData={formData} setFormData={setFormData} onSubmit={onSubmit}
-        onCancel={onCancel} uploading={uploading} handleImageUpload={handleImageUpload}
-        editingMovie={editingMovie} onSyncFromTMDB={onSyncFromTMDB} syncing={syncing}
-      />
-    </DialogContent>
-  </Dialog>
+const EditMovieSheet = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie, onSyncFromTMDB, syncing }) => (
+  <Sheet open={open} onOpenChange={onOpenChange}>
+    <SheetContent side="right" className="sm:max-w-2xl overflow-hidden flex flex-col p-0" overlayClassName="backdrop-blur-sm">
+      <SheetHeader className="px-6 py-4 border-b shrink-0">
+        <SheetTitle>Edit Movie</SheetTitle>
+        <SheetDescription>Update the movie information below and save your changes.</SheetDescription>
+      </SheetHeader>
+      <div className="overflow-y-auto flex-1 px-6 py-4">
+        <MovieForm
+          formData={formData} setFormData={setFormData} onSubmit={onSubmit}
+          onCancel={onCancel} uploading={uploading} handleImageUpload={handleImageUpload}
+          editingMovie={editingMovie} onSyncFromTMDB={onSyncFromTMDB} syncing={syncing}
+          hideActions formId="edit-movie-form"
+        />
+      </div>
+      <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
+        <Button type="button" variant="outline" className="min-w-[100px]" onClick={onCancel}>Cancel</Button>
+        <Button type="submit" form="edit-movie-form" className="min-w-[100px] bg-primary hover:bg-primary/90">Update Movie</Button>
+      </div>
+    </SheetContent>
+  </Sheet>
 )
 
 // ── Filter Panel (shared between sidebar and sheet) ──────────────────────────
@@ -758,21 +764,28 @@ const MovieManagement = () => {
       </TabsContent>
 
       {/* ── Shared Add/Edit Dialogs ── */}
-      <Dialog open={isAddModalOpen} onOpenChange={(open) => { if (!open) { setIsAddModalOpen(false); resetForm() } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Movie</DialogTitle>
-            <DialogDescription>Review and confirm the movie details below before saving.</DialogDescription>
-          </DialogHeader>
-          <MovieForm
-            formData={formData} setFormData={setFormData} onSubmit={handleSubmit}
-            onCancel={() => { setIsAddModalOpen(false); resetForm() }}
-            uploading={uploading} handleImageUpload={handleImageUpload} editingMovie={null}
-          />
-        </DialogContent>
-      </Dialog>
+      <Sheet open={isAddModalOpen} onOpenChange={(open) => { if (!open) { setIsAddModalOpen(false); resetForm() } }}>
+        <SheetContent side="right" className="sm:max-w-2xl overflow-hidden flex flex-col p-0" overlayClassName="backdrop-blur-sm">
+          <SheetHeader className="px-6 py-4 border-b shrink-0">
+            <SheetTitle>Add New Movie</SheetTitle>
+            <SheetDescription>Review and confirm the movie details below before saving.</SheetDescription>
+          </SheetHeader>
+          <div className="overflow-y-auto flex-1 px-6 py-4">
+            <MovieForm
+              formData={formData} setFormData={setFormData} onSubmit={handleSubmit}
+              onCancel={() => { setIsAddModalOpen(false); resetForm() }}
+              uploading={uploading} handleImageUpload={handleImageUpload} editingMovie={null}
+              hideActions formId="add-movie-form"
+            />
+          </div>
+          <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
+            <Button type="button" variant="outline" className="min-w-[100px]" onClick={() => { setIsAddModalOpen(false); resetForm() }}>Cancel</Button>
+            <Button type="submit" form="add-movie-form" className="min-w-[100px] bg-primary hover:bg-primary/90">Add Movie</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
-      <EditMovieDialog
+      <EditMovieSheet
         open={isEditModalOpen}
         onOpenChange={(open) => { if (!open) handleEditModalClose() }}
         formData={formData} setFormData={setFormData}
