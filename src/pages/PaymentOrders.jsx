@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, ChevronLeft, ChevronRight, ChevronDown, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw, Copy, Check } from "lucide-react"
+import { Search, ChevronDown, CreditCard, SlidersHorizontal, X, CalendarDays, CalendarIcon, User, RefreshCw, Copy, Check } from "lucide-react"
 import { paymentAPI } from "../services/api"
+import { Pagination } from "@/components/ui/Pagination"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
@@ -45,6 +46,7 @@ const PaymentOrders = () => {
   const [orders, setOrders] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -56,7 +58,7 @@ const PaymentOrders = () => {
   const [movie, setMovie] = useState("")
   const [movieInput, setMovieInput] = useState("")
 
-  const totalPages = Math.max(1, Math.ceil(total / 50))
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
   const [copiedId, setCopiedId] = useState(null)
   const copyId = (val) => {
@@ -78,8 +80,8 @@ const PaymentOrders = () => {
   }, [])
 
   useEffect(() => {
-    fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page })
-  }, [fromDate, toDate, status, customer, movie, page, fetchOrders])
+    fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page, limit })
+  }, [fromDate, toDate, status, customer, movie, page, limit, fetchOrders])
 
   const debouncedCustomer = useCallback(
     debounce((val) => { setCustomer(val); setPage(1) }, 400), []
@@ -128,7 +130,7 @@ const PaymentOrders = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page })}
+            onClick={() => fetchOrders({ from_date: fromDate, to_date: toDate, status: status === "all" ? "" : status, customer, movie, page, limit })}
             disabled={loading}
             className="h-8 gap-1.5"
           >
@@ -464,32 +466,8 @@ const PaymentOrders = () => {
           )}
 
           {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{totalPages}</span>
-              </p>
-              <div className="flex gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => p - 1)}
-                  disabled={page === 1}
-                  className="h-8 px-3 gap-1"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page === totalPages}
-                  className="h-8 px-3 gap-1"
-                >
-                  Next <ChevronRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
+          {!loading && total > 0 && (
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={(v) => { setLimit(v); setPage(1) }} />
           )}
         </CardContent>
       </Card>

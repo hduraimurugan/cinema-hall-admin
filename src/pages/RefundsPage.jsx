@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronLeft, ChevronRight, ChevronDown, RefreshCw, IndianRupee, CheckCircle2, AlertCircle, Clock, CalendarDays, CalendarIcon, SlidersHorizontal, X } from "lucide-react"
+import { ChevronDown, RefreshCw, IndianRupee, CheckCircle2, AlertCircle, Clock, CalendarDays, CalendarIcon, SlidersHorizontal, X } from "lucide-react"
 import { refundAPI } from "../services/api"
+import { Pagination } from "@/components/ui/Pagination"
 import { toast } from "sonner"
 import dayjs from "dayjs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -54,13 +55,14 @@ const RefundsPage = () => {
   const [refunds, setRefunds] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
   const [status, setStatus] = useState("all")
   const [fromDate, setFromDate] = useState("")
   const [toDate, setToDate] = useState("")
   const [loading, setLoading] = useState(true)
   const [settling, setSettling] = useState(null) // refund_id being settled
 
-  const totalPages = Math.max(1, Math.ceil(total / 50))
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
   const fetchRefunds = useCallback((filters) => {
     setLoading(true)
@@ -74,8 +76,8 @@ const RefundsPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })
-  }, [status, fromDate, toDate, page, fetchRefunds])
+    fetchRefunds({ status, from_date: fromDate, to_date: toDate, page, limit })
+  }, [status, fromDate, toDate, page, limit, fetchRefunds])
 
   const handleStatusChange = (val) => { setStatus(val); setPage(1) }
   const handleFromDateChange = (d) => { setFromDate(d ? dayjs(d).format("YYYY-MM-DD") : ""); setPage(1) }
@@ -92,7 +94,7 @@ const RefundsPage = () => {
     try {
       await refundAPI.settleRefund(refundId)
       toast.success("Refund marked as settled")
-      fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })
+      fetchRefunds({ status, from_date: fromDate, to_date: toDate, page, limit })
     } catch (err) {
       toast.error(err.message || "Failed to settle refund")
     } finally {
@@ -123,7 +125,7 @@ const RefundsPage = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchRefunds({ status, from_date: fromDate, to_date: toDate, page })}
+            onClick={() => fetchRefunds({ status, from_date: fromDate, to_date: toDate, page, limit })}
             className="gap-1.5"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -395,17 +397,9 @@ const RefundsPage = () => {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-border/40">
-              <p className="text-xs text-muted-foreground">Page {page} of {totalPages}</p>
-              <div className="flex gap-1">
-                <Button variant="outline" size="icon" className="h-7 w-7" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-7 w-7" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Button>
-              </div>
+          {!loading && total > 0 && (
+            <div className="px-5 pb-3">
+              <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={(v) => { setLimit(v); setPage(1) }} />
             </div>
           )}
         </CardContent>

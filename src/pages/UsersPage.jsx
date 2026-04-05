@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, Users, RefreshCw, CheckCircle2, X } from "lucide-react"
 import { customersAPI } from "../services/api"
+import { Pagination } from "@/components/ui/Pagination"
 
 function debounce(fn, delay) {
   let t
@@ -33,13 +34,14 @@ const UsersPage = () => {
   const [customers, setCustomers] = useState([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [stats, setStats] = useState(null)
   const [search, setSearch] = useState("")
   const [searchInput, setSearchInput] = useState("")
 
-  const totalPages = Math.max(1, Math.ceil(total / 50))
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
   const fetchCustomers = useCallback((filters) => {
     setLoading(true)
@@ -55,8 +57,8 @@ const UsersPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchCustomers({ search, page })
-  }, [search, page, fetchCustomers])
+    fetchCustomers({ search, page, limit })
+  }, [search, page, limit, fetchCustomers])
 
   const debouncedSearch = useCallback(
     debounce((val) => { setSearch(val); setPage(1) }, 400),
@@ -95,7 +97,7 @@ const UsersPage = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchCustomers({ search, page })}
+            onClick={() => fetchCustomers({ search, page, limit })}
             disabled={loading}
             className="h-8 gap-1.5"
           >
@@ -181,11 +183,38 @@ const UsersPage = () => {
               <p className="text-sm">{error}</p>
             </div>
           ) : loading ? (
-            <div className="space-y-2.5 py-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-14 w-full rounded-lg" />
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent border-border/50">
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Joined</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bookings</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={i} className="border-border/40">
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+                        <div className="space-y-1.5">
+                          <Skeleton className="h-3.5 w-28 rounded" />
+                          <Skeleton className="h-3 w-36 rounded" />
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-24 rounded" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-32 rounded" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-3.5 w-20 rounded" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-8 rounded-md" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : customers.length === 0 ? (
             <div className="flex flex-col items-center py-20 text-muted-foreground gap-3">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
@@ -263,20 +292,8 @@ const UsersPage = () => {
           )}
 
           {/* Pagination */}
-          {!loading && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Page <span className="font-medium text-foreground">{page}</span> of <span className="font-medium text-foreground">{totalPages}</span>
-              </p>
-              <div className="flex gap-1.5">
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1} className="h-8 px-3 gap-1">
-                  Prev
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setPage(p => p + 1)} disabled={page === totalPages} className="h-8 px-3 gap-1">
-                  Next
-                </Button>
-              </div>
-            </div>
+          {!loading && total > 0 && (
+            <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={(v) => { setLimit(v); setPage(1) }} />
           )}
         </CardContent>
       </Card>

@@ -264,7 +264,7 @@ export const moviesAPI = {
 }
 
 export const bookingAPI = {
-  getCinemaHallBookings: async ({ from_date, to_date, search, status, screen_id, page = 1 } = {}) => {
+  getCinemaHallBookings: async ({ from_date, to_date, search, status, screen_id, page = 1, limit = 10 } = {}) => {
     const params = new URLSearchParams();
     if (from_date) params.append("from_date", from_date);
     if (to_date) params.append("to_date", to_date);
@@ -272,6 +272,7 @@ export const bookingAPI = {
     if (status) params.append("status", status);
     if (screen_id) params.append("screen_id", screen_id);
     params.append("page", page);
+    params.append("limit", limit);
     const response = await fetch(`${API_BASE_URL}/api/booking/admin/all?${params}`, {
       credentials: "include",
     });
@@ -675,10 +676,11 @@ export const offersAPI = {
 }
 
 export const customersAPI = {
-  getAll: async ({ search, page = 1 } = {}) => {
+  getAll: async ({ search, page = 1, limit = 10 } = {}) => {
     const params = new URLSearchParams()
     if (search) params.set('search', search)
     params.set('page', page)
+    params.set('limit', limit)
     const response = await fetch(`${API_BASE_URL}/api/customers?${params}`, {
       credentials: 'include',
     })
@@ -688,10 +690,11 @@ export const customersAPI = {
 }
 
 export const adminsAPI = {
-  getAll: async ({ search, page = 1 } = {}) => {
+  getAll: async ({ search, page = 1, limit = 10 } = {}) => {
     const params = new URLSearchParams()
     if (search) params.set('search', search)
     params.set('page', page)
+    params.set('limit', limit)
     const response = await fetch(`${API_BASE_URL}/api/auth/admins?${params}`, {
       credentials: 'include',
     })
@@ -712,7 +715,7 @@ export const dashboardAPI = {
 
 export const paymentAPI = {
   // ✅ Get all payment orders for the cinema hall (admin)
-  getOrders: async ({ from_date, to_date, status, customer, movie, page = 1 } = {}) => {
+  getOrders: async ({ from_date, to_date, status, customer, movie, page = 1, limit = 10 } = {}) => {
     const params = new URLSearchParams()
     if (from_date) params.set("from_date", from_date)
     if (to_date) params.set("to_date", to_date)
@@ -720,6 +723,7 @@ export const paymentAPI = {
     if (customer) params.set("customer", customer)
     if (movie) params.set("movie", movie)
     params.set("page", page)
+    params.set("limit", limit)
     const response = await fetch(`${API_BASE_URL}/api/payment/admin/orders?${params}`, {
       credentials: "include",
     })
@@ -784,12 +788,13 @@ export const tmdbAPI = {
 };
 
 export const refundAPI = {
-  getRefunds: async ({ status, from_date, to_date, page } = {}) => {
+  getRefunds: async ({ status, from_date, to_date, page = 1, limit = 10 } = {}) => {
     const params = new URLSearchParams()
     if (status && status !== "all") params.set("status", status)
     if (from_date) params.set("from_date", from_date)
     if (to_date) params.set("to_date", to_date)
-    if (page) params.set("page", page)
+    params.set("page", page)
+    params.set("limit", limit)
     const response = await fetch(`${API_BASE_URL}/api/refunds?${params}`, { credentials: "include" })
     if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to fetch refunds") }
     return response.json()
