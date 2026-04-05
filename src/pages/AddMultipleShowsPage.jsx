@@ -172,7 +172,7 @@ const AddMultipleShowsPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6">
+    <div className="px-6 py-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate("/shows")} type="button">
@@ -185,6 +185,8 @@ const AddMultipleShowsPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+
+        <div className="grid grid-cols-2 gap-5 items-start">
 
         {/* Shared Details Card */}
         <Card>
@@ -437,17 +439,19 @@ const AddMultipleShowsPage = () => {
           </CardContent>
         </Card>
 
+        </div>
+
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex justify-end gap-3">
           <Button
             type="button"
             variant="outline"
-            className="flex-1 bg-transparent"
+            className="min-w-[120px] bg-transparent"
             onClick={() => navigate("/shows")}
           >
             Cancel
           </Button>
-          <Button type="submit" className="flex-1" disabled={isSubmitting}>
+          <Button type="submit" className="min-w-[120px]" disabled={isSubmitting}>
             {isSubmitting
               ? "Creating..."
               : `Create ${totalShows > 0 ? totalShows : filledSlots.length} Show${(totalShows > 1 || (totalShows === 0 && filledSlots.length !== 1)) ? "s" : ""}`}

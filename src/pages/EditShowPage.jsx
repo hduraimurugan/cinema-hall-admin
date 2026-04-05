@@ -95,7 +95,7 @@ const EditShowPage = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-6 space-y-5">
+      <div className="px-6 py-6 space-y-5">
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-9 rounded-md" />
           <div className="space-y-1">
@@ -118,7 +118,7 @@ const EditShowPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6">
+    <div className="px-6 py-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate("/shows")} type="button">
@@ -285,16 +285,16 @@ const EditShowPage = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 bg-transparent"
+                className="min-w-[120px] bg-transparent"
                 onClick={() => navigate("/shows")}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+              <Button type="submit" className="min-w-[120px]" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Update Show"}
               </Button>
             </div>
