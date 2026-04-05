@@ -170,15 +170,15 @@ export default function AdsManagement() {
         </Button>
       </div>
 
-      <Tabs defaultValue="ads" className="w-full">
+      <Tabs defaultValue="analytics" className="w-full">
         <TabsList className="mb-6">
-          <TabsTrigger value="ads" className="gap-2">
-            <LayoutGrid className="size-4" />
-            Ads
-          </TabsTrigger>
           <TabsTrigger value="analytics" className="gap-2">
             <TableProperties className="size-4" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="ads" className="gap-2">
+            <LayoutGrid className="size-4" />
+            Ads
           </TabsTrigger>
         </TabsList>
 
