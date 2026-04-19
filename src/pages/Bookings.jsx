@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import dayjs from "dayjs"
+import { ExportButton } from "@/components/ExportButton"
 
 function debounce(fn, delay) {
   let t
@@ -135,6 +136,22 @@ const Bookings = () => {
               {total} booking{total !== 1 ? "s" : ""}
             </div>
           )}
+          <ExportButton
+            filename="bookings"
+            disabled={loading}
+            data={bookings.map(b => ({
+              "Booking ID": b.id || "",
+              "Customer Name": b.customer_name || "",
+              "Customer Email": b.customer_email || "",
+              "Movie": b.movie_title || "",
+              "Show Date": b.show_date || "",
+              "Start Time": b.start_time ? b.start_time.slice(0, 5) : "",
+              "Screen": b.screen_name || "",
+              "Seats": (b.seat_labels || []).join(", "),
+              "Amount": b.total_amount || "",
+              "Status": b.booking_status || "",
+            }))}
+          />
           <Button
             variant="outline"
             size="sm"

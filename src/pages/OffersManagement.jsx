@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import dayjs from "dayjs"
 import { toast } from "sonner"
 import { offersAPI } from "../services/api"
+import { ExportButton } from "@/components/ExportButton"
 
 function debounce(fn, delay) {
     let t
@@ -148,6 +149,20 @@ const OffersManagement = () => {
                         <RefreshCw className="w-3.5 h-3.5" />
                         Refresh
                     </Button>
+                    <ExportButton
+                        filename="offers"
+                        disabled={loading}
+                        data={offers.map(offer => ({
+                            "Code": offer.code || "",
+                            "Title": offer.title || "",
+                            "Discount": formatDiscount(offer),
+                            "Scope": offer.scope || "",
+                            "Cinema Hall": offer.cinema_hall_name || "",
+                            "Eligibility": offer.user_eligibility === "all" ? "All Users" : `Joined after ${dayjs(offer.user_joined_after).format("DD MMM YYYY")}`,
+                            "Valid Until": offer.valid_until ? dayjs(offer.valid_until).format("DD MMM YYYY") : "",
+                            "Status": offer.is_active ? "Active" : "Inactive",
+                        }))}
+                    />
                     <Button size="sm" onClick={() => navigate("/offers/new")} className="gap-1.5">
                         <Plus className="w-4 h-4" />
                         Create Offer

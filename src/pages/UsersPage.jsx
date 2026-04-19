@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Users, RefreshCw, CheckCircle2, X } from "lucide-react"
 import { customersAPI } from "../services/api"
 import { Pagination } from "@/components/ui/Pagination"
+import { ExportButton } from "@/components/ExportButton"
 
 function debounce(fn, delay) {
   let t
@@ -94,6 +95,19 @@ const UsersPage = () => {
               {total} customer{total !== 1 ? "s" : ""}
             </div>
           )}
+          <ExportButton
+            filename="customers"
+            disabled={loading}
+            data={customers.map(c => ({
+              "Name": c.name || "",
+              "Email": c.email || "",
+              "Phone": c.phone || "",
+              "Location": [c.district, c.state].filter(Boolean).join(", "),
+              "Verified": c.is_verified ? "Yes" : "No",
+              "Joined": c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "",
+              "Bookings": c.booking_count || 0,
+            }))}
+          />
           <Button
             variant="outline"
             size="sm"

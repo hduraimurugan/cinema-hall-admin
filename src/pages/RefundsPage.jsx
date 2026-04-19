@@ -13,6 +13,7 @@ import dayjs from "dayjs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import { ExportButton } from "@/components/ExportButton"
 
 const refundStatusConfig = {
   initiated: {
@@ -122,6 +123,24 @@ const RefundsPage = () => {
               {total} refund{total !== 1 ? "s" : ""}
             </div>
           )}
+          <ExportButton
+            filename="refunds"
+            disabled={loading}
+            data={refunds.map(r => ({
+              "Refund ID": r.refund_id || "",
+              "Booking ID": r.booking_id || "",
+              "Customer Name": r.customer_name || "",
+              "Customer Email": r.customer_email || "",
+              "Movie": r.movie_title || "",
+              "Show Date": r.show_date || "",
+              "Start Time": r.start_time ? r.start_time.slice(0, 5) : "",
+              "Seats": (r.seat_labels || []).join(", "),
+              "Amount": r.amount || "",
+              "Status": r.refund_status || "",
+              "Initiated At": r.initiated_at ? dayjs(r.initiated_at).format("DD MMM YYYY, h:mm A") : "",
+              "Settled At": r.settled_at ? dayjs(r.settled_at).format("DD MMM YYYY, h:mm A") : "",
+            }))}
+          />
           <Button
             variant="outline"
             size="sm"

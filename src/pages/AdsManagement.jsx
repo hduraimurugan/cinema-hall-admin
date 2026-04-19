@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Megaphone, Plus, Pencil, Trash2, MousePointerClick, X, ExternalLink, ToggleLeft, ToggleRight, LayoutGrid, TableProperties } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ExportButton } from '@/components/ExportButton';
 import {
   Dialog,
   DialogContent,
@@ -165,10 +166,26 @@ export default function AdsManagement() {
             Manage banner and sidebar advertisements
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="size-4" />
-          New Ad
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportButton
+            filename="ads-performance"
+            disabled={loading}
+            data={ads.map(ad => ({
+              "Title": ad.title || "",
+              "Image URL": ad.image_url || "",
+              "Click-through URL": ad.click_url || "",
+              "Placement": placementLabel(ad.placement),
+              "Status": ad.is_active ? "Active" : "Inactive",
+              "Start Date": ad.start_date ? formatDate(ad.start_date) : "",
+              "End Date": ad.end_date ? formatDate(ad.end_date) : "",
+              "Total Clicks": ad.click_count || 0,
+            }))}
+          />
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="size-4" />
+            New Ad
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="analytics" className="w-full">
@@ -588,7 +605,18 @@ export default function AdsManagement() {
             <div className="py-8 text-center text-muted-foreground text-sm">No clicks recorded yet.</div>
           ) : (
             <div className="overflow-x-auto mt-2">
-              <p className="text-xs text-muted-foreground mb-3">{clicks.length} total click{clicks.length !== 1 ? 's' : ''}</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-muted-foreground">{clicks.length} total click{clicks.length !== 1 ? 's' : ''}</p>
+                <ExportButton
+                  filename={`ad-clicks-${clicksAd?.title || 'ad'}`}
+                  data={clicks.map(click => ({
+                    "Customer": click.customer_name || "",
+                    "Email": click.customer_email || "",
+                    "Phone": click.customer_phone || "",
+                    "Clicked At": click.clicked_at ? formatDateTime(click.clicked_at) : "",
+                  }))}
+                />
+              </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border">

@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import dayjs from "dayjs"
+import { ExportButton } from "@/components/ExportButton"
 
 function debounce(fn, delay) {
   let t
@@ -127,6 +128,22 @@ const PaymentOrders = () => {
               {total} order{total !== 1 ? "s" : ""}
             </div>
           )}
+          <ExportButton
+            filename="payment-orders"
+            disabled={loading}
+            data={orders.map(o => ({
+              "Order ID": o.order_id || "",
+              "Payment ID": o.payment_id || "",
+              "Customer Name": o.customer_name || "",
+              "Customer Email": o.customer_email || "",
+              "Movie": o.movie_title || "",
+              "Show Date": o.show_date || "",
+              "Start Time": o.start_time ? o.start_time.slice(0, 5) : "",
+              "Seats": (o.seat_labels || []).join(", "),
+              "Amount": o.amount || "",
+              "Status": o.status || "",
+            }))}
+          />
           <Button
             variant="outline"
             size="sm"

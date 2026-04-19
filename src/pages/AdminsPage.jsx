@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Building2, RefreshCw, X, MapPin } from "lucide-react"
 import { adminsAPI } from "../services/api"
 import { Pagination } from "@/components/ui/Pagination"
+import { ExportButton } from "@/components/ExportButton"
 
 function debounce(fn, delay) {
   let t
@@ -92,6 +93,18 @@ const AdminsPage = () => {
               {total} admin{total !== 1 ? "s" : ""}
             </div>
           )}
+          <ExportButton
+            filename="hall-admins"
+            disabled={loading}
+            data={admins.map(a => ({
+              "Name": a.name || "",
+              "Email": a.email || "",
+              "Phone": a.phone || "",
+              "Cinema Hall": a.hall_name || "",
+              "Location": [a.location, a.district, a.state].filter(Boolean).join(", "),
+              "Registered": a.created_at ? new Date(a.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "",
+            }))}
+          />
           <Button
             variant="outline"
             size="sm"
