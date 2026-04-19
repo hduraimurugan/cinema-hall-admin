@@ -15,6 +15,7 @@ import {
   Tag,
   Building2,
   RefreshCw,
+  Sparkles,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -29,13 +30,16 @@ const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Screens", url: "/screens", icon: Monitor },
   { title: "Movies", url: "/movies", icon: Film },
-  { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"] },
-  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"] },
   { title: "Showtimes", url: "/shows", icon: Calendar },
   { title: "Bookings", url: "/bookings", icon: Ticket },
   { title: "Refunds", url: "/refunds", icon: RefreshCw },
   { title: "Payment Orders", url: "/payment-orders", icon: CreditCard },
   { title: "Verify Ticket", url: "/verify-ticket", icon: ScanLine },
+]
+
+const promotionItems = [
+  { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"] },
+  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"] },
 ]
 
 const managementItems = [
@@ -60,28 +64,25 @@ export function AppSidebar({ collapsed = false }) {
     const linkContent = (
       <Link
         to={url}
-        className={`group flex items-center overflow-hidden rounded-md text-sm font-medium transition-all duration-200 ${
+        className={`group flex items-center overflow-hidden rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
           collapsed ? "justify-center p-2" : "gap-3 px-3 py-2"
         } ${
           active
-            ? "bg-primary/10 text-primary"
-            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            ? "bg-primary/10 text-primary border-l-2 border-primary"
+            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border-l-2 border-transparent"
         }`}
       >
         <span
-          className={`flex items-center justify-center rounded p-1 transition-colors duration-200 ${
+          className={`flex items-center justify-center rounded-lg p-1 transition-colors duration-200 ${
             active
-              ? "bg-primary/15 text-primary"
+              ? "bg-primary/20 text-primary"
               : "text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
           }`}
         >
-          <Icon className="size-4" />
+          <Icon className="size-[18px]" />
         </span>
         {!collapsed && (
           <span className={`truncate ${active ? "font-semibold" : ""}`}>{title}</span>
-        )}
-        {!collapsed && active && (
-          <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
         )}
       </Link>
     )
@@ -100,24 +101,33 @@ export function AppSidebar({ collapsed = false }) {
     return linkContent
   }
 
-  const renderSection = (title, items) => {
+  const renderSection = (title, items, variant = "default") => {
     const filteredItems = items.filter(
       (item) => !item.roles || item.roles.includes(user?.role)
     )
     if (filteredItems.length === 0) return null
 
+    const isPromo = variant === "promotions"
+
     return (
       <div className="space-y-1">
         {!collapsed ? (
           <div className="flex items-center gap-2 px-2 mb-2">
-            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest whitespace-nowrap">
+            {isPromo && (
+              <Sparkles className="size-3 text-amber-500/80 shrink-0" />
+            )}
+            <span
+              className={`text-[10px] font-semibold uppercase tracking-widest whitespace-nowrap ${
+                isPromo ? "text-amber-500/80" : "text-muted-foreground/60"
+              }`}
+            >
               {title}
             </span>
-            <div className="flex-1 h-px bg-border/50" />
+            <div className={`flex-1 h-px ${isPromo ? "bg-amber-500/20" : "bg-border/50"}`} />
           </div>
         ) : (
           <div className="flex justify-center py-1">
-            <div className="h-px w-5 bg-border/50" />
+            <div className={`h-px w-5 ${isPromo ? "bg-amber-500/40" : "bg-border/50"}`} />
           </div>
         )}
         <div className="space-y-0.5">
@@ -128,6 +138,11 @@ export function AppSidebar({ collapsed = false }) {
       </div>
     )
   }
+
+  const roleBadgeClass =
+    user?.role === "superAdmin"
+      ? "bg-primary/10 text-primary"
+      : "bg-amber-500/10 text-amber-500"
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -156,6 +171,7 @@ export function AppSidebar({ collapsed = false }) {
         <ScrollArea className="flex-1 overflow-y-auto">
           <div className="space-y-4 px-2 py-4">
             {renderSection("Operations", navigationItems)}
+            {renderSection("Promotions", promotionItems, "promotions")}
             {renderSection("Management", managementItems)}
             {renderSection("System", systemItems)}
           </div>
@@ -179,17 +195,19 @@ export function AppSidebar({ collapsed = false }) {
               </TooltipContent>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
-              <Avatar className="h-8 w-8 shrink-0 rounded-full border-2 border-primary/20">
+            <div className="flex items-center gap-3 rounded-lg ring-1 ring-border/40 bg-muted/30 px-3 py-2.5">
+              <Avatar className="h-8 w-8 shrink-0 rounded-full border-2 border-primary/30 shadow-sm">
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold">
                   {user?.name?.charAt(0)?.toUpperCase() || "A"}
                 </AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
+              <div className="grid flex-1 text-left text-sm leading-tight min-w-0 gap-0.5">
                 <span className="truncate font-semibold text-foreground">
                   {user?.name || "Admin User"}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span
+                  className={`inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${roleBadgeClass}`}
+                >
                   {formatRole(user?.role) || "Administrator"}
                 </span>
               </div>
