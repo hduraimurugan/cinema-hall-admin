@@ -78,6 +78,17 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // ✅ Update cinema hall
+  const updateHall = async (data) => {
+    try {
+      const res = await authAPI.updateHall(data)
+      setCinemaHall(res.hall)
+      return { success: true, hall: res.hall }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
+
   const value = {
     user,
     cinemaHall,
@@ -87,6 +98,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     register,
+    updateHall,
   }
 
   return (

@@ -59,6 +59,21 @@ export const authAPI = {
     if (!response.ok) throw new Error("Token refresh failed")
     return response.json()
   },
+
+  // ✅ Update cinema hall details
+  updateHall: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/hall`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.error || "Failed to update cinema hall")
+    }
+    return response.json()
+  },
 }
 
 export const screensAPI = {
