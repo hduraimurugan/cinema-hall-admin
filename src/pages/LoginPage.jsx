@@ -9,92 +9,113 @@ import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, Film, Clapperboard, Ticket, LayoutDashboard, ChevronRight } from 'lucide-react';
 import { toast } from "sonner";
 
-const FilmStrip = () => (
-  <div className="flex gap-1">
-    {Array.from({ length: 40 }).map((_, i) => (
-      <div key={i} className="w-6 h-4 rounded-sm bg-white/10 flex-shrink-0" />
-    ))}
-  </div>
-);
+const FEATURES = [
+  { icon: LayoutDashboard, label: "Manage Showings & Schedules", desc: "Full show calendar with seat maps" },
+  { icon: Ticket, label: "Track Bookings in Real-time", desc: "Live seat availability and revenue" },
+  { icon: Clapperboard, label: "Seat & Screen Management", desc: "Configure layouts, pricing & aisles" },
+];
+
+const STATS = [
+  { value: "500+", label: "Screens Managed" },
+  { value: "Real-time", label: "Booking Updates" },
+  { value: "99.9%", label: "Uptime SLA" },
+  { value: "24/7", label: "Support Access" },
+];
 
 const LeftPanel = () => (
-  <div className="hidden lg:flex lg:w-1/2 flex-col relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#1a0505] to-[#2d0a0a]">
-    {/* Film strip top */}
-    <div className="absolute top-0 left-0 right-0 py-2 px-2 bg-black/40 overflow-hidden">
-      <FilmStrip />
+  <div
+    className="w-full lg:w-1/2 flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#180404] to-[#1a0a0a]"
+    style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px' }}
+  >
+    {/* Glow orbs */}
+    <div className="absolute top-1/4 -left-24 w-80 h-80 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute bottom-1/3 -right-10 w-64 h-64 bg-rose-900/25 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute top-2/3 left-1/3 w-48 h-48 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+
+    {/* Right border */}
+    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent z-10" />
+
+    {/* Watermark — desktop only */}
+    <div className="hidden lg:flex absolute inset-0 items-center justify-center pointer-events-none">
+      <Film className="w-[30rem] h-[30rem] text-white/[0.025]" strokeWidth={0.5} />
     </div>
 
-    {/* Background orbs */}
-    <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-rose-900/30 rounded-full blur-3xl" />
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-primary/10 rounded-full blur-2xl" />
-
-    {/* Content */}
-    <div className="relative flex flex-col justify-between h-full px-10 pt-20 pb-16">
-      {/* Logo */}
-      <div>
-        <div className="flex items-center gap-3 mb-12">
-          <div className="w-12 h-12 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
-            <Film className="w-6 h-6 text-primary" />
-          </div>
-          <span className="text-white font-bold text-xl tracking-wide">Cinema Admin</span>
+    {/* === MOBILE compact banner === */}
+    <div className="lg:hidden relative z-20 flex items-center justify-between px-5 pt-10 pb-5">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
+          <Film className="w-4 h-4 text-primary" />
         </div>
+        <div>
+          <p className="text-white font-bold text-sm leading-none">Cinema Admin</p>
+          <p className="text-slate-500 text-[11px] mt-0.5">Management Platform</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-primary text-sm font-semibold leading-tight">Your Cinema.</p>
+        <p className="text-slate-400 text-xs">Your Control.</p>
+      </div>
+    </div>
 
-        {/* Headline */}
-        <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
+    {/* === DESKTOP content — vertically centered === */}
+    <div className="hidden lg:flex flex-col justify-center h-full pl-12 pr-10 py-20 relative z-10 gap-7">
+      {/* Logo */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
+          <Film className="w-5 h-5 text-primary" />
+        </div>
+        <span className="text-white font-bold text-lg tracking-wide">Cinema Admin</span>
+      </div>
+
+      {/* Badge */}
+      <div className="inline-flex w-fit items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="text-primary text-xs font-medium">Trusted by 500+ Cinema Operators</span>
+      </div>
+
+      {/* Headline */}
+      <div>
+        <h1 className="text-4xl xl:text-[2.6rem] font-bold text-white leading-tight">
           Your Cinema.
           <br />
-          <span className="bg-gradient-to-r from-primary to-rose-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary via-rose-400 to-orange-400 bg-clip-text text-transparent">
             Your Control.
           </span>
         </h1>
-        <p className="text-slate-400 text-base leading-relaxed max-w-xs">
-          The complete management platform for modern cinema halls. Streamline every operation from a single dashboard.
+        <p className="text-slate-400 text-sm leading-relaxed mt-3 max-w-[260px]">
+          The complete management platform for modern cinema halls — from scheduling to seat maps.
         </p>
       </div>
 
-      {/* Feature list */}
-      <div className="space-y-4 my-10">
-        {[
-          { icon: LayoutDashboard, label: "Manage Showings & Schedules", desc: "Full show calendar with seat maps" },
-          { icon: Ticket, label: "Track Bookings in Real-time", desc: "Live seat availability and revenue" },
-          { icon: Clapperboard, label: "Seat & Screen Management", desc: "Configure layouts, pricing & aisles" },
-        ].map((feature) => {
+      {/* Features */}
+      <div className="space-y-3">
+        {FEATURES.map((feature) => {
           const FeatureIcon = feature.icon
           return (
-            <div key={feature.label} className="flex items-start gap-4 group">
-              <div className="w-10 h-10 bg-primary/15 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                <FeatureIcon className="w-5 h-5 text-primary" />
+            <div key={feature.label} className="flex items-center gap-3 group">
+              <div className="w-9 h-9 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors duration-200">
+                <FeatureIcon className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-white text-sm font-medium">{feature.label}</p>
-                <p className="text-slate-500 text-xs mt-0.5">{feature.desc}</p>
+                <p className="text-white/90 text-sm font-medium leading-none">{feature.label}</p>
+                <p className="text-slate-500 text-xs mt-1">{feature.desc}</p>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { value: "500+", label: "Screens Managed" },
-          { value: "Real-time", label: "Booking Updates" },
-          { value: "99.9%", label: "Uptime SLA" },
-          { value: "24/7", label: "Support Access" },
-        ].map(({ value, label }) => (
-          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-primary font-bold text-lg">{value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{label}</p>
+      {/* Stats row */}
+      <div className="flex gap-6 pt-2 border-t border-white/[0.06]">
+        {STATS.slice(0, 3).map(({ value, label }) => (
+          <div key={label}>
+            <p className="text-primary font-bold text-base">{value}</p>
+            <p className="text-slate-500 text-xs mt-0.5">{label}</p>
           </div>
         ))}
       </div>
     </div>
 
-    {/* Film strip bottom */}
-    <div className="absolute bottom-0 left-0 right-0 py-2 px-2 bg-black/40 overflow-hidden">
-      <FilmStrip />
-    </div>
   </div>
 );
 
@@ -129,18 +150,18 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       <LeftPanel />
 
       {/* Right panel */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-background px-6 py-12">
+      <div className="flex-1 lg:w-1/2 flex flex-col items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
+          {/* Mobile logo — hidden when compact banner is shown */}
           <div className="flex lg:hidden items-center gap-2 justify-center mb-8">
             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
               <Film className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-bold text-lg text-foreground">CineMax Admin</span>
+            <span className="font-bold text-lg text-foreground">Cinema Admin</span>
           </div>
 
           <div className="mb-8">
@@ -189,11 +210,7 @@ export const LoginPage = () => {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-11 font-medium"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full h-11 font-medium" disabled={isLoading}>
               {isLoading ? "Signing in..." : (
                 <span className="flex items-center gap-2">
                   Sign In <ChevronRight className="w-4 h-4" />

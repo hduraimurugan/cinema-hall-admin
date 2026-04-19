@@ -17,90 +17,113 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 
-const FilmStrip = () => (
-  <div className="flex gap-1">
-    {Array.from({ length: 40 }).map((_, i) => (
-      <div key={i} className="w-6 h-4 rounded-sm bg-white/10 flex-shrink-0" />
-    ))}
-  </div>
-)
+const FEATURES = [
+  { icon: LayoutDashboard, label: "Instant Dashboard Access", desc: "Full analytics from day one" },
+  { icon: Ticket, label: "Automated Booking System", desc: "Handle reservations effortlessly" },
+  { icon: Clapperboard, label: "Flexible Screen Layouts", desc: "Custom seat maps & pricing tiers" },
+]
+
+const STATS = [
+  { value: "Free", label: "To Get Started" },
+  { value: "5 min", label: "Setup Time" },
+  { value: "500+", label: "Active Halls" },
+  { value: "24/7", label: "Support Access" },
+]
 
 const LeftPanel = () => (
-  <div className="hidden lg:flex lg:w-1/2 flex-col relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#1a0505] to-[#2d0a0a]">
-    {/* Film strip top */}
-    <div className="absolute top-0 left-0 right-0 py-2 px-2 bg-black/40 overflow-hidden">
-      <FilmStrip />
+  <div
+    className="w-full lg:w-1/2 flex-shrink-0 relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#180404] to-[#1a0a0a]"
+    style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px' }}
+  >
+    {/* Glow orbs */}
+    <div className="absolute top-1/4 -left-24 w-80 h-80 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute bottom-1/3 -right-10 w-64 h-64 bg-rose-900/25 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute top-2/3 left-1/3 w-48 h-48 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+
+    {/* Right border */}
+    <div className="hidden lg:block absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent z-10" />
+
+    {/* Watermark — desktop only */}
+    <div className="hidden lg:flex absolute inset-0 items-center justify-center pointer-events-none">
+      <Film className="w-[30rem] h-[30rem] text-white/[0.025]" strokeWidth={0.5} />
     </div>
 
-    {/* Background orbs */}
-    <div className="absolute top-1/4 -left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-1/4 right-0 w-56 h-56 bg-rose-900/30 rounded-full blur-3xl" />
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-primary/10 rounded-full blur-2xl" />
-
-    {/* Content */}
-    <div className="relative flex flex-col justify-between h-full px-10 pt-20 pb-16">
-      <div>
-        <div className="flex items-center gap-3 mb-12">
-          <div className="w-12 h-12 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
-            <Film className="w-6 h-6 text-primary" />
-          </div>
-          <span className="text-white font-bold text-xl tracking-wide">Cinema Admin</span>
+    {/* === MOBILE compact banner === */}
+    <div className="lg:hidden relative z-20 flex items-center justify-between px-5 pt-10 pb-5">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
+          <Film className="w-4 h-4 text-primary" />
         </div>
+        <div>
+          <p className="text-white font-bold text-sm leading-none">Cinema Admin</p>
+          <p className="text-slate-500 text-[11px] mt-0.5">Management Platform</p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-primary text-sm font-semibold leading-tight">Start Managing</p>
+        <p className="text-slate-400 text-xs">Your Cinema.</p>
+      </div>
+    </div>
 
-        <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
+    {/* === DESKTOP content — vertically centered === */}
+    <div className="hidden lg:flex flex-col justify-center h-full pl-12 pr-10 py-20 relative z-10 gap-7">
+      {/* Logo */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center">
+          <Film className="w-5 h-5 text-primary" />
+        </div>
+        <span className="text-white font-bold text-lg tracking-wide">Cinema Admin</span>
+      </div>
+
+      {/* Badge */}
+      <div className="inline-flex w-fit items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        <span className="text-primary text-xs font-medium">Set up in under 5 minutes</span>
+      </div>
+
+      {/* Headline */}
+      <div>
+        <h1 className="text-4xl xl:text-[2.6rem] font-bold text-white leading-tight">
           Start Managing
           <br />
-          <span className="bg-gradient-to-r from-primary to-rose-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-primary via-rose-400 to-orange-400 bg-clip-text text-transparent">
             Your Cinema.
           </span>
         </h1>
-        <p className="text-slate-400 text-base leading-relaxed max-w-xs">
-          Join hundreds of cinema operators using our platform. Set up your hall in minutes and go live today.
+        <p className="text-slate-400 text-sm leading-relaxed mt-3 max-w-[260px]">
+          Join hundreds of cinema operators using our platform. Go live in minutes.
         </p>
       </div>
 
-      {/* Feature list */}
-      <div className="space-y-4 my-10">
-        {[
-          { icon: LayoutDashboard, label: "Instant Dashboard Access", desc: "Full analytics from day one" },
-          { icon: Ticket, label: "Automated Booking System", desc: "Handle reservations effortlessly" },
-          { icon: Clapperboard, label: "Flexible Screen Layouts", desc: "Custom seat maps & pricing tiers" },
-        ].map((feature) => {
+      {/* Features */}
+      <div className="space-y-3">
+        {FEATURES.map((feature) => {
           const FeatureIcon = feature.icon
           return (
-            <div key={feature.label} className="flex items-start gap-4 group">
-              <div className="w-10 h-10 bg-primary/15 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/25 transition-colors">
-                <FeatureIcon className="w-5 h-5 text-primary" />
+            <div key={feature.label} className="flex items-center gap-3 group">
+              <div className="w-9 h-9 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors duration-200">
+                <FeatureIcon className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <p className="text-white text-sm font-medium">{feature.label}</p>
-                <p className="text-slate-500 text-xs mt-0.5">{feature.desc}</p>
+                <p className="text-white/90 text-sm font-medium leading-none">{feature.label}</p>
+                <p className="text-slate-500 text-xs mt-1">{feature.desc}</p>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { value: "Free", label: "To Get Started" },
-          { value: "5 min", label: "Setup Time" },
-          { value: "500+", label: "Active Halls" },
-          { value: "24/7", label: "Support Access" },
-        ].map(({ value, label }) => (
-          <div key={label} className="bg-white/5 border border-white/10 rounded-xl p-3 backdrop-blur-sm">
-            <p className="text-primary font-bold text-lg">{value}</p>
-            <p className="text-slate-400 text-xs mt-0.5">{label}</p>
+      {/* Stats row */}
+      <div className="flex gap-6 pt-2 border-t border-white/[0.06]">
+        {STATS.slice(0, 3).map(({ value, label }) => (
+          <div key={label}>
+            <p className="text-primary font-bold text-base">{value}</p>
+            <p className="text-slate-500 text-xs mt-0.5">{label}</p>
           </div>
         ))}
       </div>
     </div>
 
-    {/* Film strip bottom */}
-    <div className="absolute bottom-0 left-0 right-0 py-2 px-2 bg-black/40 overflow-hidden">
-      <FilmStrip />
-    </div>
   </div>
 )
 
@@ -160,11 +183,11 @@ export const RegisterPage = () => {
   }, [formData.hall_state, states])
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="h-screen flex flex-col lg:flex-row overflow-hidden">
       <LeftPanel />
 
       {/* Right panel — scrollable */}
-      <div className="w-full lg:w-1/2 h-full overflow-y-auto bg-background flex flex-col">
+      <div className="flex-1 lg:w-1/2 overflow-y-auto bg-background flex flex-col">
         <div className="flex-1 flex flex-col justify-center px-6 py-12">
           <div className="w-full max-w-sm mx-auto">
             {/* Mobile logo */}
