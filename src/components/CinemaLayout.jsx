@@ -42,12 +42,11 @@ const mockNotifications = [
 
 export function CinemaLayout() {
     
-    const [isMobileView, setIsMobileView] = useState(window.innerWidth < 1024)
     const location = useLocation()
 
     const { user, cinemaHall, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
-    const { activeHall, hallKey } = useHall();
+    const { hallKey } = useHall();
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         const storedState = localStorage.getItem("sidebar-collapsed")
@@ -57,16 +56,6 @@ export function CinemaLayout() {
     useEffect(() => {
         localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarCollapsed))
     }, [isSidebarCollapsed])
-
-    // Handle responsive views
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobileView(window.innerWidth < 1024)
-        }
-
-        window.addEventListener("resize", handleResize)
-        return () => window.removeEventListener("resize", handleResize)
-    }, [])
 
     // Get page title from pathname
     const getPageTitle = (path) => {
@@ -142,49 +131,25 @@ export function CinemaLayout() {
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
                                 <Film className="h-4 w-4" />
                             </div>
-                            <span className="font-semibold text-lg hidden sm:inline-block">{activeHall?.name ?? cinemaHall?.name}</span>
+                            <span className="font-semibold text-base hidden sm:inline-block">CineMax Admin</span>
                         </Link>
 
                         {/* Desktop Logo */}
-                        <div className="hidden lg:flex h-16 items-center">
-                            <Link to="/" className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
-                                    <Film className="h-4 w-4" />
-                                </div>
+                        <Link to="/" className="hidden lg:flex items-center gap-2.5 mr-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
+                                <Film className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col gap-0 justify-center items-start leading-tight">
+                                <span className="font-bold text-sm tracking-tight">CineMax Admin</span>
+                                <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Management</span>
+                            </div>
+                        </Link>
 
-                                <div className="flex flex-col gap-0 justify-center items-start">
-                                    <span className="font-semibold text-md">{activeHall?.name ?? cinemaHall?.name}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{activeHall?.location ?? cinemaHall?.location}</span>
-                                </div>
-                            </Link>
+                        {/* Hall Switcher — desktop, next to logo */}
+                        <div className="hidden lg:flex items-center">
+                            <Separator orientation="vertical" className="h-6 mx-3" />
+                            <HallSwitcher />
                         </div>
-
-                        {/* Breadcrumbs */}
-                        <div className="hidden ml-4">
-                            <Breadcrumb>
-                                <BreadcrumbList>
-                                    <BreadcrumbItem>
-                                        <BreadcrumbLink asChild>
-                                            <Link to="/" className="flex items-center gap-1 hover:text-primary transition-colors">
-                                                <Home className="h-3 w-3" />
-                                                <span>Home</span>
-                                            </Link>
-                                        </BreadcrumbLink>
-                                    </BreadcrumbItem>
-                                    <BreadcrumbSeparator>
-                                        <ChevronRight className="h-3 w-3" />
-                                    </BreadcrumbSeparator>
-                                    <BreadcrumbItem>
-                                        <span className="font-medium text-foreground">{pageTitle}</span>
-                                    </BreadcrumbItem>
-                                </BreadcrumbList>
-                            </Breadcrumb>
-                        </div>
-                    </div>
-
-                    {/* Hall Switcher */}
-                    <div className="hidden lg:flex items-center">
-                        <HallSwitcher />
                     </div>
 
                     {/* Center section with search */}

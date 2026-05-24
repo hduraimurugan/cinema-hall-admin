@@ -54,7 +54,7 @@ const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 
 export function AppSidebar({ collapsed = false }) {
   const location = useLocation()
-  const { user, cinemaHall, logout } = useAuth()
+  const { user, logout } = useAuth()
 
   const isActive = (url) => location.pathname === url
 
@@ -150,19 +150,14 @@ export function AppSidebar({ collapsed = false }) {
       <div className="flex h-full w-full flex-col bg-background">
         {/* Mobile Header */}
         <div className="lg:hidden flex h-16 items-center border-b px-4">
-          <Link
-            to="/"
-            className={`flex items-center gap-3 ${collapsed ? "justify-center w-full" : ""}`}
-          >
+          <Link to="/" className="flex items-center gap-2.5">
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
               <Film className="size-4" />
             </div>
             {!collapsed && (
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{cinemaHall.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {cinemaHall.location}
-                </span>
+              <div className="flex flex-col leading-tight">
+                <span className="font-bold text-sm tracking-tight">CineMax Admin</span>
+                <span className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Management</span>
               </div>
             )}
           </Link>
