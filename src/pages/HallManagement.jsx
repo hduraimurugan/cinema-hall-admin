@@ -423,7 +423,7 @@ const HallsManagement = () => {
 
       {/* Side Sheet — Create / Edit */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-[520px] p-0 flex flex-col">
+        <SheetContent side="right" className="w-full sm:max-w-[520px] p-0 flex flex-col h-full overflow-hidden">
           <SheetHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
             <SheetTitle>{editTarget ? "Edit Hall" : "Add New Hall"}</SheetTitle>
             <SheetDescription>
@@ -433,7 +433,7 @@ const HallsManagement = () => {
             </SheetDescription>
           </SheetHeader>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 min-h-0">
             <div className="px-6 py-5 space-y-5">
               {/* Name + Phone */}
               <div className="grid grid-cols-2 gap-3">
