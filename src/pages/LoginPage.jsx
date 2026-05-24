@@ -135,7 +135,11 @@ export const LoginPage = () => {
     try {
       const result = await login(email, password);
       if (result.success) {
-        toast.success("Welcome back!");
+        if (!result.hall) {
+          toast.info("Welcome! Please set up your first cinema hall to get started.", { duration: 5000 })
+        } else {
+          toast.success("Welcome back!")
+        }
         navigate('/');
       } else {
         setError(result.message || 'Login failed');

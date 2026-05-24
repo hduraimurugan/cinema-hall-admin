@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
       const res = await authAPI.login(email, password)
       setUser(res.admin)
       setCinemaHall(res.hall)
-      return { success: true, admin: res.admin }
+      return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
       return { success: false, message: err.message }
     }
