@@ -298,7 +298,7 @@ export function CinemaLayout() {
             {/* Footer */}
             <footer className="hidden border-t bg-background/50 backdrop-blur-sm flex-shrink-0">
                 <div className="flex h-7 items-center justify-center px-4">
-                    <p className="text-xs text-muted-foreground">© 2025 {cinemaHall.name} Admin Panel. All rights reserved.</p>
+                    <p className="text-xs text-muted-foreground">© 2025 {cinemaHall?.name ?? "CineMax"} Admin Panel. All rights reserved.</p>
                 </div>
             </footer>
         </div>
