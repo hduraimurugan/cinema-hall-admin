@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
@@ -432,6 +433,87 @@ export default function OnboardingPage() {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+export function OnboardingPageSkeleton() {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-slate-950 via-[#180404] to-[#1a0a0a] px-4 py-10"
+      style={{
+        backgroundImage: "radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)",
+        backgroundSize: "28px 28px",
+      }}
+    >
+      {/* Ambient blobs */}
+      <div className="absolute top-1/4 -left-40 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-40 w-[400px] h-[400px] bg-rose-900/15 rounded-full blur-3xl pointer-events-none" />
+      <Film
+        className="absolute inset-0 m-auto w-[42rem] h-[42rem] text-white/[0.015] pointer-events-none"
+        strokeWidth={0.3}
+      />
+
+      <div className="relative z-10 w-full max-w-lg">
+        {/* Sign-out placeholder */}
+        <div className="flex justify-start mb-6">
+          <Skeleton className="h-4 w-20 bg-slate-800" />
+        </div>
+
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2.5 mb-8">
+          <Skeleton className="w-10 h-10 rounded-xl bg-slate-800" />
+          <Skeleton className="h-5 w-36 bg-slate-800" />
+        </div>
+
+        {/* Hero heading */}
+        <div className="flex flex-col items-center gap-3 mb-8">
+          <Skeleton className="h-6 w-32 rounded-full bg-slate-800" />
+          <Skeleton className="h-9 w-64 bg-slate-800" />
+          <Skeleton className="h-4 w-80 bg-slate-800/60" />
+        </div>
+
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <Skeleton className="w-8 h-8 rounded-full bg-primary/30" />
+          <Skeleton className="h-4 w-20 bg-slate-800" />
+          <Skeleton className="h-px w-12 bg-slate-800" />
+          <Skeleton className="w-8 h-8 rounded-full bg-slate-800" />
+          <Skeleton className="h-4 w-16 bg-slate-800" />
+        </div>
+
+        {/* Card */}
+        <div className="bg-slate-900/70 backdrop-blur-md border border-white/[0.07] rounded-2xl px-6 py-7 shadow-2xl space-y-5">
+          {/* Section title */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="w-4 h-4 rounded bg-slate-700" />
+            <Skeleton className="h-5 w-40 bg-slate-700" />
+          </div>
+          {/* Hall name */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-20 bg-slate-700" />
+            <Skeleton className="h-11 w-full rounded-md bg-slate-800" />
+          </div>
+          {/* Address */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24 bg-slate-700" />
+            <Skeleton className="h-11 w-full rounded-md bg-slate-800" />
+          </div>
+          {/* State / District */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-10 bg-slate-700" />
+              <Skeleton className="h-11 w-full rounded-md bg-slate-800" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-16 bg-slate-700" />
+              <Skeleton className="h-11 w-full rounded-md bg-slate-800" />
+            </div>
+          </div>
+          {/* Button */}
+          <Skeleton className="h-11 w-full rounded-md bg-primary/20" />
+        </div>
+      </div>
     </div>
   )
 }
