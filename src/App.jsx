@@ -29,6 +29,7 @@ import BookingDetailPage from './pages/BookingDetailPage.jsx'
 import RefundsPage from './pages/RefundsPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 import AdminsPage from './pages/AdminsPage.jsx';
+import HallsManagement from './pages/HallManagement.jsx'
 
 function App() {
   const { isLoggedIn } = useAuth()
@@ -70,6 +71,7 @@ function App() {
             <Route path="/verify-ticket" element={<VerifyTicket />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/halls" element={<HallsManagement />} />
           </Route>
 
           {/* Super Admin Routes */}

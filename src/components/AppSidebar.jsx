@@ -28,6 +28,7 @@ import { formatRole } from "../utils/utils"
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: Home },
+  { title: "My Halls", url: "/halls", icon: Building2 },
   { title: "Screens", url: "/screens", icon: Monitor },
   { title: "Movies", url: "/movies", icon: Film },
   { title: "Showtimes", url: "/shows", icon: Calendar },

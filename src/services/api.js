@@ -1,6 +1,26 @@
 //services/api.js
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
 
+// ─── Hall-scoped fetch interceptor ──────────────────────────────────────────
+// Reads the active hall ID from localStorage (written by HallContext) and
+// automatically injects the X-Hall-Id header on every call.
+// Use this instead of plain fetch() for any admin route protected by
+// the requireActiveHall middleware on the backend.
+const hallFetch = (url, options = {}) => {
+  const hallId = localStorage.getItem("activeHallId")
+  if (hallId) {
+    options = {
+      ...options,
+      headers: {
+        "X-Hall-Id": hallId,
+        ...(options.headers || {}),
+      },
+    }
+  }
+  return fetch(url, options)
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export const authAPI = {
   // ✅ Register a new cinema admin
   register: async (data) => {
@@ -79,7 +99,7 @@ export const authAPI = {
 export const screensAPI = {
   // ✅ Create a new screen
   createScreen: async (data) => {
-    const response = await fetch(`${API_BASE_URL}/api/screens/create`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/screens/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -98,7 +118,7 @@ export const screensAPI = {
 
   // ✅ Get all screens for the current admin's cinema hall
   getMyScreens: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/screens`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/screens`, {
       method: "GET",
       credentials: "include",
     })
@@ -113,7 +133,7 @@ export const screensAPI = {
 
   // ✅ Update an existing screen by ID
   updateScreen: async (screenId, data) => {
-    const response = await fetch(`${API_BASE_URL}/api/screens/update/${screenId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/screens/update/${screenId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -132,7 +152,7 @@ export const screensAPI = {
 
   // ✅ Delete a screen by ID
   deleteScreen: async (screenId) => {
-    const response = await fetch(`${API_BASE_URL}/api/screens/delete/${screenId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/screens/delete/${screenId}`, {
       method: "DELETE",
       credentials: "include",
     })
@@ -288,7 +308,7 @@ export const bookingAPI = {
     if (screen_id) params.append("screen_id", screen_id);
     params.append("page", page);
     params.append("limit", limit);
-    const response = await fetch(`${API_BASE_URL}/api/booking/admin/all?${params}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/booking/admin/all?${params}`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -299,7 +319,7 @@ export const bookingAPI = {
   },
 
   verifyBooking: async (bookingId) => {
-    const response = await fetch(`${API_BASE_URL}/api/booking/admin/verify/${bookingId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/booking/admin/verify/${bookingId}`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -310,7 +330,7 @@ export const bookingAPI = {
   },
 
   getBookingById: async (bookingId) => {
-    const response = await fetch(`${API_BASE_URL}/api/booking/admin/verify/${bookingId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/booking/admin/verify/${bookingId}`, {
       credentials: "include",
     });
     if (!response.ok) {
@@ -324,7 +344,7 @@ export const bookingAPI = {
 export const showsAPI = {
   // ✅ Create a single show
   createShow: async (data) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/create`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -343,7 +363,7 @@ export const showsAPI = {
 
   // ✅ Create multiple shows (bulk)
   createMultipleShows: async (data) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/bulk`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/bulk`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -362,7 +382,7 @@ export const showsAPI = {
 
   // ✅ Edit a show
   editShow: async (showId, data) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/edit/${showId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/edit/${showId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -381,7 +401,7 @@ export const showsAPI = {
 
   // ✅ Delete a show
   deleteShow: async (showId) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/delete/${showId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/delete/${showId}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -396,7 +416,7 @@ export const showsAPI = {
 
   // ✅ Bulk delete shows
   deleteMultipleShows: async (ids) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/bulk`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/bulk`, {
       method: "DELETE",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -413,7 +433,7 @@ export const showsAPI = {
 
   // ✅ Get shows grouped by movie for a specific date
   getShowsByDate: async (date) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/date/${date}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/date/${date}`, {
       method: "GET",
       credentials: "include",
     });
@@ -462,7 +482,7 @@ export const showsAPI = {
 
   // Get confirmed booking count + total refund amount for a show (used by cancel dialog)
   getShowBookingCount: async (showId) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/booking-count/${showId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/booking-count/${showId}`, {
       credentials: "include",
     });
 
@@ -476,7 +496,7 @@ export const showsAPI = {
 
   // Cancel a show (marks bookings cancelled + initiates refunds)
   cancelShow: async (showId) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/cancel/${showId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/cancel/${showId}`, {
       method: "PUT",
       credentials: "include",
     });
@@ -491,7 +511,7 @@ export const showsAPI = {
 
   // Open or revert booking status for a show
   updateBookingStatus: async (showId, action) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/booking-status/${showId}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/booking-status/${showId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -508,7 +528,7 @@ export const showsAPI = {
 
   // Bulk cancel shows
   bulkCancelShows: async (ids) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-cancel`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/bulk-cancel`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -525,7 +545,7 @@ export const showsAPI = {
 
   // Bulk restore cancelled shows to scheduled
   bulkRestoreShows: async (ids) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-restore`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/bulk-restore`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -542,7 +562,7 @@ export const showsAPI = {
 
   // Bulk open booking for shows
   bulkOpenBooking: async (ids) => {
-    const response = await fetch(`${API_BASE_URL}/api/shows/bulk-booking-open`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/shows/bulk-booking-open`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -720,7 +740,7 @@ export const adminsAPI = {
 
 export const dashboardAPI = {
   getStats: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/dashboard/stats`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/dashboard/stats`, {
       credentials: 'include',
     })
     if (!response.ok) throw await response.json()
@@ -739,7 +759,7 @@ export const paymentAPI = {
     if (movie) params.set("movie", movie)
     params.set("page", page)
     params.set("limit", limit)
-    const response = await fetch(`${API_BASE_URL}/api/payment/admin/orders?${params}`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/payment/admin/orders?${params}`, {
       credentials: "include",
     })
     if (!response.ok) throw await response.json()
@@ -810,23 +830,66 @@ export const refundAPI = {
     if (to_date) params.set("to_date", to_date)
     params.set("page", page)
     params.set("limit", limit)
-    const response = await fetch(`${API_BASE_URL}/api/refunds?${params}`, { credentials: "include" })
+    const response = await hallFetch(`${API_BASE_URL}/api/refunds?${params}`, { credentials: "include" })
     if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to fetch refunds") }
     return response.json()
   },
 
   getRefundByBooking: async (bookingId) => {
-    const response = await fetch(`${API_BASE_URL}/api/refunds/booking/${bookingId}`, { credentials: "include" })
+    const response = await hallFetch(`${API_BASE_URL}/api/refunds/booking/${bookingId}`, { credentials: "include" })
     if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Refund not found") }
     return response.json()
   },
 
   settleRefund: async (refundId) => {
-    const response = await fetch(`${API_BASE_URL}/api/refunds/${refundId}/settle`, {
+    const response = await hallFetch(`${API_BASE_URL}/api/refunds/${refundId}/settle`, {
       method: "POST",
       credentials: "include",
     })
     if (!response.ok) { const e = await response.json(); throw new Error(e.error || "Failed to settle refund") }
+    return response.json()
+  },
+};
+
+export const hallsAPI = {
+  // GET /api/halls — list all halls owned by the logged-in admin
+  getMyHalls: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/halls`, { credentials: "include" })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.message || "Failed to fetch halls") }
+    return response.json()
+  },
+
+  // POST /api/halls — create a new hall
+  createHall: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/halls`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.message || "Failed to create hall") }
+    return response.json()
+  },
+
+  // PUT /api/halls/:id — update hall details
+  updateHall: async (id, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/halls/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.message || "Failed to update hall") }
+    return response.json()
+  },
+
+  // DELETE /api/halls/:id — delete hall (cascades to screens/shows/bookings)
+  deleteHall: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/halls/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+    if (!response.ok) { const e = await response.json(); throw new Error(e.message || "Failed to delete hall") }
     return response.json()
   },
 };

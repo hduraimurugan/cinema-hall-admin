@@ -28,6 +28,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
+import { useHall } from "../context/HallContext"
+import { HallSwitcher } from "./HallSwitcher"
 import { formatRole } from "../utils/utils";
 import SearchMovies from "./SearchMovies";
 
@@ -45,6 +47,7 @@ export function CinemaLayout() {
 
     const { user, cinemaHall, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
+    const { activeHall, hallKey } = useHall();
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
         const storedState = localStorage.getItem("sidebar-collapsed")
@@ -109,6 +112,9 @@ export function CinemaLayout() {
                             </SheetTrigger>
                             <SheetContent side="left" className="px-3 w-[280px]">
                                 <ScrollArea className="h-full">
+                                    <div className="px-2 pt-4 pb-2">
+                                        <HallSwitcher />
+                                    </div>
                                     <AppSidebar user={user} pageTitle={pageTitle} />
                                 </ScrollArea>
                             </SheetContent>
@@ -136,7 +142,7 @@ export function CinemaLayout() {
                             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
                                 <Film className="h-4 w-4" />
                             </div>
-                            <span className="font-semibold text-lg hidden sm:inline-block">{cinemaHall.name}</span>
+                            <span className="font-semibold text-lg hidden sm:inline-block">{activeHall?.name ?? cinemaHall?.name}</span>
                         </Link>
 
                         {/* Desktop Logo */}
@@ -147,8 +153,8 @@ export function CinemaLayout() {
                                 </div>
 
                                 <div className="flex flex-col gap-0 justify-center items-start">
-                                    <span className="font-semibold text-md">{cinemaHall.name}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{cinemaHall.location}</span>
+                                    <span className="font-semibold text-md">{activeHall?.name ?? cinemaHall?.name}</span>
+                                    <span className="truncate text-xs text-muted-foreground">{activeHall?.location ?? cinemaHall?.location}</span>
                                 </div>
                             </Link>
                         </div>
@@ -174,6 +180,11 @@ export function CinemaLayout() {
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </div>
+                    </div>
+
+                    {/* Hall Switcher */}
+                    <div className="hidden lg:flex items-center">
+                        <HallSwitcher />
                     </div>
 
                     {/* Center section with search */}
@@ -307,7 +318,7 @@ export function CinemaLayout() {
 
 
                 {/* Page Content - Scrollable */}
-                <main className="flex-1 min-w-0 overflow-hidden">
+                <main key={hallKey} className="flex-1 min-w-0 overflow-hidden">
                     <div
                         className="h-full overflow-y-auto"
                         style={{ scrollbarWidth: location.pathname === "/movies" ? "none" : "auto" }}
