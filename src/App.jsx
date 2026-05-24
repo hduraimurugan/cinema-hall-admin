@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Toaster } from "@/components/ui/sonner"
 import { ProtectedRoute } from './routes/ProtectedRoutes.jsx'
 import { CinemaLayout } from './components/CinemaLayout.jsx';
@@ -13,7 +13,7 @@ import VerifyTicket from './pages/VerifyTicket.jsx';
 import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import ScreenDesignerPage from './pages/ScreenDesignerPage.jsx'
-import RegisterPage from './pages/RegisterPage.jsx';
+import { RegisterPage } from './pages/RegisterPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
@@ -30,9 +30,13 @@ import RefundsPage from './pages/RefundsPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 import AdminsPage from './pages/AdminsPage.jsx';
 import HallsManagement from './pages/HallManagement.jsx'
+import OnboardingPage from './pages/OnboardingPage.jsx'
+import { HallGuard } from './routes/HallGuard.jsx'
+import { useHall } from './context/HallContext.jsx'
 
 function App() {
   const { isLoggedIn } = useAuth()
+  const { halls, hallsLoading } = useHall()
 
   return (
     <>
@@ -45,33 +49,49 @@ function App() {
           />
           <Route path="/register" element={<RegisterPage />} />
 
+          {/* Onboarding — shown only when admin has no halls yet */}
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                {!hallsLoading && halls.length > 0
+                  ? <Navigate to="/" replace />
+                  : <OnboardingPage />}
+              </ProtectedRoute>
+            }
+          />
+
           {/* Normal Cinema Admin routes */}
           <Route path="" element={
             <ProtectedRoute>
               <CinemaLayout />
             </ProtectedRoute>
           }>
-            <Route path="/" element={<HomePage />} />
+            {/* Always accessible without a hall */}
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
-            
-            <Route path="/movies" element={<MovieManagement />} />
-            <Route path="/movie/:id" element={<MoviePage />} />
-            <Route path="/screens" element={<CinemaScreenDesigner />} />
-            <Route path="/screens/new" element={<ScreenDesignerPage />} />
-            <Route path="/screens/:id/edit" element={<ScreenDesignerPage />} />
-            <Route path="/shows" element={<ShowsManagement />} />
-            <Route path="/shows/new" element={<AddShowPage />} />
-            <Route path="/shows/bulk" element={<AddMultipleShowsPage />} />
-            <Route path="/shows/:id/edit" element={<EditShowPage />} />
-            <Route path="/show/:id" element={<ShowPage/>} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/bookings/:id" element={<BookingDetailPage />} />
-            <Route path="/refunds" element={<RefundsPage />} />
-            <Route path="/payment-orders" element={<PaymentOrders />} />
-            <Route path="/verify-ticket" element={<VerifyTicket />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/halls" element={<HallsManagement />} />
+
+            {/* Hall-gated routes — require at least one hall */}
+            <Route element={<HallGuard><Outlet /></HallGuard>}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/movies" element={<MovieManagement />} />
+              <Route path="/movie/:id" element={<MoviePage />} />
+              <Route path="/screens" element={<CinemaScreenDesigner />} />
+              <Route path="/screens/new" element={<ScreenDesignerPage />} />
+              <Route path="/screens/:id/edit" element={<ScreenDesignerPage />} />
+              <Route path="/shows" element={<ShowsManagement />} />
+              <Route path="/shows/new" element={<AddShowPage />} />
+              <Route path="/shows/bulk" element={<AddMultipleShowsPage />} />
+              <Route path="/shows/:id/edit" element={<EditShowPage />} />
+              <Route path="/show/:id" element={<ShowPage/>} />
+              <Route path="/bookings" element={<Bookings />} />
+              <Route path="/bookings/:id" element={<BookingDetailPage />} />
+              <Route path="/refunds" element={<RefundsPage />} />
+              <Route path="/payment-orders" element={<PaymentOrders />} />
+              <Route path="/verify-ticket" element={<VerifyTicket />} />
+            </Route>
           </Route>
 
           {/* Super Admin Routes */}

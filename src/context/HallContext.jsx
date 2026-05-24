@@ -1,24 +1,38 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { hallsAPI } from "../services/api.js";
+import { useAuth } from "./AuthContext.jsx";
 
 const HallContext = createContext();
 
 const STORAGE_KEY = "activeHallId";
 
 export const HallProvider = ({ children }) => {
+  const { user, loading: authLoading } = useAuth();
+
   const [halls, setHalls] = useState([]);
   const [activeHall, setActiveHallState] = useState(null);
   const [hallsLoading, setHallsLoading] = useState(true);
-  // Incremented every time the active hall changes.
-  // CinemaLayout keys the <main> outlet off this so the page remounts
-  // and re-fetches data scoped to the new hall automatically.
   const [hallKey, setHallKey] = useState(0);
 
-  // On mount: fetch halls and restore the last-selected hall from localStorage.
-  // localStorage is the source of truth for persistence across refreshes.
-  // hallFetch in api.js reads the same key to inject X-Hall-Id automatically.
+  // Wait for AuthContext to finish its session check before fetching halls.
+  // If we fetch immediately on mount, the request races against the JWT
+  // verification and can return 401 (when a token refresh is in progress),
+  // causing halls to appear empty and HallGuard to redirect to /onboarding.
   useEffect(() => {
+    // Auth is still initialising — keep hallsLoading=true so nothing redirects yet.
+    if (authLoading) return;
+
+    if (!user) {
+      // Not logged in — clear any stale hall state.
+      setHalls([]);
+      setActiveHallState(null);
+      localStorage.removeItem(STORAGE_KEY);
+      setHallsLoading(false);
+      return;
+    }
+
     const loadHalls = async () => {
+      setHallsLoading(true);
       try {
         const data = await hallsAPI.getMyHalls();
         const fetched = data.halls ?? [];
@@ -40,7 +54,7 @@ export const HallProvider = ({ children }) => {
     };
 
     loadHalls();
-  }, []);
+  }, [user, authLoading]);
 
   // Switch the active hall — persists to localStorage so the axios-style
   // interceptor (hallFetch) picks it up on every subsequent API call.

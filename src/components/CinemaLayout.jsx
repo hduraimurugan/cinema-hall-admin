@@ -227,7 +227,7 @@ export function CinemaLayout() {
                                 >
                                     <Avatar className="h-9 w-9 border-2 border-primary/20">
                                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
-                                            {user.name.charAt(0)}
+                                            {user?.name?.charAt(0) ?? "?"}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>
