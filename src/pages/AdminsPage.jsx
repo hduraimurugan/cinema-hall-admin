@@ -3,8 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Building2, RefreshCw, X, MapPin } from "lucide-react"
+import {
+  Search, Building2, RefreshCw, X, MapPin, ShieldCheck, ShieldAlert,
+  LogIn, Mail, KeyRound, Lock, UserCheck, Clock, ChevronRight, Loader2,
+  Phone, CalendarDays, ShieldOff,
+} from "lucide-react"
 import { adminsAPI } from "../services/api"
 import { Pagination } from "@/components/ui/Pagination"
 import { ExportButton } from "@/components/ExportButton"
@@ -25,10 +31,179 @@ const avatarColors = [
   "bg-violet-500", "bg-sky-500", "bg-rose-500",
   "bg-amber-500", "bg-teal-500", "bg-pink-500",
 ]
-
 function avatarColor(name = "") {
   const code = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0)
   return avatarColors[code % avatarColors.length]
+}
+
+function fmtDate(val) {
+  if (!val) return "—"
+  return new Date(val).toLocaleDateString("en-IN", { dateStyle: "medium" })
+}
+function fmtDateTime(val) {
+  if (!val) return "—"
+  return new Date(val).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })
+}
+
+// ── Log action meta ────────────────────────────────────────────────────────────────────────────────
+const LOG_META = {
+  LOGIN_SUCCESS:               { icon: LogIn,       color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Login success" },
+  LOGIN_FAILED_WRONG_PASSWORD: { icon: ShieldAlert,  color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         label: "Wrong password" },
+  LOGIN_FAILED_UNKNOWN_EMAIL:  { icon: ShieldAlert,  color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         label: "Unknown email" },
+  LOGIN_FAILED_UNVERIFIED:     { icon: Mail,         color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     label: "Login — unverified" },
+  LOGIN_ATTEMPT_WHILE_LOCKED:  { icon: Lock,         color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         label: "Login while locked" },
+  EMAIL_VERIFIED:              { icon: ShieldCheck,  color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Email verified" },
+  REGISTER:                    { icon: UserCheck,    color: "text-sky-400",     bg: "bg-sky-500/10 border-sky-500/20",         label: "Registered" },
+  RESEND_VERIFICATION:         { icon: Mail,         color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     label: "Resent verification" },
+  PASSWORD_RESET_REQUESTED:    { icon: KeyRound,     color: "text-violet-400",  bg: "bg-violet-500/10 border-violet-500/20",   label: "Reset requested" },
+  PASSWORD_RESET_SUCCESS:      { icon: KeyRound,     color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", label: "Password reset" },
+  PASSWORD_CHANGED:            { icon: KeyRound,     color: "text-sky-400",     bg: "bg-sky-500/10 border-sky-500/20",         label: "Password changed" },
+  ACCOUNT_LOCKED:              { icon: Lock,         color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         label: "Account locked" },
+  LOGOUT:                      { icon: LogIn,        color: "text-slate-400",   bg: "bg-slate-500/10 border-slate-500/20",     label: "Logout" },
+  LOGOUT_ALL_DEVICES:          { icon: LogIn,        color: "text-slate-400",   bg: "bg-slate-500/10 border-slate-500/20",     label: "Logout all devices" },
+}
+function logMeta(action) {
+  return LOG_META[action] || { icon: ShieldOff, color: "text-slate-400", bg: "bg-slate-500/10 border-slate-500/20", label: action }
+}
+
+// ── Admin Detail Sheet ────────────────────────────────────────────────────────────────────────────────
+function AdminDetailSheet({ admin, onClose }) {
+  const [detail, setDetail] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!admin) return
+    setLoading(true); setError(null); setDetail(null)
+    adminsAPI.getLogs(admin.id)
+      .then(setDetail)
+      .catch(() => setError("Failed to load security details."))
+      .finally(() => setLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admin?.id])
+
+  const a = detail?.admin || admin
+  const logs = detail?.logs || []
+
+  return (
+    <Sheet open={!!admin} onOpenChange={(o) => { if (!o) onClose() }}>
+      <SheetContent className="w-full sm:max-w-lg flex flex-col gap-0 p-0 overflow-hidden">
+        {/* Header */}
+        <SheetHeader className="px-6 pt-6 pb-4 border-b border-border/50 shrink-0">
+          <div className="flex items-start gap-4">
+            <div className={`w-12 h-12 rounded-full ${avatarColor(a?.name || "")} flex items-center justify-center text-white font-bold text-base shrink-0`}>
+              {getInitials(a?.name)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <SheetTitle className="text-base font-semibold leading-tight truncate">{a?.name}</SheetTitle>
+              <p className="text-sm text-muted-foreground truncate mt-0.5">{a?.email}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                {a?.email_verified ? (
+                  <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/25 text-[11px] px-2 py-0.5 gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </Badge>
+                ) : (
+                  <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/25 text-[11px] px-2 py-0.5 gap-1">
+                    <Mail className="w-3 h-3" /> Unverified
+                  </Badge>
+                )}
+                <Badge variant="outline" className="text-[11px] px-2 py-0.5 capitalize">{a?.role}</Badge>
+              </div>
+            </div>
+          </div>
+        </SheetHeader>
+
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center py-16">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="flex-1 flex items-center justify-center py-16 text-destructive text-sm">{error}</div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+            {/* Details grid */}
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Account Details</p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: Phone,        label: "Phone",            value: a?.phone || "—" },
+                  { icon: CalendarDays, label: "Registered",       value: fmtDate(a?.created_at) },
+                  { icon: ShieldCheck,  label: "Email Verified",   value: a?.email_verified ? (fmtDateTime(a?.email_verified_at) || "Yes") : "No" },
+                  { icon: Clock,        label: "Last Login",        value: fmtDateTime(a?.last_login_at) },
+                  { icon: KeyRound,     label: "Password Changed",  value: fmtDateTime(a?.password_changed_at) },
+                  { icon: Lock,         label: "Locked Until",      value: a?.account_locked_until && new Date(a.account_locked_until) > new Date() ? fmtDateTime(a.account_locked_until) : "—" },
+                // eslint-disable-next-line no-unused-vars
+                ].map(({ icon: ItemIcon, label, value }) => (
+                  <div key={label} className="rounded-lg bg-muted/40 border border-border/40 p-3">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <ItemIcon className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+                    </div>
+                    <p className="text-xs font-medium text-foreground leading-snug">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Cinema Hall */}
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Cinema Hall</p>
+              {a?.hall_name ? (
+                <div className="rounded-lg bg-muted/40 border border-border/40 p-3 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-sm font-medium">{a.hall_name}</span>
+                  </div>
+                  {(a.location || a.district || a.state) && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <span className="text-xs text-muted-foreground">{[a.location, a.district, a.state].filter(Boolean).join(", ")}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="rounded-lg bg-muted/30 border border-dashed border-border/40 p-3 text-center text-xs text-muted-foreground">
+                  No cinema hall assigned
+                </div>
+              )}
+            </section>
+
+            {/* Security Logs */}
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Security Activity <span className="normal-case font-normal">(last {logs.length})</span>
+              </p>
+              {logs.length === 0 ? (
+                <div className="rounded-lg bg-muted/30 border border-dashed border-border/40 p-4 text-center text-xs text-muted-foreground">
+                  No activity recorded yet
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {logs.map((log, i) => {
+                    const { icon: Icon, color, bg, label } = logMeta(log.action)
+                    return (
+                      <div key={i} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 ${bg}`}>
+                        <div className={`mt-0.5 shrink-0 ${color}`}><Icon className="w-3.5 h-3.5" /></div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-medium ${color}`}>{label}</p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="text-[10px] text-muted-foreground">{fmtDateTime(log.created_at)}</span>
+                            {log.ip_address && <span className="text-[10px] text-muted-foreground font-mono">{log.ip_address}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
 }
 
 const AdminsPage = () => {
@@ -40,6 +215,7 @@ const AdminsPage = () => {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState("")
   const [searchInput, setSearchInput] = useState("")
+  const [selectedAdmin, setSelectedAdmin] = useState(null)
 
   const totalPages = Math.max(1, Math.ceil(total / limit))
 
@@ -59,6 +235,7 @@ const AdminsPage = () => {
     fetchAdmins({ search, page, limit })
   }, [search, page, limit, fetchAdmins])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSearch = useCallback(
     debounce((val) => { setSearch(val); setPage(1) }, 400),
     []
@@ -73,8 +250,14 @@ const AdminsPage = () => {
     setSearch(""); setSearchInput(""); setPage(1)
   }
 
+  const COLS = ["Admin", "Phone", "Verified", "Cinema Hall", "Location", "Registered", ""]
+
   return (
     <div className="p-6 space-y-6">
+      {selectedAdmin && (
+        <AdminDetailSheet admin={selectedAdmin} onClose={() => setSelectedAdmin(null)} />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -100,9 +283,12 @@ const AdminsPage = () => {
               "Name": a.name || "",
               "Email": a.email || "",
               "Phone": a.phone || "",
+              "Email Verified": a.email_verified ? "Yes" : "No",
+              "Verified At": fmtDateTime(a.email_verified_at),
+              "Last Login": fmtDateTime(a.last_login_at),
               "Cinema Hall": a.hall_name || "",
               "Location": [a.location, a.district, a.state].filter(Boolean).join(", "),
-              "Registered": a.created_at ? new Date(a.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" }) : "",
+              "Registered": fmtDate(a.created_at),
             }))}
           />
           <Button
@@ -162,11 +348,7 @@ const AdminsPage = () => {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Admin</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cinema Hall</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Registered</TableHead>
+                  {COLS.map(c => <TableHead key={c} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c}</TableHead>)}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,6 +364,7 @@ const AdminsPage = () => {
                       </div>
                     </TableCell>
                     <TableCell><Skeleton className="h-3.5 w-24 rounded" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
                         <Skeleton className="w-3.5 h-3.5 rounded shrink-0" />
@@ -195,6 +378,7 @@ const AdminsPage = () => {
                       </div>
                     </TableCell>
                     <TableCell><Skeleton className="h-3.5 w-20 rounded" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))}
               </TableBody>
@@ -216,16 +400,16 @@ const AdminsPage = () => {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent border-border/50">
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Admin</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Phone</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cinema Hall</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</TableHead>
-                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Registered</TableHead>
+                  {COLS.map(c => <TableHead key={c} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{c}</TableHead>)}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {admins.map((a) => (
-                  <TableRow key={a.id} className="border-border/40 hover:bg-muted/30 transition-colors">
+                  <TableRow
+                    key={a.id}
+                    className="border-border/40 hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setSelectedAdmin(a)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <div className={`w-8 h-8 rounded-full ${avatarColor(a.name || "")} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
@@ -239,6 +423,22 @@ const AdminsPage = () => {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">{a.phone || "—"}</span>
+                    </TableCell>
+                    <TableCell>
+                      {a.email_verified ? (
+                        <div>
+                          <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-500/25 text-[11px] px-2 py-0.5 gap-1">
+                            <ShieldCheck className="w-3 h-3" /> Verified
+                          </Badge>
+                          {a.email_verified_at && (
+                            <p className="text-[10px] text-muted-foreground mt-1">{fmtDate(a.email_verified_at)}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/25 text-[11px] px-2 py-0.5 gap-1">
+                          <Mail className="w-3 h-3" /> Unverified
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {a.hall_name ? (
@@ -261,9 +461,17 @@ const AdminsPage = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(a.created_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}
-                      </span>
+                      <div>
+                        <span className="text-sm text-muted-foreground">{fmtDate(a.created_at)}</span>
+                        {a.last_login_at && (
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Last login {fmtDate(a.last_login_at)}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </TableCell>
                   </TableRow>
                 ))}

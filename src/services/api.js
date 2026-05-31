@@ -815,6 +815,13 @@ export const adminsAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+  getLogs: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/admins/${id}/logs`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
 }
 
 export const dashboardAPI = {
