@@ -26,28 +26,26 @@ export const authAPI = {
   register: async (data) => {
     const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(data),
     })
-    if (!response.ok) throw new Error("Registration failed")
-    return response.json()
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "Registration failed"), { data: json })
+    return json
   },
 
   // ✅ Login admin
   login: async (email, password) => {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ email, password }),
     })
-    if (!response.ok) throw new Error("Login failed")
-    return response.json()
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "Login failed"), { data: json, status: response.status })
+    return json
   },
 
   // ✅ Logout admin
@@ -92,6 +90,87 @@ export const authAPI = {
       const err = await response.json()
       throw new Error(err.error || "Failed to update cinema hall")
     }
+    return response.json()
+  },
+
+  // ✅ Verify email with token from link
+  verifyEmail: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-email?token=${encodeURIComponent(token)}`, {
+      method: "GET",
+      credentials: "include",
+    })
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "Verification failed"), { data: json })
+    return json
+  },
+
+  // ✅ Resend verification email
+  resendVerification: async (email) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to resend verification email")
+    return json
+  },
+
+  // ✅ Forgot password — request reset link
+  forgotPassword: async (email) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Request failed")
+    return json
+  },
+
+  // ✅ Reset password with token from link
+  resetPassword: async (token, newPassword) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, newPassword }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "Password reset failed"), { data: json })
+    return json
+  },
+
+  // ✅ Change password (authenticated)
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to change password")
+    return json
+  },
+
+  // ✅ Logout from all devices
+  logoutAllDevices: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout-all`, {
+      method: "POST",
+      credentials: "include",
+    })
+    if (!response.ok) throw new Error("Failed to sign out from all devices")
+    return response.json()
+  },
+
+  // ✅ Get security info (sessions, logs, etc.)
+  getSecurityInfo: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/security`, {
+      method: "GET",
+      credentials: "include",
+    })
+    if (!response.ok) throw new Error("Failed to load security info")
     return response.json()
   },
 }

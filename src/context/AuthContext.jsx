@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       setCinemaHall(res.hall)
       return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
-      return { success: false, message: err.message }
+      return { success: false, message: err.message, data: err.data }
     }
   }
 
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (data) => {
     try {
       const res = await authAPI.register(data)
-      return { success: true, admin: res.admin }
+      return { success: true, admin: res.admin, message: res.message }
     } catch (err) {
       return { success: false, message: err.message }
     }
@@ -89,16 +89,41 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // ✅ Change password
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const res = await authAPI.changePassword(currentPassword, newPassword)
+      return { success: true, message: res.message }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
+
+  // ✅ Logout all devices
+  const logoutAllDevices = async () => {
+    try {
+      await authAPI.logoutAllDevices()
+      setUser(null)
+      setCinemaHall(null)
+      return { success: true }
+    } catch (err) {
+      return { success: false, message: err.message }
+    }
+  }
+
   const value = {
     user,
     cinemaHall,
     isSuperAdmin,
     isLoggedIn: !!user,
+    emailVerified: user?.email_verified ?? false,
     loading,
     login,
     logout,
     register,
     updateHall,
+    changePassword,
+    logoutAllDevices,
   }
 
   return (

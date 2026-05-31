@@ -16,5 +16,9 @@ export const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 
+  if (user.email_verified === false) {
+    return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email)}`} replace />
+  }
+
   return children
 }

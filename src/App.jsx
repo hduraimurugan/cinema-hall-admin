@@ -14,6 +14,9 @@ import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import ScreenDesignerPage from './pages/ScreenDesignerPage.jsx'
 import { RegisterPage } from './pages/RegisterPage.jsx';
+import { VerifyEmailPage } from './pages/VerifyEmailPage.jsx';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage.jsx';
+import { ResetPasswordPage } from './pages/ResetPasswordPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
@@ -49,6 +52,9 @@ function App() {
             element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />}
           />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Onboarding — shown only when admin has no halls yet */}
           <Route

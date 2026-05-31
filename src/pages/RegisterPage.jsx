@@ -1,11 +1,12 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import { PASSWORD_POLICY_CHECKS } from "@/utils/passwordPolicy"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User, Mail, Lock, Phone, Film, Eye, EyeOff } from "lucide-react"
+import { User, Mail, Lock, Phone, Film, Eye, EyeOff, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 
 export const RegisterPage = () => {
@@ -21,21 +22,22 @@ export const RegisterPage = () => {
     setFormData(p => ({ ...p, [name]: value }))
   }
 
+  const allPolicyPassed = PASSWORD_POLICY_CHECKS.every((c) => c.test(formData.password))
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name.trim()) return setError("Full name is required.")
     if (!formData.phone.trim()) return setError("Phone number is required.")
     if (!formData.email.trim()) return setError("Email is required.")
-    if (!formData.password.trim()) return setError("Password is required.")
-    if (formData.password.length < 6) return setError("Password must be at least 6 characters.")
+    if (!allPolicyPassed) return setError("Password does not meet the required policy.")
 
     setError("")
     setIsLoading(true)
     try {
       const result = await register(formData)
       if (result.success) {
-        toast.success("Account created! Please sign in.")
-        navigate("/login")
+        toast.success("Account created! Please verify your email.")
+        navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`)
       } else {
         setError(result.message || "Registration failed")
         toast.error(result.message || "Registration failed")
@@ -122,7 +124,7 @@ export const RegisterPage = () => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                 <Input
-                  name="password" type={showPassword ? "text" : "password"} placeholder="Min 6 characters"
+                  name="password" type={showPassword ? "text" : "password"} placeholder="Min 8 characters"
                   className="pl-10 pr-10 h-11 bg-slate-800/60 border-slate-700 text-white placeholder:text-slate-500 focus:border-primary"
                   value={formData.password} onChange={handleChange}
                 />
@@ -134,6 +136,20 @@ export const RegisterPage = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {/* Policy checklist */}
+              {formData.password.length > 0 && (
+                <ul className="space-y-0.5 px-1 pt-1">
+                  {PASSWORD_POLICY_CHECKS.map((check) => {
+                    const passed = check.test(formData.password)
+                    return (
+                      <li key={check.label} className={`flex items-center gap-2 text-xs ${passed ? "text-green-400" : "text-slate-500"}`}>
+                        <CheckCircle className={`w-3 h-3 flex-shrink-0 ${passed ? "text-green-400" : "text-slate-600"}`} />
+                        {check.label}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
 
             <div className="pt-2 space-y-3">

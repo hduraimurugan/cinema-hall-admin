@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { authAPI } from '@/services/api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, Film, Clapperboard, Ticket, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { Mail, Lock, Film, Clapperboard, Ticket, LayoutDashboard, ChevronRight, RefreshCw } from 'lucide-react';
 import { toast } from "sonner";
 
 const FEATURES = [
@@ -123,6 +124,10 @@ export const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState(null)
+  const [lockedUntil, setLockedUntil] = useState(null)
+  const [unverifiedEmail, setUnverifiedEmail] = useState(null)
+  const [resendingVerification, setResendingVerification] = useState(false)
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -130,6 +135,9 @@ export const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorCode(null)
+    setLockedUntil(null)
+    setUnverifiedEmail(null)
     setIsLoading(true);
 
     try {
@@ -142,8 +150,18 @@ export const LoginPage = () => {
         }
         navigate('/');
       } else {
-        setError(result.message || 'Login failed');
-        toast.error(result.message || 'Login failed');
+        const data = result.data || {}
+        setErrorCode(data.code || null)
+        if (data.code === 'ACCOUNT_LOCKED') {
+          setLockedUntil(data.lockedUntil)
+          setError(result.message)
+        } else if (data.code === 'EMAIL_NOT_VERIFIED') {
+          setUnverifiedEmail(data.email || email)
+          setError(result.message)
+        } else {
+          setError(result.message || 'Login failed')
+          toast.error(result.message || 'Login failed')
+        }
       }
     } catch {
       setError('Something went wrong. Please try again.');
@@ -152,6 +170,25 @@ export const LoginPage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedEmail) return
+    setResendingVerification(true)
+    try {
+      await authAPI.resendVerification(unverifiedEmail)
+      toast.success("Verification email sent! Check your inbox.")
+      navigate(`/verify-email?email=${encodeURIComponent(unverifiedEmail)}`)
+    } catch (err) {
+      toast.error(err.message || "Failed to resend. Please try again.")
+    } finally {
+      setResendingVerification(false)
+    }
+  }
+
+  // Format locked until time
+  const lockedUntilFormatted = lockedUntil
+    ? new Date(lockedUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    : null
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -174,8 +211,31 @@ export const LoginPage = () => {
           </div>
 
           {error && (
-            <Alert variant="destructive" className="mb-6 border-destructive/20 bg-destructive/5">
-              <AlertDescription className="text-sm">{error}</AlertDescription>
+            <Alert
+              variant={errorCode === 'EMAIL_NOT_VERIFIED' ? 'default' : 'destructive'}
+              className="mb-6 border-destructive/20 bg-destructive/5"
+            >
+              <AlertDescription className="text-sm space-y-2">
+                <p>{error}</p>
+                {errorCode === 'ACCOUNT_LOCKED' && lockedUntilFormatted && (
+                  <p className="text-xs text-muted-foreground">Account unlocks at {lockedUntilFormatted}. You can also <Link to="/forgot-password" className="text-primary underline underline-offset-2">reset your password</Link> to regain access immediately.</p>
+                )}
+                {errorCode === 'EMAIL_NOT_VERIFIED' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-1 h-8 text-xs"
+                    onClick={handleResendVerification}
+                    disabled={resendingVerification}
+                  >
+                    {resendingVerification ? (
+                      <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> Sending…</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3" /> Resend verification email</span>
+                    )}
+                  </Button>
+                )}
+              </AlertDescription>
             </Alert>
           )}
 
@@ -198,7 +258,15 @@ export const LoginPage = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-primary hover:text-primary/80 underline-offset-4 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
