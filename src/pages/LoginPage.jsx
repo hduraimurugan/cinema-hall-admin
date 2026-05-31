@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, Film, Clapperboard, Ticket, LayoutDashboard, ChevronRight, RefreshCw } from 'lucide-react';
+import { Mail, Lock, Film, Clapperboard, Ticket, LayoutDashboard, ChevronRight, RefreshCw, MailCheck, ShieldAlert, Clock } from 'lucide-react';
 import { toast } from "sonner";
 
 const FEATURES = [
@@ -210,32 +210,67 @@ export const LoginPage = () => {
             <p className="text-muted-foreground text-sm mt-1">Sign in to your admin account</p>
           </div>
 
-          {error && (
-            <Alert
-              variant={errorCode === 'EMAIL_NOT_VERIFIED' ? 'default' : 'destructive'}
-              className="mb-6 border-destructive/20 bg-destructive/5"
-            >
-              <AlertDescription className="text-sm space-y-2">
-                <p>{error}</p>
-                {errorCode === 'ACCOUNT_LOCKED' && lockedUntilFormatted && (
-                  <p className="text-xs text-muted-foreground">Account unlocks at {lockedUntilFormatted}. You can also <Link to="/forgot-password" className="text-primary underline underline-offset-2">reset your password</Link> to regain access immediately.</p>
-                )}
-                {errorCode === 'EMAIL_NOT_VERIFIED' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-1 h-8 text-xs"
+          {/* Email not verified — prominent banner */}
+          {errorCode === 'EMAIL_NOT_VERIFIED' && (
+            <div className="mb-6 rounded-xl border border-amber-500/25 bg-amber-500/8 p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                  <MailCheck className="w-4.5 h-4.5 text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-300 leading-none mb-1">Email not verified</p>
+                  <p className="text-xs text-amber-200/70 leading-relaxed">
+                    Check your inbox for the verification link, or request a new one below.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-3 h-8 px-3 text-xs rounded-md bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border border-amber-500/30 hover:border-amber-500/50 flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleResendVerification}
                     disabled={resendingVerification}
                   >
                     {resendingVerification ? (
-                      <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3 animate-spin" /> Sending…</span>
+                      <><RefreshCw className="w-3 h-3 animate-spin" />Sending…</>
                     ) : (
-                      <span className="flex items-center gap-1.5"><RefreshCw className="w-3 h-3" /> Resend verification email</span>
+                      <><RefreshCw className="w-3 h-3" />Resend verification email</>
                     )}
-                  </Button>
-                )}
-              </AlertDescription>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Account locked banner */}
+          {errorCode === 'ACCOUNT_LOCKED' && (
+            <div className="mb-6 rounded-xl border border-red-500/25 bg-red-500/8 p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center">
+                  <ShieldAlert className="w-4.5 h-4.5 text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-red-300 leading-none mb-1">Account temporarily locked</p>
+                  <p className="text-xs text-red-200/70 leading-relaxed">{error}</p>
+                  {lockedUntilFormatted && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <Clock className="w-3 h-3 text-red-400/70" />
+                      <span className="text-xs text-red-300/80">Unlocks at <span className="font-medium text-red-200">{lockedUntilFormatted}</span></span>
+                    </div>
+                  )}
+                  <p className="text-xs text-red-200/50 mt-2">
+                    Or{' '}
+                    <Link to="/forgot-password" className="text-red-300 underline underline-offset-2 hover:text-red-200">
+                      reset your password
+                    </Link>{' '}
+                    to regain access immediately.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Generic error */}
+          {error && !errorCode && (
+            <Alert variant="destructive" className="mb-6 border-destructive/30 bg-destructive/8">
+              <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
 
