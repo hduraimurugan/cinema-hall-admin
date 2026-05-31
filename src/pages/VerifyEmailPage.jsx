@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react"
 import { useSearchParams, useNavigate } from "react-router-dom"
 import { authAPI } from "@/services/api"
+
+// Module-level set — persists across React StrictMode double-invocations
+const verifyingTokens = new Set()
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Film, Mail, CheckCircle, XCircle, RefreshCw, Loader2 } from "lucide-react"
@@ -17,9 +20,13 @@ export const VerifyEmailPage = () => {
   const [resending, setResending] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
 
-  // Auto-verify when token is in URL
+  // Auto-verify when token is in URL.
+  // Uses a module-level Set so React 18 StrictMode double-invocation doesn't
+  // call the API twice (which would consume the token and return INVALID_TOKEN).
   useEffect(() => {
     if (!token) return
+    if (verifyingTokens.has(token)) return
+    verifyingTokens.add(token)
 
     authAPI.verifyEmail(token)
       .then(() => setStatus("success"))
