@@ -212,8 +212,8 @@ export const LoginForm = () => {
       </div>
 
       <Button
-        variant="outline"
-        className="w-full h-11 border-slate-700 hover:border-slate-500 hover:bg-slate-900/50"
+        type="button" variant="ghost"
+        className="w-full h-11 text-slate-400 hover:text-white border border-slate-700/80 hover:border-slate-500 hover:bg-slate-800/50 transition-all"
         onClick={() => navigate('/register')}
         disabled={isLoading}
       >
