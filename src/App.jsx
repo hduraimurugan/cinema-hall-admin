@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from "@/components/ui/sonner"
 import { ProtectedRoute } from './routes/ProtectedRoutes.jsx'
 import { CinemaLayout } from './components/CinemaLayout.jsx';
-import { LoginPage } from './pages/LoginPage'
+import { AuthPage } from './pages/Auth/AuthPage.jsx'
 import { ProfilePage } from './pages/ProfilePage'
 import { SettingsPage } from './pages/SettingsPage'
 import HomePage from './pages/HomePage.jsx'
@@ -13,10 +13,6 @@ import VerifyTicket from './pages/VerifyTicket.jsx';
 import MovieManagement from './pages/MovieManagement.jsx';
 import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import ScreenDesignerPage from './pages/ScreenDesignerPage.jsx'
-import { RegisterPage } from './pages/RegisterPage.jsx';
-import { VerifyEmailPage } from './pages/VerifyEmailPage.jsx';
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage.jsx';
-import { ResetPasswordPage } from './pages/ResetPasswordPage.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
@@ -49,12 +45,12 @@ function App() {
           {/* Redirect to home if already logged in */}
           <Route
             path="/login"
-            element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />}
+            element={isLoggedIn ? <Navigate to="/" replace /> : <AuthPage view="login" />}
           />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/register" element={<AuthPage view="register" />} />
+          <Route path="/verify-email" element={<AuthPage view="verify-email" />} />
+          <Route path="/forgot-password" element={<AuthPage view="forgot-password" />} />
+          <Route path="/reset-password" element={<AuthPage view="reset-password" />} />
 
           {/* Onboarding — shown only when admin has no halls yet */}
           <Route

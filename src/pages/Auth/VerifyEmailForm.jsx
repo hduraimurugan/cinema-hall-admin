@@ -1,0 +1,194 @@
+import { useState, useEffect } from "react"
+import { useSearchParams, useNavigate } from "react-router-dom"
+import { authAPI } from "@/services/api"
+import { Button } from "@/components/ui/button"
+import { Mail, CheckCircle, XCircle, RefreshCw, Loader2 } from "lucide-react"
+import { toast } from "sonner"
+
+// Module-level set — persists across React StrictMode double-invocations
+const verifyingTokens = new Set()
+
+export const VerifyEmailForm = () => {
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const token = searchParams.get("token")
+  const emailParam = searchParams.get("email") // passed from register redirect
+
+  const [status, setStatus] = useState(token ? "verifying" : "pending") // verifying | success | expired | invalid | pending
+  const [resendEmail, setResendEmail] = useState(emailParam || "")
+  const [resending, setResending] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+
+  // Auto-verify when token is in URL.
+  // Uses a module-level Set so React 18 StrictMode double-invocation doesn't
+  // call the API twice (which would consume the token and return INVALID_TOKEN).
+  useEffect(() => {
+    if (!token) return
+    if (verifyingTokens.has(token)) return
+    verifyingTokens.add(token)
+
+    authAPI.verifyEmail(token)
+      .then(() => setStatus("success"))
+      .catch((err) => {
+        const code = err?.data?.code
+        if (code === "TOKEN_EXPIRED") setStatus("expired")
+        else setStatus("invalid")
+      })
+  }, [token])
+
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
+
+  const handleResend = async () => {
+    if (!resendEmail.trim()) {
+      toast.error("Please enter your email address.")
+      return
+    }
+    setResending(true)
+    try {
+      await authAPI.resendVerification(resendEmail.trim())
+      toast.success("Verification email sent! Check your inbox.")
+      setResendCooldown(120) // 2 minutes
+    } catch (err) {
+      toast.error(err.message || "Failed to resend. Please try again.")
+    } finally {
+      setResending(false)
+    }
+  }
+
+  return (
+    <div className="w-full max-w-sm mx-auto">
+      {/* Verifying state */}
+      {status === "verifying" && (
+        <div className="flex flex-col items-center text-center gap-4 py-4 animate-in fade-in duration-300">
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <h2 className="text-xl font-bold text-white">Verifying your email…</h2>
+          <p className="text-slate-400 text-sm">Please wait a moment.</p>
+        </div>
+      )}
+
+      {/* Success */}
+      {status === "success" && (
+        <div className="flex flex-col items-center text-center gap-4 py-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-14 h-14 rounded-full bg-green-500/15 border border-green-500/30 flex items-center justify-center shadow-lg shadow-green-500/10">
+            <CheckCircle className="w-7 h-7 text-green-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Email verified!</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">Your account is now active. You can sign in to your admin panel.</p>
+          <Button className="w-full mt-2 h-11 bg-primary hover:bg-primary/95 shadow-lg shadow-primary/20" onClick={() => navigate("/login")}>
+            Go to Sign In
+          </Button>
+        </div>
+      )}
+
+      {/* Expired */}
+      {status === "expired" && (
+        <div className="flex flex-col items-center text-center gap-4 py-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-14 h-14 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center">
+            <XCircle className="w-7 h-7 text-yellow-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Link expired</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">This verification link has expired (links are valid for 24 hours). Request a new one below.</p>
+          <ResendForm
+            email={resendEmail}
+            setEmail={setResendEmail}
+            onResend={handleResend}
+            resending={resending}
+            cooldown={resendCooldown}
+          />
+          <Button variant="ghost" className="text-slate-400 hover:text-white border border-slate-700 w-full h-11" onClick={() => navigate("/login")}>
+            Back to Sign In
+          </Button>
+        </div>
+      )}
+
+      {/* Invalid */}
+      {status === "invalid" && (
+        <div className="flex flex-col items-center text-center gap-4 py-4 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-14 h-14 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+            <XCircle className="w-7 h-7 text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white">Invalid link</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">This verification link is not valid. It may have already been used or the URL may be incomplete.</p>
+          <ResendForm
+            email={resendEmail}
+            setEmail={setResendEmail}
+            onResend={handleResend}
+            resending={resending}
+            cooldown={resendCooldown}
+          />
+          <Button variant="ghost" className="text-slate-400 hover:text-white border border-slate-700 w-full h-11" onClick={() => navigate("/login")}>
+            Back to Sign In
+          </Button>
+        </div>
+      )}
+
+      {/* Pending (no token — landed here from register) */}
+      {status === "pending" && (
+        <div className="flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-300">
+          <div className="flex flex-col items-center text-center gap-3">
+            <div className="w-14 h-14 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
+              <Mail className="w-7 h-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold text-white animate-pulse">Check your inbox</h2>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              We've sent a verification link to <strong className="text-slate-300">{emailParam || "your email"}</strong>.
+              Click the link to activate your account.
+            </p>
+            <p className="text-slate-500 text-xs">Didn't receive it? Check your spam folder or request a new link below.</p>
+          </div>
+
+          <ResendForm
+            email={resendEmail}
+            setEmail={setResendEmail}
+            onResend={handleResend}
+            resending={resending}
+            cooldown={resendCooldown}
+          />
+
+          <Button variant="ghost" className="text-slate-400 hover:text-white border border-slate-700 w-full h-11" onClick={() => navigate("/login")}>
+            Back to Sign In
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ResendForm = ({ email, setEmail, onResend, resending, cooldown }) => (
+  <div className="w-full space-y-3 mt-2">
+    <div className="relative">
+      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+      <input
+        type="email"
+        placeholder="Enter your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full pl-10 pr-4 h-11 rounded-md bg-slate-800/60 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-primary"
+      />
+    </div>
+    <Button
+      className="w-full h-11 bg-primary hover:bg-primary/95 text-white"
+      onClick={onResend}
+      disabled={resending || cooldown > 0}
+    >
+      {resending ? (
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" /> Sending…
+        </span>
+      ) : cooldown > 0 ? (
+        <span className="flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4" /> Resend in {cooldown}s
+        </span>
+      ) : (
+        <span className="flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4" /> Resend Verification Email
+        </span>
+      )}
+    </Button>
+  </div>
+)
