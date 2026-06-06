@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ProtectedRoute } from './routes/ProtectedRoutes.jsx'
 import { CinemaLayout } from './components/CinemaLayout.jsx';
 import { AuthPage } from './pages/Auth/AuthPage.jsx'
+import { GitHubCallback } from './pages/Auth/GitHubCallback.jsx'
 import { ProfilePage } from './pages/ProfilePage'
 import { SettingsPage } from './pages/SettingsPage'
 import HomePage from './pages/HomePage.jsx'
@@ -51,6 +52,7 @@ function App() {
           <Route path="/verify-email" element={<AuthPage view="verify-email" />} />
           <Route path="/forgot-password" element={<AuthPage view="forgot-password" />} />
           <Route path="/reset-password" element={<AuthPage view="reset-password" />} />
+          <Route path="/auth/github/callback" element={<GitHubCallback />} />
 
           {/* Onboarding — shown only when admin has no halls yet */}
           <Route

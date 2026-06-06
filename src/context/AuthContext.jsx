@@ -111,6 +111,41 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // ✅ Google OAuth Login
+  const googleLogin = async (idToken) => {
+    try {
+      const res = await authAPI.googleLogin(idToken)
+      setUser(res.admin)
+      setCinemaHall(res.hall)
+      return { success: true, admin: res.admin, hall: res.hall ?? null }
+    } catch (err) {
+      return { success: false, message: err.message, data: err.data }
+    }
+  }
+
+  // ✅ GitHub OAuth Login
+  const githubLogin = async (code) => {
+    try {
+      const res = await authAPI.githubLogin(code)
+      setUser(res.admin)
+      setCinemaHall(res.hall)
+      return { success: true, admin: res.admin, hall: res.hall ?? null }
+    } catch (err) {
+      return { success: false, message: err.message, data: err.data }
+    }
+  }
+
+  // ✅ Refresh user data
+  const refreshUser = async () => {
+    try {
+      const res = await authAPI.getMe()
+      setUser(res.admin)
+      setCinemaHall(res.hall)
+    } catch {
+      // ignore
+    }
+  }
+
   const value = {
     user,
     cinemaHall,
@@ -124,6 +159,9 @@ export const AuthProvider = ({ children }) => {
     updateHall,
     changePassword,
     logoutAllDevices,
+    googleLogin,
+    githubLogin,
+    refreshUser,
   }
 
   return (

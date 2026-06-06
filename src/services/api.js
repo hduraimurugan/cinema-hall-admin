@@ -173,6 +173,71 @@ export const authAPI = {
     if (!response.ok) throw new Error("Failed to load security info")
     return response.json()
   },
+
+  // ✅ Google OAuth Login
+  googleLogin: async (idToken) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ idToken }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "Google login failed"), { data: json, status: response.status })
+    return json
+  },
+
+  // ✅ GitHub OAuth Login
+  githubLogin: async (code) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/github-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ code }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw Object.assign(new Error(json.error || "GitHub login failed"), { data: json, status: response.status })
+    return json
+  },
+
+  // ✅ Link OAuth provider
+  linkProvider: async (provider, { idToken, code } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/link-provider`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ provider, idToken, code }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to link provider")
+    return json
+  },
+
+  // ✅ Unlink OAuth provider
+  unlinkProvider: async (provider) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/unlink-provider`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ provider }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to unlink provider")
+    return json
+  },
+
+  // ✅ Set password (for OAuth-only accounts)
+  setPassword: async (newPassword) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/set-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ newPassword }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to set password")
+    return json
+  },
 }
 
 export const screensAPI = {
