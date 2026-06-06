@@ -192,19 +192,23 @@ function AdminDetailSheet({ admin, onClose }) {
 
             {/* Cinema Hall */}
             <section>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Cinema Hall</p>
-              {a?.hall_name ? (
-                <div className="rounded-lg bg-muted/40 border border-border/40 p-3 space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                    <span className="text-sm font-medium">{a.hall_name}</span>
-                  </div>
-                  {(a.location || a.district || a.state) && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground">{[a.location, a.district, a.state].filter(Boolean).join(", ")}</span>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Cinema Halls</p>
+              {a?.halls?.length > 0 ? (
+                <div className="space-y-2">
+                  {a.halls.map((hall) => (
+                    <div key={hall.id} className="rounded-lg bg-muted/40 border border-border/40 p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="text-sm font-medium">{hall.name}</span>
+                      </div>
+                      {(hall.location || hall.district || hall.state) && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">{[hall.location, hall.district, hall.state].filter(Boolean).join(", ")}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
               ) : (
                 <div className="rounded-lg bg-muted/30 border border-dashed border-border/40 p-3 text-center text-xs text-muted-foreground">
@@ -294,7 +298,7 @@ const AdminsPage = () => {
     setSearch(""); setSearchInput(""); setPage(1)
   }
 
-  const COLS = ["Admin", "Phone", "Verified", "Cinema Hall", "Location", "Registered", ""]
+  const COLS = ["Admin", "Phone", "Verified", "Cinema Halls", "Location", "Registered", ""]
 
   return (
     <div className="p-6 space-y-6">
@@ -489,20 +493,28 @@ const AdminsPage = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {a.hall_name ? (
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium">{a.hall_name}</span>
+                      {a.halls?.length > 0 ? (
+                        <div className="space-y-1">
+                          {a.halls.map((h) => (
+                            <div key={h.id} className="flex items-center gap-1.5">
+                              <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-sm font-medium">{h.name}</span>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">No hall</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      {a.location ? (
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="text-sm">{[a.location, a.district, a.state].filter(Boolean).join(", ")}</span>
+                      {a.halls?.length > 0 ? (
+                        <div className="space-y-1">
+                          {a.halls.map((h) => (
+                            <div key={h.id} className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-muted-foreground shrink-0" />
+                              <span className="text-sm">{[h.location, h.district, h.state].filter(Boolean).join(", ")}</span>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-sm">—</span>
