@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { toast } from 'sonner'
@@ -9,21 +9,25 @@ export const GitHubCallback = () => {
   const navigate = useNavigate()
   const { githubLogin } = useAuth()
   const [error, setError] = useState(null)
+  const processedRef = useRef(false)
 
   useEffect(() => {
+    if (processedRef.current) return
+    processedRef.current = true
+
     const code = searchParams.get('code')
     const errorParam = searchParams.get('error')
 
     if (errorParam) {
       setError('GitHub login was cancelled or denied.')
       toast.error('GitHub login was cancelled.')
-      setTimeout(() => navigate('/login'), 2000)
+      setTimeout(() => navigate('/login', { replace: true }), 2000)
       return
     }
 
     if (!code) {
       setError('No authorization code received from GitHub.')
-      setTimeout(() => navigate('/login'), 2000)
+      setTimeout(() => navigate('/login', { replace: true }), 2000)
       return
     }
 
@@ -32,16 +36,16 @@ export const GitHubCallback = () => {
         const result = await githubLogin(code)
         if (result.success) {
           toast.success('Welcome!')
-          navigate('/')
+          navigate('/', { replace: true })
         } else {
           setError(result.message || 'GitHub login failed')
           toast.error(result.message || 'GitHub login failed')
-          setTimeout(() => navigate('/login'), 3000)
+          setTimeout(() => navigate('/login', { replace: true }), 3000)
         }
       } catch (err) {
         setError('GitHub login failed. Please try again.')
         toast.error('GitHub login failed. Please try again.')
-        setTimeout(() => navigate('/login'), 3000)
+        setTimeout(() => navigate('/login', { replace: true }), 3000)
       }
     }
 
