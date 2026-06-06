@@ -866,6 +866,13 @@ export const customersAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+  getDetails: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/customers/${id}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
 }
 
 export const adminsAPI = {
