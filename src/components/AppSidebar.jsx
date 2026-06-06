@@ -18,7 +18,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -193,6 +193,7 @@ export function AppSidebar({ collapsed = false }) {
           ) : (
             <div className="flex items-center gap-3 rounded-lg ring-1 ring-border/40 bg-muted/30 px-3 py-2.5">
               <Avatar className="h-8 w-8 shrink-0 rounded-full border-2 border-primary/30 shadow-sm">
+                {user?.avatar && <AvatarImage src={user.avatar} alt={user?.name} className="object-cover" />}
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold">
                   {user?.name?.charAt(0)?.toUpperCase() || "A"}
                 </AvatarFallback>

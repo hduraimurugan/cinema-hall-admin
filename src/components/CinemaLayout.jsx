@@ -15,7 +15,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -226,6 +226,7 @@ export function CinemaLayout() {
                                     className="relative h-9 w-9 rounded-full hover:bg-primary/10 transition-all duration-200"
                                 >
                                     <Avatar className="h-9 w-9 border-2 border-primary/20">
+                                        {user?.avatar && <AvatarImage src={user.avatar} alt={user?.name} className="object-cover" />}
                                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold">
                                             {user?.name?.charAt(0) ?? "?"}
                                         </AvatarFallback>
