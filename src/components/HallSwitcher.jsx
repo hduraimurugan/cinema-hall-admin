@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Building2, PlusCircle, Settings2, ChevronDown } from "lucide-react";
+import { Building2, PlusCircle, Settings2, ChevronsUpDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,10 +43,11 @@ export function HallSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40
-                     px-2.5 h-9 text-left hover:bg-muted/70 hover:border-border
+          className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/50
+                     px-2.5 h-9 text-left
+                     hover:bg-primary/10 hover:border-primary/30 hover:shadow-[0_0_12px_rgba(var(--primary),0.08)]
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
-                     transition-all duration-150 group max-w-[220px]"
+                     transition-all duration-200 ease-out group max-w-[220px]"
           aria-label="Switch active cinema hall"
         >
           {/* Icon */}
@@ -67,7 +68,7 @@ export function HallSwitcher() {
           </div>
 
           {/* Chevron */}
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <ChevronsUpDown className="h-3 w-3 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
         </button>
       </DropdownMenuTrigger>
 
