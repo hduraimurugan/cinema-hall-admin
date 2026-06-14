@@ -23,6 +23,8 @@ export const MovieForm = ({
     syncing = false,
     hideActions = false,
     formId,
+    handleBackdropUpload,
+    uploadingBackdrop = false,
 }) => {
     const [datePickerOpen, setDatePickerOpen] = useState(false)
     const [newCast, setNewCast] = useState({ name: "", character: "", profile_path: "" })
@@ -233,33 +235,61 @@ export const MovieForm = ({
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <Label>Poster Image *</Label>
-                    <div className="flex items-center gap-4">
-                        <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            disabled={uploading}
-                        />
-                        <Button type="button" disabled={uploading} variant="outline">
-                            <Upload className="w-4 h-4 mr-2" />
-                            {uploading ? "Uploading..." : "Upload"}
-                        </Button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Poster Image *</Label>
+                        <div className="flex items-center gap-4">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                disabled={uploading}
+                            />
+                            <Button type="button" disabled={uploading} variant="outline">
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploading ? "Uploading..." : "Upload"}
+                            </Button>
+                        </div>
+
+                        {formData.poster_url && (
+                            <div
+                                className={`mt-2 ${datePickerOpen ? "pointer-events-none" : ""
+                                    }`}
+                            >
+                                <img
+                                    src={formData.poster_url || "/placeholder.svg"}
+                                    alt="Preview"
+                                    className="w-32 h-48 object-cover rounded"
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    {formData.poster_url && (
-                        <div
-                            className={`mt-2 ${datePickerOpen ? "pointer-events-none" : ""
-                                }`}
-                        >
-                            <img
-                                src={formData.poster_url || "/placeholder.svg"}
-                                alt="Preview"
-                                className="w-32 h-48 object-cover rounded"
+                    <div className="space-y-2">
+                        <Label>Backdrop Image</Label>
+                        <div className="flex items-center gap-4">
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleBackdropUpload}
+                                disabled={uploadingBackdrop}
                             />
+                            <Button type="button" disabled={uploadingBackdrop} variant="outline">
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploadingBackdrop ? "Uploading..." : "Upload"}
+                            </Button>
                         </div>
-                    )}
+
+                        {formData.backdrop_path && (
+                            <div className="mt-2">
+                                <img
+                                    src={formData.backdrop_path}
+                                    alt="Backdrop Preview"
+                                    className="w-full h-32 object-cover rounded"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Vote Average & Vote Count */}

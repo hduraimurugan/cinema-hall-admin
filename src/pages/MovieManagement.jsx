@@ -46,7 +46,7 @@ const genreIcons = {
   Western: Clapperboard,
 }
 
-const EditMovieSheet = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie, onSyncFromTMDB, syncing }) => (
+const EditMovieSheet = ({ open, onOpenChange, formData, setFormData, onSubmit, onCancel, uploading, handleImageUpload, editingMovie, onSyncFromTMDB, syncing, handleBackdropUpload, uploadingBackdrop }) => (
   <Sheet open={open} onOpenChange={onOpenChange}>
     <SheetContent side="right" className="sm:max-w-2xl overflow-hidden flex flex-col p-0" overlayClassName="backdrop-blur-sm">
       <SheetHeader className="px-6 py-4 border-b shrink-0">
@@ -58,6 +58,7 @@ const EditMovieSheet = ({ open, onOpenChange, formData, setFormData, onSubmit, o
           formData={formData} setFormData={setFormData} onSubmit={onSubmit}
           onCancel={onCancel} uploading={uploading} handleImageUpload={handleImageUpload}
           editingMovie={editingMovie} onSyncFromTMDB={onSyncFromTMDB} syncing={syncing}
+          handleBackdropUpload={handleBackdropUpload} uploadingBackdrop={uploadingBackdrop}
           hideActions formId="edit-movie-form"
         />
       </div>
@@ -408,11 +409,12 @@ const MovieManagement = () => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [expandedFilters, setExpandedFilters] = useState({ languages: true, genres: false, releaseDate: false })
   const [formData, setFormData] = useState({
-    title: "", description: "", poster_url: "", trailer_url: "",
+    title: "", description: "", poster_url: "", backdrop_path: "", trailer_url: "",
     duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null,
     cast: [], vote_average: null, vote_count: null,
   })
   const [uploading, setUploading] = useState(false)
+  const [uploadingBackdrop, setUploadingBackdrop] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [existingTmdbIds, setExistingTmdbIds] = useState(new Set())
 
@@ -458,6 +460,21 @@ const MovieManagement = () => {
     }
   }
 
+  const handleBackdropUpload = async (event) => {
+    const file = event.target.files[0]
+    if (!file) return
+    setUploadingBackdrop(true)
+    try {
+      const result = await uploadImageToCloudinary(file)
+      setFormData((prev) => ({ ...prev, backdrop_path: result.url }))
+    } catch (error) {
+      console.error("Error uploading backdrop image:", error)
+      alert("Failed to upload backdrop image")
+    } finally {
+      setUploadingBackdrop(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
@@ -494,6 +511,7 @@ const MovieManagement = () => {
       title: tmdbMovie.title || "",
       description: tmdbMovie.overview || "",
       poster_url: tmdbMovie.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbMovie.poster_path}` : "",
+      backdrop_path: (tmdbMovie.backdrop_path || details?.backdrop_path) ? `https://image.tmdb.org/t/p/original${tmdbMovie.backdrop_path || details.backdrop_path}` : "",
       trailer_url: trailer ? `https://youtube.com/watch?v=${trailer.key}` : "",
       duration_mins: details?.runtime || "",
       genre: genreNames,
@@ -513,7 +531,7 @@ const MovieManagement = () => {
     setEditingMovie(movie)
     setFormData({
       title: movie.title || "", description: movie.description || "",
-      poster_url: movie.poster_url || "", trailer_url: movie.trailer_url || "",
+      poster_url: movie.poster_url || "", backdrop_path: movie.backdrop_path || "", trailer_url: movie.trailer_url || "",
       duration_mins: movie.duration_mins || "", genre: movie.genre || [],
       language: movie.language || [], release_date: movie.release_date || "",
       cast: movie.cast || [], vote_average: movie.vote_average ?? null, vote_count: movie.vote_count ?? null,
@@ -547,6 +565,8 @@ const MovieManagement = () => {
           updates.duration_mins = details.runtime
         if (!prev.poster_url && details?.poster_path)
           updates.poster_url = `https://image.tmdb.org/t/p/w500${details.poster_path}`
+        if (!prev.backdrop_path && details?.backdrop_path)
+          updates.backdrop_path = `https://image.tmdb.org/t/p/original${details.backdrop_path}`
         return { ...prev, ...updates }
       })
       toast.success("Synced missing fields from TMDB")
@@ -571,7 +591,7 @@ const MovieManagement = () => {
   }
 
   const resetForm = () =>
-    setFormData({ title: "", description: "", poster_url: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null, cast: [], vote_average: null, vote_count: null })
+    setFormData({ title: "", description: "", poster_url: "", backdrop_path: "", trailer_url: "", duration_mins: "", genre: [], language: [], release_date: "", status: "upcoming", tmdb_id: null, cast: [], vote_average: null, vote_count: null })
 
   const clearFilters = () =>
     setFilters({ genre: [], language: [], release_date: "", page: 1, limit: 12 })
@@ -775,6 +795,7 @@ const MovieManagement = () => {
               formData={formData} setFormData={setFormData} onSubmit={handleSubmit}
               onCancel={() => { setIsAddModalOpen(false); resetForm() }}
               uploading={uploading} handleImageUpload={handleImageUpload} editingMovie={null}
+              handleBackdropUpload={handleBackdropUpload} uploadingBackdrop={uploadingBackdrop}
               hideActions formId="add-movie-form"
             />
           </div>
@@ -793,6 +814,7 @@ const MovieManagement = () => {
         uploading={uploading} handleImageUpload={handleImageUpload}
         editingMovie={editingMovie}
         onSyncFromTMDB={handleSyncFromTMDB} syncing={syncing}
+        handleBackdropUpload={handleBackdropUpload} uploadingBackdrop={uploadingBackdrop}
       />
     </Tabs>
   )
