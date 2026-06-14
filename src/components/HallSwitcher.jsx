@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Building2, PlusCircle, Settings2, ChevronsUpDown } from "lucide-react";
+import { Building2, PlusCircle, Settings2, ChevronsUpDown, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,15 +43,15 @@ export function HallSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/50
+          className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/40
                      px-2.5 h-9 text-left
-                     hover:bg-primary/10 hover:border-primary/30 hover:shadow-[0_0_12px_rgba(var(--primary),0.08)]
+                     hover:bg-muted/50 hover:border-border
                      focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30
                      transition-all duration-200 ease-out group max-w-[220px]"
           aria-label="Switch active cinema hall"
         >
           {/* Icon */}
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-primary/10 text-primary border border-primary/20">
             <Building2 className="h-3 w-3" />
           </div>
 
@@ -83,28 +83,30 @@ export function HallSwitcher() {
             <DropdownMenuItem
               key={hall.id}
               onClick={() => handleSelect(hall)}
-              className={`flex items-center gap-3 px-2 py-2 rounded-md cursor-pointer mb-0.5
-                         ${isActive ? "bg-primary/8 text-foreground" : "text-foreground"}`}
+              className={`group flex items-center gap-3 px-2.5 py-2 rounded-md cursor-pointer mb-0.5 transition-all
+                         ${isActive 
+                           ? "bg-primary/10 text-foreground font-semibold focus:bg-primary/15 focus:text-foreground" 
+                           : "text-muted-foreground hover:text-foreground hover:bg-muted/40 focus:bg-muted/40 focus:text-foreground"}`}
             >
               {/* Hall icon */}
-              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md
-                               ${isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-all
+                               ${isActive 
+                                 ? "bg-primary/20 text-foreground border border-primary/30" 
+                                 : "bg-muted text-foreground/70 group-hover:text-foreground border border-transparent group-hover:bg-muted/80 group-focus:bg-muted/80"}`}>
                 <Building2 className="h-4 w-4" />
               </div>
 
               {/* Hall details */}
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-sm font-medium leading-tight truncate">{hall.name}</span>
+                <span className="text-sm font-medium leading-tight truncate text-foreground">{hall.name}</span>
                 {hall.location && (
-                  <span className="text-xs text-muted-foreground truncate mt-0.5">{hall.location}</span>
+                  <span className={`text-xs truncate mt-0.5 ${isActive ? "text-muted-foreground/80" : "text-muted-foreground"}`}>{hall.location}</span>
                 )}
               </div>
 
-              {/* Active badge */}
+              {/* Checkmark indicator */}
               {isActive && (
-                <Badge className="shrink-0 h-4 px-1.5 text-[9px] bg-primary/15 text-primary border-primary/20 font-semibold">
-                  Active
-                </Badge>
+                <Check className="h-4 w-4 text-primary shrink-0 animate-in fade-in zoom-in duration-200" />
               )}
             </DropdownMenuItem>
           );
@@ -114,12 +116,12 @@ export function HallSwitcher() {
 
         <DropdownMenuItem
           onClick={() => navigate("/halls")}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-muted-foreground hover:text-foreground"
+          className="group flex items-center gap-3 px-2.5 py-1.5 rounded-md cursor-pointer text-muted-foreground hover:text-foreground hover:bg-muted/30 focus:bg-muted/40 focus:text-foreground"
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted/60 text-muted-foreground transition-colors group-hover:bg-muted group-focus:bg-muted">
             <Settings2 className="h-3.5 w-3.5" />
           </div>
-          <span className="text-sm">Manage halls</span>
+          <span className="text-[13px] font-medium">Manage halls</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
