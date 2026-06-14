@@ -65,8 +65,8 @@ export function AppSidebar({ collapsed = false }) {
     const linkContent = (
       <Link
         to={url}
-        className={`group flex items-center overflow-hidden rounded-lg text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
-          collapsed ? "justify-center p-2" : "gap-3 px-3 py-2"
+        className={`group flex items-center overflow-hidden rounded-lg text-[13px] font-medium transition-all duration-200 active:scale-[0.97] ${
+          collapsed ? "justify-center p-1.5" : "gap-2 px-2.5 py-1.5"
         } ${
           active
             ? "bg-primary/10 text-primary border-l-2 border-primary"
@@ -80,7 +80,7 @@ export function AppSidebar({ collapsed = false }) {
               : "text-muted-foreground group-hover:bg-muted group-hover:text-foreground"
           }`}
         >
-          <Icon className="size-[18px]" />
+          <Icon className="size-4" />
         </span>
         {!collapsed && (
           <span className={`truncate ${active ? "font-semibold" : ""}`}>{title}</span>
@@ -165,7 +165,7 @@ export function AppSidebar({ collapsed = false }) {
 
         {/* Nav Content */}
         <ScrollArea className="flex-1 overflow-y-auto">
-          <div className="space-y-4 px-2 py-4">
+          <div className="space-y-3 px-2 py-3">
             {renderSection("Operations", navigationItems)}
             {renderSection("Promotions", promotionItems, "promotions")}
             {renderSection("Management", managementItems)}
@@ -175,13 +175,13 @@ export function AppSidebar({ collapsed = false }) {
 
         {/* Footer */}
         <Separator />
-        <div className="p-3">
+        <div className="p-2.5">
           {collapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={logout}
-                  className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                  className="flex w-full items-center justify-center rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                 >
                   <LogOut className="size-4" />
                 </button>
@@ -191,7 +191,7 @@ export function AppSidebar({ collapsed = false }) {
               </TooltipContent>
             </Tooltip>
           ) : (
-            <div className="flex items-center gap-3 rounded-lg ring-1 ring-border/40 bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center gap-2.5 rounded-lg ring-1 ring-border/40 bg-muted/30 px-2.5 py-2">
               <Avatar className="h-8 w-8 shrink-0 rounded-full border-2 border-primary/30 shadow-sm">
                 {user?.avatar && <AvatarImage src={user.avatar} alt={user?.name} className="object-cover" />}
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold">

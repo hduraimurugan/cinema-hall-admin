@@ -280,3 +280,29 @@ button:not(.bg-primary):not(.bg-destructive):not(.bg-secondary):hover:not(:disab
   border-color: rgba(255, 255, 255, 0.25) !important;
 }
 
+/* Hide scrollbars on mobile view (under 1024px, the tailwind lg breakpoint) */
+@media (max-width: 1023px) {
+  /* For Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    background: transparent !important;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    display: none !important;
+  }
+
+  /* For Firefox and other browsers */
+  * {
+    scrollbar-width: none !important;
+  }
+  
+  /* Hide custom Radix / ScrollArea scrollbars on mobile */
+  [data-slot="scroll-area-scrollbar"] {
+    display: none !important;
+  }
+}
+
+
