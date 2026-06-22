@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from './context/AuthContext'
 import { HallProvider } from './context/HallContext'
+import { SettingsProvider } from './context/SettingsContext'
 import './index.css'
 import App from './App.jsx'
 
@@ -15,7 +16,9 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <HallProvider>
-            <App />
+            <SettingsProvider>
+              <App />
+            </SettingsProvider>
           </HallProvider>
         </AuthProvider>
       </ThemeProvider>

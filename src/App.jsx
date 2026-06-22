@@ -5,7 +5,12 @@ import { CinemaLayout } from './components/CinemaLayout.jsx';
 import { AuthPage } from './pages/Auth/AuthPage.jsx'
 import { GitHubCallback } from './pages/Auth/GitHubCallback.jsx'
 import { ProfilePage } from './pages/ProfilePage'
-import { SettingsPage } from './pages/SettingsPage'
+import { SettingsLayout } from './pages/settings/SettingsLayout'
+import { GeneralSettingsPage } from './pages/settings/GeneralSettingsPage'
+import { CinemaProfilePage } from './pages/settings/CinemaProfilePage'
+import { ShowtimesSettingsPage } from './pages/settings/ShowtimesSettingsPage'
+import { BookingSettingsPage } from './pages/settings/BookingSettingsPage'
+import { PaymentSettingsPage } from './pages/settings/PaymentSettingsPage'
 import HomePage from './pages/HomePage.jsx'
 import ShowsManagement from './pages/ShowsManagement.jsx';
 import Bookings from './pages/Bookings.jsx';
@@ -79,7 +84,14 @@ function App() {
             {/* Exempt: accessible without a hall */}
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={<SettingsLayout />}>
+              <Route index element={<Navigate to="general" replace />} />
+              <Route path="general" element={<GeneralSettingsPage />} />
+              <Route path="cinema-profile" element={<CinemaProfilePage />} />
+              <Route path="showtimes" element={<ShowtimesSettingsPage />} />
+              <Route path="booking" element={<BookingSettingsPage />} />
+              <Route path="payment" element={<PaymentSettingsPage />} />
+            </Route>
             <Route path="/halls" element={<HallsManagement />} />
 
             {/* Hall-gated */}
