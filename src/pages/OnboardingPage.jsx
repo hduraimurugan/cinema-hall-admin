@@ -2,7 +2,7 @@ import { useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useHall } from "../context/HallContext"
-import { hallsAPI } from "../services/api"
+import { authAPI } from "../services/api"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import {
   Film, Building2, MapPin, Search, Navigation, CheckCircle2,
-  ArrowRight, Sparkles, ChevronLeft, LogOut,
+  ArrowRight, Sparkles, ChevronLeft, LogOut, Briefcase
 } from "lucide-react"
 import { State, City } from "country-state-city"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
@@ -48,19 +48,22 @@ function DraggableMarker({ position, onDrag }) {
 const IN_STATES = State.getStatesOfCountry("IN")
 
 export default function OnboardingPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, refreshUser } = useAuth()
   const { refetchHalls } = useHall()
   const navigate = useNavigate()
 
-  // Step: 1 = hall info, 2 = location, 3 = success
+  // Step: 1 = Org details, 2 = hall info, 3 = location, 4 = success
   const [step, setStep] = useState(1)
 
-  // Step 1 form
+  // Step 1
+  const [orgName, setOrgName] = useState("")
+
+  // Step 2
   const [form, setForm] = useState({ name: "", location: "", state: "", district: "" })
   const [cities, setCities] = useState([])
   const [error, setError] = useState("")
 
-  // Step 2 map
+  // Step 3 map
   const [markerPos, setMarkerPos] = useState(null)
   const [mapCenter, setMapCenter] = useState([20.5937, 78.9629])
   const [mapKey, setMapKey] = useState(0)
@@ -77,11 +80,17 @@ export default function OnboardingPage() {
   }
 
   const handleStep1Next = () => {
+    if (!orgName.trim()) return setError("Organization name is required.")
+    setError("")
+    setStep(2)
+  }
+
+  const handleStep2Next = () => {
     if (!form.name.trim()) return setError("Hall name is required.")
     if (!form.location.trim()) return setError("Address is required.")
     if (!form.state) return setError("Please select a state.")
     setError("")
-    setStep(2)
+    setStep(3)
   }
 
   const handleLocationPick = useCallback((lat, lng) => {
@@ -117,7 +126,8 @@ export default function OnboardingPage() {
   const handleFinish = async (skipLocation = false) => {
     setIsSubmitting(true)
     try {
-      await hallsAPI.createHall({
+      const result = await authAPI.completeOnboarding({
+        orgName: orgName.trim(),
         name: form.name.trim(),
         location: form.location.trim(),
         district: form.district || null,
@@ -125,14 +135,20 @@ export default function OnboardingPage() {
         latitude: skipLocation ? null : (markerPos?.[0] ?? null),
         longitude: skipLocation ? null : (markerPos?.[1] ?? null),
       })
-      setStep(3)
-      // After brief success display, refresh halls and navigate home
+      
+      setStep(4)
+      
+      // Update auth context state with newly returned user details (orgId, etc.)
+      if (refreshUser) {
+        await refreshUser();
+      }
+
       setTimeout(async () => {
         await refetchHalls()
         navigate("/", { replace: true })
       }, 2200)
     } catch (err) {
-      toast.error(err.message || "Failed to create hall. Please try again.")
+      toast.error(err.message || "Failed to complete onboarding. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -153,7 +169,7 @@ export default function OnboardingPage() {
       <Film className="fixed inset-0 m-auto w-[42rem] h-[42rem] text-white/[0.015] pointer-events-none -z-10" strokeWidth={0.3} />
 
       {/* Fixed Sign out button */}
-      {step !== 3 && (
+      {step !== 4 && (
         <div className="fixed top-4 left-4 z-50">
           <button
             onClick={logout}
@@ -170,13 +186,13 @@ export default function OnboardingPage() {
       <div className="min-h-full flex items-center justify-center px-4 py-10">
 
       {/* ───── Success overlay ───── */}
-      {step === 3 && (
+      {step === 4 && (
         <div className="relative z-20 flex flex-col items-center gap-6 text-center animate-in fade-in zoom-in-95 duration-500">
           <div className="w-24 h-24 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shadow-[0_0_60px_rgba(16,185,129,0.3)]">
             <CheckCircle2 className="w-12 h-12 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Hall Created!</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">Onboarding Completed!</h2>
             <p className="text-slate-400">Taking you to your dashboard…</p>
           </div>
           <div className="w-48 h-1 rounded-full bg-slate-800 overflow-hidden">
@@ -188,7 +204,7 @@ export default function OnboardingPage() {
       )}
 
       {/* ───── Main card ───── */}
-      {step !== 3 && (
+      {step !== 4 && (
         <div className="w-full max-w-lg">
 
           {/* Logo */}
@@ -209,13 +225,13 @@ export default function OnboardingPage() {
               Welcome, {firstName}!
             </h1>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Let's set up your first cinema hall. You'll be on the dashboard in under a minute.
+              Let's set up your organization and first cinema hall to get started.
             </p>
           </div>
 
           {/* Step indicator */}
           <div className="flex items-center justify-center mb-7">
-            {[1, 2].map((s) => (
+            {[1, 2, 3].map((s) => (
               <div key={s} className="flex items-center">
                 <div className="flex items-center gap-2.5">
                   <div className={`flex items-center justify-center w-9 h-9 rounded-full border-2 text-sm font-bold transition-all duration-300 ${
@@ -228,13 +244,13 @@ export default function OnboardingPage() {
                     {step > s ? <CheckCircle2 className="w-4 h-4" /> : s}
                   </div>
                   <span className={`text-sm font-medium transition-colors ${step === s ? "text-white" : "text-slate-500"}`}>
-                    {s === 1 ? "Hall Details" : "Location"}
+                    {s === 1 ? "Organization" : s === 2 ? "Hall Details" : "Location"}
                   </span>
                 </div>
-                {s < 2 && (
+                {s < 3 && (
                   <div className="mx-4 w-14 h-px relative">
                     <div className="absolute inset-0 bg-slate-700 rounded-full" />
-                    <div className={`absolute inset-0 bg-emerald-500/60 rounded-full transition-all duration-500 ${step > 1 ? "w-full" : "w-0"}`} />
+                    <div className={`absolute inset-0 bg-emerald-500/60 rounded-full transition-all duration-500 ${step > s ? "w-full" : "w-0"}`} />
                   </div>
                 )}
               </div>
@@ -246,14 +262,53 @@ export default function OnboardingPage() {
             {/* Accent top bar */}
             <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-80" />
 
-            {/* ── Step 1: Hall Info ── */}
+            {/* ── Step 1: Organization details ── */}
             {step === 1 && (
+              <div className="px-7 py-7 space-y-5">
+                <div className="flex items-center gap-2.5 mb-1">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center">
+                    <Briefcase className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <h2 className="text-base font-semibold text-white">Create Your Organization</h2>
+                </div>
+
+                {error && (
+                  <Alert variant="destructive" className="border-destructive/30 bg-destructive/8">
+                    <AlertDescription className="text-sm">{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-1.5">
+                  <Label className="text-slate-300 text-xs font-semibold uppercase tracking-wider">Organization Name</Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <Input
+                      placeholder="e.g. Cineplex Entertainment"
+                      className="pl-10 h-11 bg-slate-800/50 border-slate-700/80 text-white placeholder:text-slate-600 focus:border-primary/70 focus:bg-slate-800 transition-colors"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full h-11 font-semibold mt-2 shadow-[0_4px_20px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_4px_28px_rgba(var(--primary-rgb),0.45)] transition-all"
+                  onClick={handleStep1Next}
+                >
+                  Next — Cinema Hall Details
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+
+            {/* ── Step 2: Hall Info ── */}
+            {step === 2 && (
               <div className="px-7 py-7 space-y-5">
                 <div className="flex items-center gap-2.5 mb-1">
                   <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center">
                     <Building2 className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <h2 className="text-base font-semibold text-white">Hall Information</h2>
+                  <h2 className="text-base font-semibold text-white">First Cinema Hall Details</h2>
                 </div>
 
                 {error && (
@@ -321,18 +376,28 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <Button
-                  className="w-full h-11 font-semibold mt-2 shadow-[0_4px_20px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_4px_28px_rgba(var(--primary-rgb),0.45)] transition-all"
-                  onClick={handleStep1Next}
-                >
-                  Next — Set Location
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    type="button" variant="ghost"
+                    className="flex-1 h-11 border border-slate-700/80 text-slate-400 hover:text-white hover:border-slate-500 hover:bg-slate-800/50 transition-all"
+                    onClick={() => setStep(1)}
+                  >
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back
+                  </Button>
+                  <Button
+                    className="flex-[2] h-11 font-semibold shadow-[0_4px_20px_rgba(var(--primary-rgb),0.3)] hover:shadow-[0_4px_28px_rgba(var(--primary-rgb),0.45)] transition-all"
+                    onClick={handleStep2Next}
+                  >
+                    Next — Set Location
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
               </div>
             )}
 
-            {/* ── Step 2: Location ── */}
-            {step === 2 && (
+            {/* ── Step 3: Location ── */}
+            {step === 3 && (
               <div className="px-7 py-7 space-y-4">
                 <div className="flex items-center gap-2.5 mb-1">
                   <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center">
@@ -404,7 +469,7 @@ export default function OnboardingPage() {
                   <Button
                     type="button" variant="ghost"
                     className="flex-1 h-11 border border-slate-700/80 text-slate-400 hover:text-white hover:border-slate-500 hover:bg-slate-800/50 transition-all"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                   >
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Back

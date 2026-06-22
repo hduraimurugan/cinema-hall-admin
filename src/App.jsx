@@ -121,18 +121,18 @@ function App() {
             <Route path="/verify-ticket" element={<VerifyTicket />} />
           </Route>
 
-          {/* Super Admin Routes */}
+          {/* Super Admin / Gated Routes */}
           <Route path="" element={
             <AdminProtectedRoute>
               <CinemaLayout />
             </AdminProtectedRoute>
           }>
-            <Route path="/ads" element={<AdsManagement />} />
-            <Route path="/offers" element={<OffersManagement />} />
-            <Route path="/offers/new" element={<OfferFormPage />} />
-            <Route path="/offers/:id/edit" element={<OfferFormPage />} />
-            <Route path="/customers" element={<UsersPage />} />
-            <Route path="/admins" element={<AdminsPage />} />
+            <Route path="/ads" element={<AdminProtectedRoute permission="ads.read" requireSuperAdmin={true}><AdsManagement /></AdminProtectedRoute>} />
+            <Route path="/offers" element={<AdminProtectedRoute permission="offers.read"><OffersManagement /></AdminProtectedRoute>} />
+            <Route path="/offers/new" element={<AdminProtectedRoute permission="offers.create"><OfferFormPage /></AdminProtectedRoute>} />
+            <Route path="/offers/:id/edit" element={<AdminProtectedRoute permission="offers.update"><OfferFormPage /></AdminProtectedRoute>} />
+            <Route path="/customers" element={<AdminProtectedRoute permission="customers.read" requireSuperAdmin={true}><UsersPage /></AdminProtectedRoute>} />
+            <Route path="/admins" element={<AdminProtectedRoute permission="team.manage" requireSuperAdmin={true}><AdminsPage /></AdminProtectedRoute>} />
           </Route>
 
           {/* Catch-all route - redirect to home */}

@@ -28,27 +28,27 @@ import { Button } from "@/components/ui/button"
 import { formatRole } from "../utils/utils"
 
 const navigationItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Dashboard", url: "/", icon: Home, permission: "dashboard.view" },
   { title: "My Halls", url: "/halls", icon: Building2 },
-  { title: "Screens", url: "/screens", icon: Monitor },
-  { title: "Movies", url: "/movies", icon: Film },
-  { title: "Showtimes", url: "/shows", icon: Calendar },
-  { title: "Bookings", url: "/bookings", icon: Ticket },
-  { title: "Refunds", url: "/refunds", icon: RefreshCw },
-  { title: "Payment Orders", url: "/payment-orders", icon: CreditCard },
-  { title: "Verify Ticket", url: "/verify-ticket", icon: ScanLine },
+  { title: "Screens", url: "/screens", icon: Monitor, permission: "screens.read" },
+  { title: "Movies", url: "/movies", icon: Film, permission: "movies.read" },
+  { title: "Showtimes", url: "/shows", icon: Calendar, permission: "shows.read" },
+  { title: "Bookings", url: "/bookings", icon: Ticket, permission: "bookings.read" },
+  { title: "Refunds", url: "/refunds", icon: RefreshCw, permission: "refunds.read" },
+  { title: "Payment Orders", url: "/payment-orders", icon: CreditCard, permission: "payment.read" },
+  { title: "Verify Ticket", url: "/verify-ticket", icon: ScanLine, permission: "verify-ticket.use" },
 ]
 
 const promotionItems = [
-  { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"], permission: "ads.read" },
-  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"], permission: "offers.read" },
+  { title: "Ads", url: "/ads", icon: Megaphone, permission: "ads.read", superAdminOnly: true },
+  { title: "Offers", url: "/offers", icon: Tag, permission: "offers.read" },
 ]
 
 const managementItems = [
-  { title: "Customers", url: "/customers", icon: Users, roles: ["superAdmin"], permission: "customers.read" },
-  { title: "Hall Admins", url: "/admins", icon: Building2, roles: ["superAdmin"], permission: "team.manage" },
-  { title: "Revenue", url: "/revenue", icon: DollarSign },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Customers", url: "/customers", icon: Users, permission: "customers.read", superAdminOnly: true },
+  { title: "Hall Admins", url: "/admins", icon: Building2, permission: "team.manage", superAdminOnly: true },
+  { title: "Revenue", url: "/revenue", icon: DollarSign, permission: "analytics.view" },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, permission: "analytics.view" },
 ]
 
 const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
@@ -106,8 +106,9 @@ export function AppSidebar({ collapsed = false }) {
 
   const renderSection = (title, items, variant = "default") => {
     const filteredItems = items.filter((item) => {
-      if (item.roles && !item.roles.includes(user?.role)) return false
-      if (item.permission && !can(item.permission) && user?.role !== 'superAdmin') return false
+      if (item.superAdminOnly && user?.role !== 'superAdmin') return false
+      if (user?.role === 'superAdmin') return true
+      if (item.permission && !can(item.permission)) return false
       return true
     })
     if (filteredItems.length === 0) return null

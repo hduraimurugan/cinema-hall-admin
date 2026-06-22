@@ -93,6 +93,21 @@ export const authAPI = {
     return response.json()
   },
 
+  // ✅ Complete Onboarding (Setup Organization + Cinema Hall)
+  completeOnboarding: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/onboarding`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+    const json = await response.json()
+    if (!response.ok) {
+      throw Object.assign(new Error(json.error || "Onboarding failed"), { data: json })
+    }
+    return json
+  },
+
   // ✅ Verify email with token from link
   verifyEmail: async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/auth/verify-email?token=${encodeURIComponent(token)}`, {
