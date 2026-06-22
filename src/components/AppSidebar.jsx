@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useAuth } from "../context/AuthContext"
+import { usePermissions } from "@/context/PermissionContext"
 import { Button } from "@/components/ui/button"
 import { formatRole } from "../utils/utils"
 
@@ -39,13 +40,13 @@ const navigationItems = [
 ]
 
 const promotionItems = [
-  { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"] },
-  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"] },
+  { title: "Ads", url: "/ads", icon: Megaphone, roles: ["superAdmin"], permission: "ads.read" },
+  { title: "Offers", url: "/offers", icon: Tag, roles: ["superAdmin"], permission: "offers.read" },
 ]
 
 const managementItems = [
-  { title: "Customers", url: "/customers", icon: Users, roles: ["superAdmin"] },
-  { title: "Hall Admins", url: "/admins", icon: Building2, roles: ["superAdmin"] },
+  { title: "Customers", url: "/customers", icon: Users, roles: ["superAdmin"], permission: "customers.read" },
+  { title: "Hall Admins", url: "/admins", icon: Building2, roles: ["superAdmin"], permission: "team.manage" },
   { title: "Revenue", url: "/revenue", icon: DollarSign },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
 ]
@@ -55,6 +56,7 @@ const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 export function AppSidebar({ collapsed = false }) {
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { can, roleKey } = usePermissions()
 
   const isActive = (url) => location.pathname === url
 
@@ -103,9 +105,11 @@ export function AppSidebar({ collapsed = false }) {
   }
 
   const renderSection = (title, items, variant = "default") => {
-    const filteredItems = items.filter(
-      (item) => !item.roles || item.roles.includes(user?.role)
-    )
+    const filteredItems = items.filter((item) => {
+      if (item.roles && !item.roles.includes(user?.role)) return false
+      if (item.permission && !can(item.permission) && user?.role !== 'superAdmin') return false
+      return true
+    })
     if (filteredItems.length === 0) return null
 
     const isPromo = variant === "promotions"
@@ -140,8 +144,9 @@ export function AppSidebar({ collapsed = false }) {
     )
   }
 
+  const displayRole = roleKey || user?.role
   const roleBadgeClass =
-    user?.role === "superAdmin"
+    displayRole === "owner" || displayRole === "superAdmin"
       ? "bg-primary/10 text-primary"
       : "bg-amber-500/10 text-amber-500"
 
@@ -205,7 +210,7 @@ export function AppSidebar({ collapsed = false }) {
                 <span
                   className={`inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${roleBadgeClass}`}
                 >
-                  {formatRole(user?.role) || "Administrator"}
+                  {formatRole(displayRole) || "Administrator"}
                 </span>
               </div>
               <Button

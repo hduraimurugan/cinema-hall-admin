@@ -1,10 +1,11 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   Settings, Building2, Calendar, Ticket, CreditCard,
-  Sparkles, Save
+  Sparkles, Save, Users, Shield
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
+import { usePermissions } from "@/context/PermissionContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -20,13 +21,25 @@ const hallSections = [
   { path: "booking",        label: "Booking",        icon: Ticket,     scope: "hall" },
 ];
 
+const managementSections = [
+  { path: "team", label: "Team", icon: Users, scope: "org" },
+  { path: "roles", label: "Roles", icon: Shield, scope: "org" },
+];
+
 export function SettingsLayout() {
   const location = useLocation();
   const { user } = useAuth();
+  const { can } = usePermissions();
   const { isSectionDirty, saveSection, isSaving } = useSettings();
 
+  const visibleManagementSections = managementSections.filter(s => {
+    if (s.path === 'team') return can('team.manage')
+    if (s.path === 'roles') return can('roles.read')
+    return true
+  })
+
   const currentPath = location.pathname.split("/").pop() || "general";
-  const allSections = [...orgSections, ...hallSections];
+  const allSections = [...orgSections, ...hallSections, ...visibleManagementSections];
   const currentSection = allSections.find(s => s.path === currentPath);
 
   const handleSave = async () => {
@@ -72,6 +85,9 @@ export function SettingsLayout() {
         <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 space-y-5">
           <NavGroup title="Organization" sections={orgSections} isSectionDirty={isSectionDirty} />
           <NavGroup title="Cinema Branch" sections={hallSections} isSectionDirty={isSectionDirty} />
+          {visibleManagementSections.length > 0 && (
+            <NavGroup title="Management" sections={visibleManagementSections} isSectionDirty={isSectionDirty} />
+          )}
         </div>
 
         <div className="p-4 border-t border-border/50">
@@ -160,6 +176,8 @@ function getSectionKey(path) {
     "showtimes": "showtimes",
     "booking": "booking",
     "payment": "payment",
+    "team": "team",
+    "roles": "roles",
   };
   return map[path] || path;
 }

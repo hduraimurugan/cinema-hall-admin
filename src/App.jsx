@@ -11,6 +11,8 @@ import { CinemaProfilePage } from './pages/settings/CinemaProfilePage'
 import { ShowtimesSettingsPage } from './pages/settings/ShowtimesSettingsPage'
 import { BookingSettingsPage } from './pages/settings/BookingSettingsPage'
 import { PaymentSettingsPage } from './pages/settings/PaymentSettingsPage'
+import { TeamManagementPage } from './pages/settings/TeamManagementPage'
+import { RolesPermissionsPage } from './pages/settings/RolesPermissionsPage'
 import HomePage from './pages/HomePage.jsx'
 import ShowsManagement from './pages/ShowsManagement.jsx';
 import Bookings from './pages/Bookings.jsx';
@@ -21,6 +23,7 @@ import CinemaScreenDesigner from './pages/CinemaScreens.jsx'
 import ScreenDesignerPage from './pages/ScreenDesignerPage.jsx'
 import { useAuth } from './context/AuthContext.jsx';
 import { AdminProtectedRoute } from './routes/AdminProtectedRoutes.jsx';
+import { PermissionProvider } from './context/PermissionContext'
 import UnAuthorizedPage from './pages/UnAuthorizedPage.jsx';
 import MoviePage from './pages/MoviePage.jsx';
 import ShowPage from './pages/ShowPage.jsx';
@@ -41,12 +44,13 @@ import { useHall } from './context/HallContext.jsx'
 import { Loader } from './components/Loader.jsx'
 
 function App() {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, user } = useAuth()
   const { halls, hallsLoading } = useHall()
 
   return (
     <>
       <Router>
+        <PermissionProvider>
         <Routes>
           {/* Redirect to home if already logged in */}
           <Route
@@ -59,16 +63,18 @@ function App() {
           <Route path="/reset-password" element={<AuthPage view="reset-password" />} />
           <Route path="/auth/github/callback" element={<GitHubCallback />} />
 
-          {/* Onboarding — shown only when admin has no halls yet */}
+          {/* Onboarding — only admins/owners with no halls see this; staff skip to / */}
           <Route
             path="/onboarding"
             element={
               <ProtectedRoute>
-                {hallsLoading
-                  ? <OnboardingPageSkeleton />
-                  : halls.length > 0
-                    ? <Navigate to="/" replace />
-                    : <OnboardingPage />}
+                {user?.role === 'staff'
+                  ? <Navigate to="/" replace />
+                  : hallsLoading
+                    ? <OnboardingPageSkeleton />
+                    : halls.length > 0
+                      ? <Navigate to="/" replace />
+                      : <OnboardingPage />}
               </ProtectedRoute>
             }
           />
@@ -91,6 +97,8 @@ function App() {
               <Route path="showtimes" element={<ShowtimesSettingsPage />} />
               <Route path="booking" element={<BookingSettingsPage />} />
               <Route path="payment" element={<PaymentSettingsPage />} />
+              <Route path="team" element={<TeamManagementPage />} />
+              <Route path="roles" element={<RolesPermissionsPage />} />
             </Route>
             <Route path="/halls" element={<HallsManagement />} />
 
@@ -130,6 +138,7 @@ function App() {
           {/* Catch-all route - redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </PermissionProvider>
       </Router>
       <Toaster position="top-right" />
     </>

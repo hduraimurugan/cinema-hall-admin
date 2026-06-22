@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
       const fetchUser = async () => {
         try {
           const res = await authAPI.getMe()
-          setUser(res.admin)
+          setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
           setCinemaHall(res.hall)
           return true
         } catch {
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await authAPI.login(email, password)
-      setUser(res.admin)
+      setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
       setCinemaHall(res.hall)
       return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     try {
       const res = await authAPI.getMe()
-      setUser(res.admin)
+      setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
       setCinemaHall(res.hall)
     } catch {
       // ignore
