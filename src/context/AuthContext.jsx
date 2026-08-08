@@ -9,13 +9,25 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const isSuperAdmin = user?.role === 'superAdmin'
 
+  // Mirror the active org into localStorage so the fetch interceptors can
+  // attach X-Org-Id without threading React context through every service.
+  useEffect(() => {
+    if (user?.orgId) {
+      localStorage.setItem("activeOrgId", user.orgId)
+    } else {
+      localStorage.removeItem("activeOrgId")
+    }
+  }, [user?.orgId])
+
   // 🔄 Load session on mount
   useEffect(() => {
     const initializeSession = async () => {
       const fetchUser = async () => {
         try {
           const res = await authAPI.getMe()
-          setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
+          // orgId, roleKey and permissions live on res.admin — reading them from
+          // the top level overwrote the real values with undefined.
+          setUser(prev => ({...prev, ...res.admin, permissions: res.admin?.permissions || []}))
           setCinemaHall(res.hall)
           return true
         } catch {
@@ -49,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await authAPI.login(email, password)
-      setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
+      setUser(prev => ({...prev, ...res.admin, permissions: res.admin?.permissions || []}))
       setCinemaHall(res.hall)
       return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
@@ -115,7 +127,7 @@ export const AuthProvider = ({ children }) => {
   const googleLogin = async (idToken) => {
     try {
       const res = await authAPI.googleLogin(idToken)
-      setUser(res.admin)
+      setUser({...res.admin, permissions: res.admin?.permissions || []})
       setCinemaHall(res.hall)
       return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
@@ -127,7 +139,7 @@ export const AuthProvider = ({ children }) => {
   const githubLogin = async (code) => {
     try {
       const res = await authAPI.githubLogin(code)
-      setUser(res.admin)
+      setUser({...res.admin, permissions: res.admin?.permissions || []})
       setCinemaHall(res.hall)
       return { success: true, admin: res.admin, hall: res.hall ?? null }
     } catch (err) {
@@ -139,7 +151,7 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     try {
       const res = await authAPI.getMe()
-      setUser(prev => ({...prev, ...res.admin, permissions: res.permissions || [], orgId: res.orgId, roleKey: res.roleKey}))
+      setUser(prev => ({...prev, ...res.admin, permissions: res.admin?.permissions || []}))
       setCinemaHall(res.hall)
     } catch {
       // ignore

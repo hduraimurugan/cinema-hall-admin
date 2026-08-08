@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useHall } from "../context/HallContext"
@@ -72,6 +72,14 @@ export default function OnboardingPage() {
 
   // Submit
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // An already-onboarded admin must never reach this flow: completeOnboarding
+  // reuses the existing organization but creates a NEW hall every time it runs.
+  useEffect(() => {
+    if (user?.orgId && step !== 4) {
+      navigate("/", { replace: true })
+    }
+  }, [user?.orgId, step, navigate])
 
   const handleStateChange = (value) => {
     const selected = IN_STATES.find((s) => s.name === value)

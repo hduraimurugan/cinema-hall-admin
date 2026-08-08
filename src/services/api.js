@@ -8,11 +8,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000
 // the requireActiveHall middleware on the backend.
 const hallFetch = (url, options = {}) => {
   const hallId = localStorage.getItem("activeHallId")
-  if (hallId) {
+  const orgId = localStorage.getItem("activeOrgId")
+  const scopeHeaders = {
+    ...(hallId ? { "X-Hall-Id": hallId } : {}),
+    ...(orgId ? { "X-Org-Id": orgId } : {}),
+  }
+  if (Object.keys(scopeHeaders).length > 0) {
     options = {
       ...options,
       headers: {
-        "X-Hall-Id": hallId,
+        ...scopeHeaders,
         ...(options.headers || {}),
       },
     }

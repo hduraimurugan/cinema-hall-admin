@@ -2,8 +2,13 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000
 
 const hallFetch = (url, options = {}) => {
   const hallId = localStorage.getItem("activeHallId");
-  if (hallId) {
-    options = { ...options, headers: { "X-Hall-Id": hallId, ...(options.headers || {}) } };
+  const orgId = localStorage.getItem("activeOrgId");
+  const scopeHeaders = {
+    ...(hallId ? { "X-Hall-Id": hallId } : {}),
+    ...(orgId ? { "X-Org-Id": orgId } : {}),
+  };
+  if (Object.keys(scopeHeaders).length > 0) {
+    options = { ...options, headers: { ...scopeHeaders, ...(options.headers || {}) } };
   }
   return fetch(url, options);
 };
