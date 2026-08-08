@@ -95,7 +95,7 @@ export function RolesPermissionsPage() {
                 )}
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-[10px]">
-                    {role.memberCount || role.membersCount || 0} members
+                    {role.member_count || 0} members
                   </Badge>
                   {role.is_system && (
                     <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20">
