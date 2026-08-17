@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
+import { motion as Motion } from "framer-motion";
 import {
   Settings, Building2, Calendar, Ticket, CreditCard,
-  Sparkles, Save, Users, Shield
+  Sparkles, Save, Users, Shield, Info
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
@@ -69,7 +70,9 @@ export function SettingsLayout() {
   return (
     <div className="flex bg-background">
       {/* Section sidebar — sticky within the page scroll container */}
-      <aside className="w-64 flex-shrink-0 sticky top-0 h-[calc(100vh-4rem)] border-r border-border/50 bg-card/30 backdrop-blur-sm flex flex-col">
+      <aside className="relative w-64 flex-shrink-0 sticky top-0 h-[calc(100vh-4rem)] border-r border-border/50 bg-card/30 backdrop-blur-sm flex flex-col">
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-primary/30 via-border/60 to-transparent" />
+
         <div className="p-5 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
@@ -82,8 +85,8 @@ export function SettingsLayout() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 space-y-5">
-          <NavGroup title="Organization" sections={orgSections} isSectionDirty={isSectionDirty} />
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 space-y-1">
+          <NavGroup title="Organization" sections={orgSections} isSectionDirty={isSectionDirty} first />
           <NavGroup title="Cinema Branch" sections={hallSections} isSectionDirty={isSectionDirty} />
           {visibleManagementSections.length > 0 && (
             <NavGroup title="Management" sections={visibleManagementSections} isSectionDirty={isSectionDirty} />
@@ -91,9 +94,10 @@ export function SettingsLayout() {
         </div>
 
         <div className="p-4 border-t border-border/50">
-          <div className="rounded-xl bg-muted/40 p-3 space-y-2">
+          <div className="flex items-start gap-2.5 rounded-xl border border-border/50 bg-muted/30 p-3">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Changes are saved per section. Unsaved edits are marked with a badge.
+              Changes are saved per section. Unsaved edits are marked with a dot.
             </p>
           </div>
         </div>
@@ -131,10 +135,11 @@ export function SettingsLayout() {
   );
 }
 
-function NavGroup({ title, sections, isSectionDirty }) {
+function NavGroup({ title, sections, isSectionDirty, first = false }) {
   return (
-    <div className="space-y-1.5">
-      <h3 className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+    <div className={`space-y-1.5 py-3 ${first ? "" : "border-t border-border/40"}`}>
+      <h3 className="px-3 flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
         {title}
       </h3>
       <nav className="space-y-0.5">
@@ -147,19 +152,36 @@ function NavGroup({ title, sections, isSectionDirty }) {
               key={path}
               to={path}
               className={({ isActive }) =>
-                `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${
+                `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 ${
                   isActive
-                    ? "bg-primary/10 text-primary shadow-[inset_2px_0_0_0_hsl(var(--primary))]"
+                    ? "text-primary"
                     : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`
               }
             >
-              <IconComp className={`h-4 w-4 shrink-0 transition-colors ${dirty ? "text-amber-500" : ""}`} />
-              <span className="truncate flex-1">{label}</span>
-              {dirty && (
-                <Badge variant="outline" className="h-5 px-1.5 text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/10 hover:bg-amber-500/15">
-                  unsaved
-                </Badge>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <Motion.div
+                      layoutId="settings-nav-active"
+                      className="absolute inset-0 rounded-xl bg-primary/15 ring-1 ring-primary/20"
+                      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                    />
+                  )}
+                  <IconComp className={`relative h-4 w-4 shrink-0 transition-colors ${isActive ? "text-primary" : dirty ? "text-amber-500" : ""}`} />
+                  <span className="relative truncate flex-1">{label}</span>
+                  {dirty && (
+                    <span className="relative flex items-center">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 group-hover:hidden" title="Unsaved changes" />
+                      <Badge
+                        variant="outline"
+                        className="hidden group-hover:inline-flex h-5 px-1.5 text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/10"
+                      >
+                        unsaved
+                      </Badge>
+                    </span>
+                  )}
+                </>
               )}
             </NavLink>
           );
