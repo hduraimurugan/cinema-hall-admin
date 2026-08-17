@@ -1,47 +1,56 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import { motion as Motion } from "framer-motion";
-import {
-  Settings, Building2, Calendar, Ticket, CreditCard,
-  Sparkles, Save, Users, Shield, Info
-} from "lucide-react";
+import { Sparkles, Save, Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSettings } from "@/context/SettingsContext";
 import { usePermissions } from "@/context/PermissionContext";
+import { PAGE_PERMISSIONS } from "@/config/pagePermissions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-const orgSections = [
-  { path: "general", label: "General",      icon: Settings,   scope: "org" },
-  { path: "payment", label: "Payment",      icon: CreditCard, scope: "org" },
-];
+// Sections come from the shared catalog; `path` here is the trailing segment
+// the nested <Route> matches on.
+const settingsSections = PAGE_PERMISSIONS
+  .filter(p => p.group === "Settings")
+  .map(p => ({
+    path: p.path.replace("/settings/", ""),
+    label: p.page,
+    icon: p.icon,
+    scope: p.scope,
+    permission: p.view,
+    // Team and Roles are org administration; the rest configure the cinema.
+    section: (p.page === "Team" || p.page === "Roles")
+      ? "Management"
+      : p.scope === "org" ? "Organization" : "Cinema Branch",
+  }));
 
-const hallSections = [
-  { path: "cinema-profile", label: "Cinema Profile", icon: Building2,  scope: "hall" },
-  { path: "showtimes",      label: "Showtimes",      icon: Calendar,   scope: "hall" },
-  { path: "booking",        label: "Booking",        icon: Ticket,     scope: "hall" },
-];
-
-const managementSections = [
-  { path: "team", label: "Team", icon: Users, scope: "org" },
-  { path: "roles", label: "Roles", icon: Shield, scope: "org" },
-];
+/**
+ * Land on the first settings section the user can actually open.
+ *
+ * /settings used to hard-redirect to "general", which a member without
+ * settings.org.read would then be bounced straight out of.
+ */
+export function SettingsIndexRedirect() {
+  const { isSuperAdmin } = useAuth();
+  const { can } = usePermissions();
+  const first = settingsSections.find(s => isSuperAdmin || !s.permission || can(s.permission));
+  return <Navigate to={first ? first.path : "/unauthorized"} replace />;
+}
 
 export function SettingsLayout() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { can } = usePermissions();
   const { isSectionDirty, saveSection, isSaving } = useSettings();
 
-  const visibleManagementSections = managementSections.filter(s => {
-    if (s.path === 'team') return can('team.manage')
-    if (s.path === 'roles') return can('roles.read')
-    return true
-  })
+  // Every group is filtered now. Organization and Cinema Branch used to render
+  // unconditionally, so a member with no settings permission still saw them.
+  const visible = settingsSections.filter(s => isSuperAdmin || !s.permission || can(s.permission));
+  const byGroup = (name) => visible.filter(s => s.section === name);
 
   const currentPath = location.pathname.split("/").pop() || "general";
-  const allSections = [...orgSections, ...hallSections, ...visibleManagementSections];
-  const currentSection = allSections.find(s => s.path === currentPath);
+  const currentSection = visible.find(s => s.path === currentPath);
 
   const handleSave = async () => {
     if (!currentSection) return;
@@ -86,11 +95,18 @@ export function SettingsLayout() {
         </div>
 
         <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 space-y-1">
-          <NavGroup title="Organization" sections={orgSections} isSectionDirty={isSectionDirty} first />
-          <NavGroup title="Cinema Branch" sections={hallSections} isSectionDirty={isSectionDirty} />
-          {visibleManagementSections.length > 0 && (
-            <NavGroup title="Management" sections={visibleManagementSections} isSectionDirty={isSectionDirty} />
-          )}
+          {["Organization", "Cinema Branch", "Management"]
+            .map(group => ({ group, sections: byGroup(group) }))
+            .filter(g => g.sections.length > 0)
+            .map(({ group, sections }, idx) => (
+              <NavGroup
+                key={group}
+                title={group}
+                sections={sections}
+                isSectionDirty={isSectionDirty}
+                first={idx === 0}
+              />
+            ))}
         </div>
 
         <div className="p-4 border-t border-border/50">

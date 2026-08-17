@@ -5,7 +5,7 @@ import { CinemaLayout } from './components/CinemaLayout.jsx';
 import { AuthPage } from './pages/Auth/AuthPage.jsx'
 import { GitHubCallback } from './pages/Auth/GitHubCallback.jsx'
 import { ProfilePage } from './pages/ProfilePage'
-import { SettingsLayout } from './pages/settings/SettingsLayout'
+import { SettingsLayout, SettingsIndexRedirect } from './pages/settings/SettingsLayout'
 import { GeneralSettingsPage } from './pages/settings/GeneralSettingsPage'
 import { CinemaProfilePage } from './pages/settings/CinemaProfilePage'
 import { ShowtimesSettingsPage } from './pages/settings/ShowtimesSettingsPage'
@@ -42,6 +42,18 @@ import OnboardingPage, { OnboardingPageSkeleton } from './pages/OnboardingPage.j
 import { HallGuard } from './routes/HallGuard.jsx'
 import { useHall } from './context/HallContext.jsx'
 import { Loader } from './components/Loader.jsx'
+
+/**
+ * Permission gate for routes inside the authenticated shell.
+ *
+ * These routes previously carried no permission prop at all, so any signed-in
+ * member could reach every admin page by typing the URL. AdminProtectedRoute
+ * already implements the check; this is just a shorthand so each route reads
+ * as one line.
+ */
+const Gate = ({ p, children }) => (
+  <AdminProtectedRoute permission={p}>{children}</AdminProtectedRoute>
+)
 
 function App() {
   const { isLoggedIn, user } = useAuth()
@@ -91,34 +103,34 @@ function App() {
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsLayout />}>
-              <Route index element={<Navigate to="general" replace />} />
-              <Route path="general" element={<GeneralSettingsPage />} />
-              <Route path="cinema-profile" element={<CinemaProfilePage />} />
-              <Route path="showtimes" element={<ShowtimesSettingsPage />} />
-              <Route path="booking" element={<BookingSettingsPage />} />
-              <Route path="payment" element={<PaymentSettingsPage />} />
-              <Route path="team" element={<TeamManagementPage />} />
-              <Route path="roles" element={<RolesPermissionsPage />} />
+              <Route index element={<SettingsIndexRedirect />} />
+              <Route path="general" element={<Gate p="settings.org.read"><GeneralSettingsPage /></Gate>} />
+              <Route path="cinema-profile" element={<Gate p="settings.hall.read"><CinemaProfilePage /></Gate>} />
+              <Route path="showtimes" element={<Gate p="settings.hall.read"><ShowtimesSettingsPage /></Gate>} />
+              <Route path="booking" element={<Gate p="settings.hall.read"><BookingSettingsPage /></Gate>} />
+              <Route path="payment" element={<Gate p="settings.org.read"><PaymentSettingsPage /></Gate>} />
+              <Route path="team" element={<Gate p="team.manage"><TeamManagementPage /></Gate>} />
+              <Route path="roles" element={<Gate p="roles.read"><RolesPermissionsPage /></Gate>} />
             </Route>
-            <Route path="/halls" element={<HallsManagement />} />
+            <Route path="/halls" element={<Gate p="halls.read"><HallsManagement /></Gate>} />
 
             {/* Hall-gated */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/movies" element={<MovieManagement />} />
-            <Route path="/movie/:id" element={<MoviePage />} />
-            <Route path="/screens" element={<CinemaScreenDesigner />} />
-            <Route path="/screens/new" element={<ScreenDesignerPage />} />
-            <Route path="/screens/:id/edit" element={<ScreenDesignerPage />} />
-            <Route path="/shows" element={<ShowsManagement />} />
-            <Route path="/shows/new" element={<AddShowPage />} />
-            <Route path="/shows/bulk" element={<AddMultipleShowsPage />} />
-            <Route path="/shows/:id/edit" element={<EditShowPage />} />
-            <Route path="/show/:id" element={<ShowPage/>} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/bookings/:id" element={<BookingDetailPage />} />
-            <Route path="/refunds" element={<RefundsPage />} />
-            <Route path="/payment-orders" element={<PaymentOrders />} />
-            <Route path="/verify-ticket" element={<VerifyTicket />} />
+            <Route path="/" element={<Gate p="dashboard.view"><HomePage /></Gate>} />
+            <Route path="/movies" element={<Gate p="movies.read"><MovieManagement /></Gate>} />
+            <Route path="/movie/:id" element={<Gate p="movies.read"><MoviePage /></Gate>} />
+            <Route path="/screens" element={<Gate p="screens.read"><CinemaScreenDesigner /></Gate>} />
+            <Route path="/screens/new" element={<Gate p="screens.create"><ScreenDesignerPage /></Gate>} />
+            <Route path="/screens/:id/edit" element={<Gate p="screens.update"><ScreenDesignerPage /></Gate>} />
+            <Route path="/shows" element={<Gate p="shows.read"><ShowsManagement /></Gate>} />
+            <Route path="/shows/new" element={<Gate p="shows.create"><AddShowPage /></Gate>} />
+            <Route path="/shows/bulk" element={<Gate p="shows.create"><AddMultipleShowsPage /></Gate>} />
+            <Route path="/shows/:id/edit" element={<Gate p="shows.update"><EditShowPage /></Gate>} />
+            <Route path="/show/:id" element={<Gate p="shows.read"><ShowPage/></Gate>} />
+            <Route path="/bookings" element={<Gate p="bookings.read"><Bookings /></Gate>} />
+            <Route path="/bookings/:id" element={<Gate p="bookings.read"><BookingDetailPage /></Gate>} />
+            <Route path="/refunds" element={<Gate p="refunds.read"><RefundsPage /></Gate>} />
+            <Route path="/payment-orders" element={<Gate p="payment.read"><PaymentOrders /></Gate>} />
+            <Route path="/verify-ticket" element={<Gate p="verify-ticket.use"><VerifyTicket /></Gate>} />
           </Route>
 
           {/* Super Admin / Gated Routes */}

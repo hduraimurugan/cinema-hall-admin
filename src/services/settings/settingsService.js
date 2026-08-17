@@ -1,17 +1,7 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+import { apiFetch, API_BASE_URL } from "../httpClient.js";
 
-const hallFetch = (url, options = {}) => {
-  const hallId = localStorage.getItem("activeHallId");
-  const orgId = localStorage.getItem("activeOrgId");
-  const scopeHeaders = {
-    ...(hallId ? { "X-Hall-Id": hallId } : {}),
-    ...(orgId ? { "X-Org-Id": orgId } : {}),
-  };
-  if (Object.keys(scopeHeaders).length > 0) {
-    options = { ...options, headers: { ...scopeHeaders, ...(options.headers || {}) } };
-  }
-  return fetch(url, options);
-};
+// Injects X-Hall-Id / X-Org-Id and silently recovers from a stale access token.
+const hallFetch = apiFetch;
 
 const unwrap = async (response) => {
   if (!response.ok) throw await response.json();

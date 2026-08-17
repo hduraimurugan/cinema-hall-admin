@@ -1,29 +1,11 @@
 //services/api.js
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
+import { apiFetch, API_BASE_URL } from "./httpClient.js"
 
 // ─── Hall-scoped fetch interceptor ──────────────────────────────────────────
-// Reads the active hall ID from localStorage (written by HallContext) and
-// automatically injects the X-Hall-Id header on every call.
-// Use this instead of plain fetch() for any admin route protected by
-// the requireActiveHall middleware on the backend.
-const hallFetch = (url, options = {}) => {
-  const hallId = localStorage.getItem("activeHallId")
-  const orgId = localStorage.getItem("activeOrgId")
-  const scopeHeaders = {
-    ...(hallId ? { "X-Hall-Id": hallId } : {}),
-    ...(orgId ? { "X-Org-Id": orgId } : {}),
-  }
-  if (Object.keys(scopeHeaders).length > 0) {
-    options = {
-      ...options,
-      headers: {
-        ...scopeHeaders,
-        ...(options.headers || {}),
-      },
-    }
-  }
-  return fetch(url, options)
-}
+// Injects X-Hall-Id / X-Org-Id and silently recovers from a stale access
+// token — see services/httpClient.js. Use this instead of plain fetch() for
+// any admin route protected by requireActiveHall or requirePermission.
+const hallFetch = apiFetch
 // ────────────────────────────────────────────────────────────────────────────
 
 export const authAPI = {

@@ -1,17 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-const hallFetch = (url, options = {}) => {
-  const hallId = localStorage.getItem("activeHallId");
-  const orgId = localStorage.getItem("activeOrgId");
-  const scopeHeaders = {
-    ...(hallId ? { "X-Hall-Id": hallId } : {}),
-    ...(orgId ? { "X-Org-Id": orgId } : {}),
-  };
-  if (Object.keys(scopeHeaders).length > 0) {
-    options = { ...options, headers: { ...scopeHeaders, ...(options.headers || {}) } };
-  }
-  return fetch(url, options);
-};
+import { apiFetch, API_BASE_URL } from "../httpClient.js";
 
 const unwrap = async (response) => {
   if (!response.ok) throw await response.json();
@@ -22,10 +9,10 @@ const headers = { "Content-Type": "application/json" };
 
 export const teamService = {
   getMembers: (params) =>
-    fetch(`${API_BASE_URL}/api/team?${params}`, { credentials: "include" }).then(unwrap),
+    apiFetch(`${API_BASE_URL}/api/team?${params}`, { credentials: "include" }).then(unwrap),
 
   inviteMember: (data) =>
-    fetch(`${API_BASE_URL}/api/team/invite`, {
+    apiFetch(`${API_BASE_URL}/api/team/invite`, {
       method: "POST",
       credentials: "include",
       headers,
@@ -33,7 +20,7 @@ export const teamService = {
     }).then(unwrap),
 
   createMember: (data) =>
-    fetch(`${API_BASE_URL}/api/team/members`, {
+    apiFetch(`${API_BASE_URL}/api/team/members`, {
       method: "POST",
       credentials: "include",
       headers,
@@ -41,10 +28,10 @@ export const teamService = {
     }).then(unwrap),
 
   getMember: (id) =>
-    fetch(`${API_BASE_URL}/api/team/members/${id}`, { credentials: "include" }).then(unwrap),
+    apiFetch(`${API_BASE_URL}/api/team/members/${id}`, { credentials: "include" }).then(unwrap),
 
   updateMember: (id, data) =>
-    fetch(`${API_BASE_URL}/api/team/members/${id}`, {
+    apiFetch(`${API_BASE_URL}/api/team/members/${id}`, {
       method: "PATCH",
       credentials: "include",
       headers,
@@ -52,16 +39,16 @@ export const teamService = {
     }).then(unwrap),
 
   removeMember: (id) =>
-    fetch(`${API_BASE_URL}/api/team/members/${id}`, {
+    apiFetch(`${API_BASE_URL}/api/team/members/${id}`, {
       method: "DELETE",
       credentials: "include",
     }).then(unwrap),
 
   getMemberHalls: (id) =>
-    fetch(`${API_BASE_URL}/api/team/members/${id}/halls`, { credentials: "include" }).then(unwrap),
+    apiFetch(`${API_BASE_URL}/api/team/members/${id}/halls`, { credentials: "include" }).then(unwrap),
 
   assignHalls: (id, halls) =>
-    fetch(`${API_BASE_URL}/api/team/members/${id}/halls`, {
+    apiFetch(`${API_BASE_URL}/api/team/members/${id}/halls`, {
       method: "POST",
       credentials: "include",
       headers,
@@ -69,19 +56,24 @@ export const teamService = {
     }).then(unwrap),
 
   removeHallAssignment: (memberId, hallId) =>
-    fetch(`${API_BASE_URL}/api/team/members/${memberId}/halls/${hallId}`, {
+    apiFetch(`${API_BASE_URL}/api/team/members/${memberId}/halls/${hallId}`, {
       method: "DELETE",
       credentials: "include",
     }).then(unwrap),
 
   getRoles: () =>
-    fetch(`${API_BASE_URL}/api/roles`, { credentials: "include" }).then(unwrap),
+    apiFetch(`${API_BASE_URL}/api/roles`, { credentials: "include" }).then(unwrap),
+
+  // The full permission catalog straight from the DB — the role editor renders
+  // only what this returns, so its options can never drift from the schema.
+  getPermissionCatalog: () =>
+    apiFetch(`${API_BASE_URL}/api/roles/permissions`, { credentials: "include" }).then(unwrap),
 
   getRole: (id) =>
-    fetch(`${API_BASE_URL}/api/roles/${id}`, { credentials: "include" }).then(unwrap),
+    apiFetch(`${API_BASE_URL}/api/roles/${id}`, { credentials: "include" }).then(unwrap),
 
   createRole: (data) =>
-    fetch(`${API_BASE_URL}/api/roles`, {
+    apiFetch(`${API_BASE_URL}/api/roles`, {
       method: "POST",
       credentials: "include",
       headers,
@@ -89,7 +81,7 @@ export const teamService = {
     }).then(unwrap),
 
   updateRole: (id, data) =>
-    fetch(`${API_BASE_URL}/api/roles/${id}`, {
+    apiFetch(`${API_BASE_URL}/api/roles/${id}`, {
       method: "PATCH",
       credentials: "include",
       headers,
@@ -97,13 +89,13 @@ export const teamService = {
     }).then(unwrap),
 
   deleteRole: (id) =>
-    fetch(`${API_BASE_URL}/api/roles/${id}`, {
+    apiFetch(`${API_BASE_URL}/api/roles/${id}`, {
       method: "DELETE",
       credentials: "include",
     }).then(unwrap),
 
   cloneRole: (id, data) =>
-    fetch(`${API_BASE_URL}/api/roles/${id}/clone`, {
+    apiFetch(`${API_BASE_URL}/api/roles/${id}/clone`, {
       method: "POST",
       credentials: "include",
       headers,

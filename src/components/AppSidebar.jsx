@@ -1,22 +1,4 @@
-import {
-  Film,
-  Home,
-  Users,
-  BarChart3,
-  Settings,
-  Calendar,
-  Ticket,
-  Monitor,
-  DollarSign,
-  LogOut,
-  ScanLine,
-  CreditCard,
-  Megaphone,
-  Tag,
-  Building2,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react"
+import { Film, Settings, LogOut, Sparkles, Building2 } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,29 +8,26 @@ import { useAuth } from "../context/AuthContext"
 import { usePermissions } from "@/context/PermissionContext"
 import { Button } from "@/components/ui/button"
 import { formatRole } from "../utils/utils"
+import { PAGE_PERMISSIONS } from "@/config/pagePermissions"
 
-const navigationItems = [
-  { title: "Dashboard", url: "/", icon: Home, permission: "dashboard.view" },
-  { title: "My Halls", url: "/halls", icon: Building2 },
-  { title: "Screens", url: "/screens", icon: Monitor, permission: "screens.read" },
-  { title: "Movies", url: "/movies", icon: Film, permission: "movies.read" },
-  { title: "Showtimes", url: "/shows", icon: Calendar, permission: "shows.read" },
-  { title: "Bookings", url: "/bookings", icon: Ticket, permission: "bookings.read" },
-  { title: "Refunds", url: "/refunds", icon: RefreshCw, permission: "refunds.read" },
-  { title: "Payment Orders", url: "/payment-orders", icon: CreditCard, permission: "payment.read" },
-  { title: "Verify Ticket", url: "/verify-ticket", icon: ScanLine, permission: "verify-ticket.use" },
-]
+// Nav is derived from the shared page/permission catalog so the sidebar, the
+// router and the role editor cannot disagree about what a page requires.
+const toNavItem = (p) => ({
+  title: p.page,
+  url: p.path,
+  icon: p.icon,
+  permission: p.view,
+  superAdminOnly: p.superAdminOnly,
+})
 
-const promotionItems = [
-  { title: "Ads", url: "/ads", icon: Megaphone, permission: "ads.read", superAdminOnly: true },
-  { title: "Offers", url: "/offers", icon: Tag, permission: "offers.read" },
-]
+const inGroup = (group) => PAGE_PERMISSIONS.filter(p => p.group === group).map(toNavItem)
 
+const navigationItems = inGroup("Operations")
+const promotionItems = inGroup("Promotions")
 const managementItems = [
-  { title: "Customers", url: "/customers", icon: Users, permission: "customers.read", superAdminOnly: true },
+  ...inGroup("Management"),
+  // Platform-level page with no org-scoped equivalent, so it is not in the catalog.
   { title: "Hall Admins", url: "/admins", icon: Building2, permission: "team.manage", superAdminOnly: true },
-  { title: "Revenue", url: "/revenue", icon: DollarSign, permission: "analytics.view" },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, permission: "analytics.view" },
 ]
 
 const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]

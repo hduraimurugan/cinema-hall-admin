@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { authAPI } from "../services/api.js"
+import { setPermissionsChangedHandler } from "../services/httpClient.js"
 
 const AuthContext = createContext()
 
@@ -148,7 +149,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   // ✅ Refresh user data
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await authAPI.getMe()
       setUser(prev => ({...prev, ...res.admin, permissions: res.admin?.permissions || []}))
@@ -156,7 +157,16 @@ export const AuthProvider = ({ children }) => {
     } catch {
       // ignore
     }
-  }
+  }, [])
+
+  // After httpClient silently recovers from a TOKEN_STALE 401, re-read the
+  // user so the new permission set drives the nav and route guards straight
+  // away — the point of the silent refresh is that nobody gets logged out
+  // just because an owner retuned their role.
+  useEffect(() => {
+    setPermissionsChangedHandler(refreshUser)
+    return () => setPermissionsChangedHandler(null)
+  }, [refreshUser])
 
   const value = {
     user,
