@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
+// Temporarily disabled while these sections are reworked.
+const DISABLED_PATHS = new Set(["cinema-profile", "showtimes", "booking"]);
+
 // Sections come from the shared catalog; `path` here is the trailing segment
 // the nested <Route> matches on.
 const settingsSections = PAGE_PERMISSIONS
@@ -23,6 +26,7 @@ const settingsSections = PAGE_PERMISSIONS
     section: (p.page === "Team" || p.page === "Roles")
       ? "Management"
       : p.scope === "org" ? "Organization" : "Cinema Branch",
+    disabled: DISABLED_PATHS.has(p.path.replace("/settings/", "")),
   }));
 
 /**
@@ -34,7 +38,7 @@ const settingsSections = PAGE_PERMISSIONS
 export function SettingsIndexRedirect() {
   const { isSuperAdmin } = useAuth();
   const { can } = usePermissions();
-  const first = settingsSections.find(s => isSuperAdmin || !s.permission || can(s.permission));
+  const first = settingsSections.find(s => !s.disabled && (isSuperAdmin || !s.permission || can(s.permission)));
   return <Navigate to={first ? first.path : "/unauthorized"} replace />;
 }
 
@@ -76,48 +80,30 @@ export function SettingsLayout() {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  const groups = ["Organization", "Cinema Branch", "Management"]
+    .map(byGroup)
+    .filter(sections => sections.length > 0);
+
   return (
-    <div className="flex bg-background">
-      {/* Section sidebar — sticky within the page scroll container */}
-      <aside className="relative w-64 flex-shrink-0 sticky top-0 h-[calc(100vh-4rem)] border-r border-border/50 bg-card/30 backdrop-blur-sm flex flex-col">
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-primary/30 via-border/60 to-transparent" />
-
-        <div className="p-5 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-              <Sparkles className="h-4.5 w-4.5" />
+    <div className="flex flex-col bg-background">
+      {/* Tab strip — sticky within the page scroll container */}
+      <div className="sticky top-0 z-10 border-b border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="px-6 lg:px-8 pt-5">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
+              <Sparkles className="h-4 w-4" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold tracking-tight text-foreground">Settings</h2>
-              <p className="text-[11px] text-muted-foreground">Configure your cinema</p>
-            </div>
+            <h2 className="text-sm font-bold tracking-tight text-foreground">Settings</h2>
+            <span className="text-[11px] text-muted-foreground">Configure your cinema</span>
+            <Info
+              className="h-3.5 w-3.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-help"
+              title="Changes are saved per section. Unsaved edits are marked with a dot."
+            />
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-2 space-y-1">
-          {["Organization", "Cinema Branch", "Management"]
-            .map(group => ({ group, sections: byGroup(group) }))
-            .filter(g => g.sections.length > 0)
-            .map(({ group, sections }, idx) => (
-              <NavGroup
-                key={group}
-                title={group}
-                sections={sections}
-                isSectionDirty={isSectionDirty}
-                first={idx === 0}
-              />
-            ))}
+          <SettingsTabBar groups={groups} isSectionDirty={isSectionDirty} />
         </div>
-
-        <div className="p-4 border-t border-border/50">
-          <div className="flex items-start gap-2.5 rounded-xl border border-border/50 bg-muted/30 p-3">
-            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Changes are saved per section. Unsaved edits are marked with a dot.
-            </p>
-          </div>
-        </div>
-      </aside>
+      </div>
 
       {/* Section content — no inner scroll; page scroll handled by CinemaLayout */}
       <main className="flex-1 min-w-0 relative">
@@ -151,59 +137,71 @@ export function SettingsLayout() {
   );
 }
 
-function NavGroup({ title, sections, isSectionDirty, first = false }) {
+function SettingsTabBar({ groups, isSectionDirty }) {
   return (
-    <div className={`space-y-1.5 py-3 ${first ? "" : "border-t border-border/40"}`}>
-      <h3 className="px-3 flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-        <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
-        {title}
-      </h3>
-      <nav className="space-y-0.5">
-        {sections.map(({ path, label, icon, scope }) => {
-          const IconComp = icon;
-          const sectionKey = getSectionKey(path);
-          const dirty = isSectionDirty(scope, sectionKey);
-          return (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) =>
-                `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors duration-200 ${
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive && (
-                    <Motion.div
-                      layoutId="settings-nav-active"
-                      className="absolute inset-0 rounded-xl bg-primary/15 ring-1 ring-primary/20"
-                      transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                    />
-                  )}
-                  <IconComp className={`relative h-4 w-4 shrink-0 transition-colors ${isActive ? "text-primary" : dirty ? "text-amber-500" : ""}`} />
-                  <span className="relative truncate flex-1">{label}</span>
-                  {dirty && (
-                    <span className="relative flex items-center">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 group-hover:hidden" title="Unsaved changes" />
-                      <Badge
-                        variant="outline"
-                        className="hidden group-hover:inline-flex h-5 px-1.5 text-[9px] border-amber-500/30 text-amber-500 bg-amber-500/10"
-                      >
-                        unsaved
-                      </Badge>
-                    </span>
-                  )}
-                </>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
-    </div>
+    <nav
+      className="flex items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden"
+      style={{ scrollbarWidth: "none" }}
+    >
+      {groups.map((sections, groupIdx) => (
+        <div key={groupIdx} className="flex items-center gap-1 shrink-0">
+          {groupIdx > 0 && <span className="mx-2 h-4 w-px shrink-0 bg-border/50" />}
+          {sections.map(({ path, label, icon, scope, disabled }) => {
+            const IconComp = icon;
+            const sectionKey = getSectionKey(path);
+            const dirty = !disabled && isSectionDirty(scope, sectionKey);
+
+            if (disabled) {
+              return (
+                <span
+                  key={path}
+                  aria-disabled="true"
+                  title="Coming soon"
+                  className="flex shrink-0 cursor-not-allowed items-center gap-2 whitespace-nowrap px-3 py-3 text-[13px] font-medium text-muted-foreground/40"
+                >
+                  <IconComp className="h-4 w-4 shrink-0" />
+                  <span>{label}</span>
+                  <Badge variant="outline" className="h-5 px-1.5 text-[9px] border-border/50 text-muted-foreground/60">
+                    Soon
+                  </Badge>
+                </span>
+              );
+            }
+
+            return (
+              <NavLink
+                key={path}
+                to={path}
+                className={({ isActive }) =>
+                  `group relative flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3 text-[13px] font-medium transition-colors duration-200 ${
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <IconComp className={`h-4 w-4 shrink-0 transition-colors ${isActive ? "text-primary" : dirty ? "text-amber-500" : ""}`} />
+                    <span>{label}</span>
+                    {dirty && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Unsaved changes" />
+                    )}
+                    {isActive && (
+                      <Motion.div
+                        layoutId="settings-tab-underline"
+                        className="absolute -bottom-px left-2 right-2 h-[2px] rounded-full bg-primary"
+                        transition={{ type: "spring", stiffness: 500, damping: 40 }}
+                      />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
   );
 }
 
