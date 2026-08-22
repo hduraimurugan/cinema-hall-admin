@@ -17,6 +17,7 @@ import dayjs from "dayjs"
 import { toast } from "sonner"
 import { offersAPI } from "../services/api"
 import { ExportButton } from "@/components/ExportButton"
+import { useAuth } from "../context/AuthContext"
 
 function debounce(fn, delay) {
     let t
@@ -36,8 +37,19 @@ const activeConfig = {
     false: { label: "Inactive", className: "bg-zinc-500/15 text-zinc-400 border border-zinc-500/25" },
 }
 
+const roleBadgeClass = {
+    "Super Admin": "bg-amber-500/15 text-amber-400 border border-amber-500/25",
+    owner: "bg-violet-500/15 text-violet-400 border border-violet-500/25",
+    admin: "bg-sky-500/15 text-sky-400 border border-sky-500/25",
+}
+const defaultRoleBadgeClass = "bg-zinc-500/15 text-zinc-400 border border-zinc-500/25"
+
+const initials = (name = "") =>
+    name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("").toUpperCase()
+
 const OffersManagement = () => {
     const navigate = useNavigate()
+    const { user, isSuperAdmin } = useAuth()
     const [offers, setOffers] = useState([])
     const [total, setTotal] = useState(0)
     const [page, setPage] = useState(1)
@@ -158,6 +170,8 @@ const OffersManagement = () => {
                             "Discount": formatDiscount(offer),
                             "Scope": offer.scope || "",
                             "Cinema Hall": offer.cinema_hall_name || "",
+                            "Creator Email": offer.created_by_email || "",
+                            "Creator Role": offer.created_by_role || "",
                             "Eligibility": offer.user_eligibility === "all" ? "All Users" : `Joined after ${dayjs(offer.user_joined_after).format("DD MMM YYYY")}`,
                             "Valid Until": offer.valid_until ? dayjs(offer.valid_until).format("DD MMM YYYY") : "",
                             "Status": offer.is_active ? "Active" : "Inactive",
@@ -245,6 +259,7 @@ const OffersManagement = () => {
                                         <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
                                         <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
                                         <th className="py-3"><Skeleton className="h-3 w-12 rounded" /></th>
+                                        <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
                                         <th className="py-3"><Skeleton className="h-3 w-20 rounded" /></th>
                                         <th className="py-3"><Skeleton className="h-3 w-16 rounded" /></th>
                                         <th className="py-3"><Skeleton className="h-3 w-12 rounded" /></th>
@@ -264,6 +279,7 @@ const OffersManagement = () => {
                                                 <Skeleton className="h-3 w-14 rounded" />
                                             </td>
                                             <td className="py-3.5 pr-4"><Skeleton className="h-5 w-14 rounded-full" /></td>
+                                            <td className="py-3.5 pr-4"><Skeleton className="h-4 w-20 rounded" /></td>
                                             <td className="py-3.5 pr-4"><Skeleton className="h-4 w-24 rounded" /></td>
                                             <td className="py-3.5 pr-4"><Skeleton className="h-4 w-20 rounded" /></td>
                                             <td className="py-3.5 pr-4"><Skeleton className="h-5 w-14 rounded-full" /></td>
@@ -309,6 +325,7 @@ const OffersManagement = () => {
                                         <TableHead>Eligibility</TableHead>
                                         <TableHead>Valid Until</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead>Created By</TableHead>
                                         <TableHead className="pr-5 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -364,15 +381,44 @@ const OffersManagement = () => {
                                                     {activeConfig[offer.is_active]?.label}
                                                 </span>
                                             </TableCell>
+                                            <TableCell>
+                                                {offer.created_by_email ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={cn(
+                                                            "w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0",
+                                                            roleBadgeClass[offer.created_by_role] || defaultRoleBadgeClass
+                                                        )}>
+                                                            {initials(offer.created_by_name)}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="text-xs text-foreground truncate max-w-[160px]">{offer.created_by_email}</div>
+                                                            {offer.created_by_role && (
+                                                                <span className={cn(
+                                                                    "inline-block mt-0.5 text-[10px] leading-none px-1.5 py-0.5 rounded-full font-medium capitalize",
+                                                                    roleBadgeClass[offer.created_by_role] || defaultRoleBadgeClass
+                                                                )}>
+                                                                    {offer.created_by_role}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                )}
+                                            </TableCell>
                                             <TableCell className="pr-5 text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/offers/${offer.id}/edit`)}>
-                                                        <Pencil className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(offer)}>
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                </div>
+                                                {(isSuperAdmin || offer.created_by === user?.id) ? (
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/offers/${offer.id}/edit`)}>
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(offer)}>
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}

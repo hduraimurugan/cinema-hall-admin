@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import dayjs from "dayjs"
 import { toast } from "sonner"
 import { offersAPI } from "../services/api"
+import { useAuth } from "../context/AuthContext"
 
 const EMPTY_FORM = {
     code: "",
@@ -36,8 +37,11 @@ const OfferFormPage = () => {
     const navigate = useNavigate()
     const { id } = useParams()
     const isEdit = Boolean(id)
+    const { isSuperAdmin } = useAuth()
 
-    const [form, setForm] = useState(EMPTY_FORM)
+    const [form, setForm] = useState(() => (
+        isSuperAdmin ? EMPTY_FORM : { ...EMPTY_FORM, scope: "hall" }
+    ))
     const [halls, setHalls] = useState([])
     const [saving, setSaving] = useState(false)
     const [loadingOffer, setLoadingOffer] = useState(isEdit)
@@ -291,10 +295,13 @@ const OfferFormPage = () => {
                             <Select value={form.scope} onValueChange={v => setField("scope", v)}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="global">Global (all halls)</SelectItem>
+                                    {isSuperAdmin && <SelectItem value="global">Global (all halls)</SelectItem>}
                                     <SelectItem value="hall">Hall-Specific</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {!isSuperAdmin && (
+                                <p className="text-xs text-muted-foreground">Only Super Admin can create offers valid across all halls.</p>
+                            )}
                         </div>
 
                         {/* Cinema Hall */}
