@@ -19,6 +19,14 @@ import timezone from "dayjs/plugin/timezone"
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+const TIME_PRESETS = [
+  { label: "Morning",    start_time: "09:00", end_time: "11:15" },
+  { label: "Matinee",    start_time: "11:45", end_time: "14:15" },
+  { label: "Afternoon",  start_time: "14:30", end_time: "17:15" },
+  { label: "Evening",    start_time: "18:30", end_time: "21:45" },
+  { label: "Night",      start_time: "22:30", end_time: "01:15" },
+]
+
 const AddShowPage = () => {
   const navigate = useNavigate()
   const [screens, setScreens] = useState([])
@@ -167,6 +175,40 @@ const AddShowPage = () => {
                   />
                 </PopoverContent>
               </Popover>
+            </div>
+
+            {/* Quick add presets */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Quick add</Label>
+              <div className="flex flex-wrap gap-2">
+                {TIME_PRESETS.map((preset) => {
+                  const active =
+                    formData.start_time === preset.start_time && formData.end_time === preset.end_time
+                  return (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          start_time: preset.start_time,
+                          end_time: preset.end_time,
+                        }))
+                      }
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                        active
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-transparent text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                      )}
+                    >
+                      {active && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      {preset.label}
+                      <span className="opacity-60">{preset.start_time}–{preset.end_time}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* Start & End Time */}
