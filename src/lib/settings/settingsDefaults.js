@@ -85,6 +85,7 @@ export const USER_DEFAULTS = {
     refund_initiated: { email: true, sms: false, whatsapp: false, push: false },
     refund_settled: { email: true, sms: false, whatsapp: false, push: false },
     show_cancelled: { email: true, sms: false, whatsapp: false, push: false },
+    show_reminder: { email: true, sms: false, whatsapp: false, push: true },
     daily_report: { email: false, sms: false, whatsapp: false, push: false },
     security_alert: { email: true, sms: true, whatsapp: false, push: true },
   },

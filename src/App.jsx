@@ -43,6 +43,7 @@ import OnboardingPage, { OnboardingPageSkeleton } from './pages/OnboardingPage.j
 import { HallGuard } from './routes/HallGuard.jsx'
 import { useHall } from './context/HallContext.jsx'
 import { Loader } from './components/Loader.jsx'
+import Notifications from './pages/Notifications.jsx'
 
 /**
  * Permission gate for routes inside the authenticated shell.
@@ -103,6 +104,7 @@ function App() {
             {/* Exempt: accessible without a hall */}
             <Route path="/unauthorized" element={<UnAuthorizedPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route index element={<SettingsIndexRedirect />} />
               <Route path="general" element={<Gate p="settings.org.read"><GeneralSettingsPage /></Gate>} />

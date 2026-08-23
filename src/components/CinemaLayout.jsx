@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Link, useLocation, Outlet } from "react-router-dom"
 import { Film, Search, Bell, User, Settings, LogOut, Sun, Moon, Home } from "lucide-react"
+import { formatDistanceToNow } from "date-fns"
 import { Sidebar as SidebarIcon, ChevronRight, ChevronLeft } from "lucide-react"
 import { GoSidebarCollapse, GoSidebarExpand } from "react-icons/go";
 
@@ -32,13 +33,9 @@ import { useHall } from "../context/HallContext"
 import { HallSwitcher } from "./HallSwitcher"
 import { formatRole } from "../utils/utils";
 import SearchMovies from "./SearchMovies";
+import { notificationAPI } from "../services/api";
 
-// Mock notifications
-const mockNotifications = [
-    { id: 1, title: "New booking received", time: "2 min ago", type: "booking" },
-    { id: 2, title: "Screen 3 maintenance due", time: "1 hour ago", type: "maintenance" },
-    { id: 3, title: "Revenue target achieved", time: "3 hours ago", type: "success" },
-]
+const NOTIFICATION_POLL_MS = 25000
 
 export function CinemaLayout() {
     
@@ -56,6 +53,49 @@ export function CinemaLayout() {
     useEffect(() => {
         localStorage.setItem("sidebar-collapsed", JSON.stringify(isSidebarCollapsed))
     }, [isSidebarCollapsed])
+
+    const [notifications, setNotifications] = useState([])
+    const [unreadCount, setUnreadCount] = useState(0)
+
+    const refreshNotifications = useCallback(async () => {
+        try {
+            const [{ notifications: list }, { count }] = await Promise.all([
+                notificationAPI.list(1, 5),
+                notificationAPI.getUnreadCount(),
+            ])
+            setNotifications(list)
+            setUnreadCount(count)
+        } catch {
+            // Non-fatal — the bell just doesn't update this cycle.
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!user) {
+            setNotifications([])
+            setUnreadCount(0)
+            return
+        }
+
+        refreshNotifications()
+
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") refreshNotifications()
+        }, NOTIFICATION_POLL_MS)
+        return () => clearInterval(interval)
+    }, [user, refreshNotifications])
+
+    const handleNotificationClick = async (notification) => {
+        if (!notification.read_at) {
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n))
+            setUnreadCount(prev => Math.max(0, prev - 1))
+            try {
+                await notificationAPI.markAsRead(notification.id)
+            } catch {
+                // Non-fatal — next poll will resync.
+            }
+        }
+    }
 
     // Get page title from pathname
     const getPageTitle = (path) => {
@@ -183,9 +223,11 @@ export function CinemaLayout() {
                                     className="relative rounded-full hover:bg-primary/10 transition-all duration-200"
                                 >
                                     <Bell className="h-5 w-5" />
-                                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse">
-                                        <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75"></span>
-                                    </span>
+                                    {unreadCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-primary animate-pulse">
+                                            <span className="absolute inset-0 rounded-full bg-primary animate-ping opacity-75"></span>
+                                        </span>
+                                    )}
                                     <span className="sr-only">Notifications</span>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -194,17 +236,26 @@ export function CinemaLayout() {
                                     <div className="flex flex-col space-y-1">
                                         <p className="text-sm font-medium">Notifications</p>
                                         <p className="text-xs text-muted-foreground">
-                                            You have {mockNotifications.length} unread notifications
+                                            {unreadCount > 0 ? `You have ${unreadCount} unread notifications` : "You're all caught up"}
                                         </p>
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <div className="max-h-64 overflow-y-auto">
-                                    {mockNotifications.map((notification) => (
-                                        <DropdownMenuItem key={notification.id} className="flex flex-col items-start p-3 cursor-pointer">
-                                            <div className="flex w-full items-start justify-between">
-                                                <p className="text-sm font-medium">{notification.title}</p>
-                                                <span className="text-xs text-muted-foreground">{notification.time}</span>
+                                    {notifications.length === 0 && (
+                                        <p className="px-3 py-6 text-center text-sm text-muted-foreground">No notifications yet</p>
+                                    )}
+                                    {notifications.map((notification) => (
+                                        <DropdownMenuItem
+                                            key={notification.id}
+                                            className="flex flex-col items-start p-3 cursor-pointer"
+                                            onClick={() => handleNotificationClick(notification)}
+                                        >
+                                            <div className="flex w-full items-start justify-between gap-2">
+                                                <p className={`text-sm ${!notification.read_at ? "font-medium" : "text-muted-foreground"}`}>{notification.title}</p>
+                                                <span className="text-xs text-muted-foreground shrink-0">
+                                                    {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                                                </span>
                                             </div>
                                         </DropdownMenuItem>
                                     ))}
