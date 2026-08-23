@@ -13,6 +13,7 @@ import { BookingSettingsPage } from './pages/settings/BookingSettingsPage'
 import { PaymentSettingsPage } from './pages/settings/PaymentSettingsPage'
 import { TeamManagementPage } from './pages/settings/TeamManagementPage'
 import { RolesPermissionsPage } from './pages/settings/RolesPermissionsPage'
+import { AuditLogPage } from './pages/settings/AuditLogPage'
 import HomePage from './pages/HomePage.jsx'
 import ShowsManagement from './pages/ShowsManagement.jsx';
 import Bookings from './pages/Bookings.jsx';
@@ -111,6 +112,7 @@ function App() {
               <Route path="payment" element={<Gate p="settings.org.read"><PaymentSettingsPage /></Gate>} />
               <Route path="team" element={<Gate p="team.manage"><TeamManagementPage /></Gate>} />
               <Route path="roles" element={<Gate p="roles.read"><RolesPermissionsPage /></Gate>} />
+              <Route path="audit-log" element={<Gate p="audit.view"><AuditLogPage /></Gate>} />
             </Route>
             <Route path="/halls" element={<Gate p="halls.read"><HallsManagement /></Gate>} />
 

@@ -16,7 +16,7 @@
 
 import {
   Home, Building2, Monitor, Film, Calendar, Ticket, RefreshCw,
-  CreditCard, ScanLine, Tag, Megaphone, Users, Settings, Shield,
+  CreditCard, ScanLine, Tag, Megaphone, Users, Settings, Shield, History,
 } from "lucide-react"
 
 export const PAGE_PERMISSIONS = [
@@ -51,11 +51,11 @@ export const PAGE_PERMISSIONS = [
   { group: "Settings", page: "Booking",        path: "/settings/booking",        icon: Ticket,     scope: "hall", view: "settings.hall.read", edit: "settings.hall.update" },
   { group: "Settings", page: "Team",           path: "/settings/team",           icon: Users,      scope: "org",  view: "team.manage",        extra: ["team.invite", "team.revoke"] },
   { group: "Settings", page: "Roles",          path: "/settings/roles",          icon: Shield,     scope: "org",  view: "roles.read",         edit: "roles.manage" },
+  { group: "Settings", page: "Activity Log",   path: "/settings/audit-log",      icon: History,    scope: "org",  view: "audit.view" },
 ]
 
 /** Permissions with no page of their own — rendered as a flat "Advanced" group. */
 export const ADVANCED_PERMISSIONS = [
-  "audit.view",
   "analytics.view",
   "analytics.manage",
   "settings.user.read",
