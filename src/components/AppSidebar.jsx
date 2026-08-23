@@ -37,7 +37,8 @@ export function AppSidebar({ collapsed = false }) {
   const { user, logout } = useAuth()
   const { can, roleKey } = usePermissions()
 
-  const isActive = (url) => location.pathname === url
+  const isActive = (url) =>
+    url === "/" ? location.pathname === "/" : location.pathname.startsWith(url)
 
   const NavItem = ({ title, url, icon }) => {
     const Icon = icon
