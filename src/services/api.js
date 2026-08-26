@@ -1160,4 +1160,12 @@ export const broadcastAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+
+  getDeviceTokens: async (type, id) => {
+    const response = await fetch(`${API_BASE_URL}/api/notifications/device-tokens?type=${type}&id=${id}`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
 };

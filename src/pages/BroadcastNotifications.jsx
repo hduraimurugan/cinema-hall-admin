@@ -66,6 +66,8 @@ export default function BroadcastNotifications() {
   const [peopleQuery, setPeopleQuery] = useState('');
   const [peopleResults, setPeopleResults] = useState([]);
   const [peopleSearching, setPeopleSearching] = useState(false);
+  const [personDevices, setPersonDevices] = useState({}); // `${type}:${id}` -> { loading, tokens }
+  const [expandedPerson, setExpandedPerson] = useState(null); // `${type}:${id}` currently expanded, or null
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -91,6 +93,8 @@ export default function BroadcastNotifications() {
     setFormData(EMPTY_FORM);
     setPeopleQuery('');
     setPeopleResults([]);
+    setPersonDevices({});
+    setExpandedPerson(null);
     setFormOpen(true);
   };
 
@@ -144,7 +148,7 @@ export default function BroadcastNotifications() {
     setFormData((prev) =>
       prev.people.some((p) => p.type === person.type && p.id === person.id)
         ? prev
-        : { ...prev, people: [...prev.people, person] }
+        : { ...prev, people: [...prev.people, { ...person, deviceTokenIds: null }] }
     );
     setPeopleQuery('');
     setPeopleResults([]);
@@ -157,10 +161,49 @@ export default function BroadcastNotifications() {
     }));
   };
 
+  // deviceTokenIds === null means "every device this person has registered"
+  // (the default). Opening the picker loads their devices lazily, once.
+  const toggleDevicePicker = async (person) => {
+    const key = `${person.type}:${person.id}`;
+    if (expandedPerson === key) {
+      setExpandedPerson(null);
+      return;
+    }
+    setExpandedPerson(key);
+    if (personDevices[key]) return;
+
+    setPersonDevices((prev) => ({ ...prev, [key]: { loading: true, tokens: [] } }));
+    try {
+      const data = await broadcastAPI.getDeviceTokens(person.type, person.id);
+      setPersonDevices((prev) => ({ ...prev, [key]: { loading: false, tokens: data.tokens } }));
+    } catch (err) {
+      toast.error(err.error || err.message || 'Failed to load devices');
+      setPersonDevices((prev) => ({ ...prev, [key]: { loading: false, tokens: [] } }));
+    }
+  };
+
+  const toggleDeviceToken = (person, tokenId, allTokenIds) => {
+    setFormData((prev) => ({
+      ...prev,
+      people: prev.people.map((p) => {
+        if (p.type !== person.type || p.id !== person.id) return p;
+        const current = p.deviceTokenIds === null ? allTokenIds : p.deviceTokenIds;
+        const next = current.includes(tokenId) ? current.filter((id) => id !== tokenId) : [...current, tokenId];
+        // Every device checked again collapses back to "all" (null).
+        return { ...p, deviceTokenIds: next.length === allTokenIds.length ? null : next };
+      }),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.audienceType === 'custom' && formData.people.length === 0) {
       toast.error('Pick at least one person');
+      return;
+    }
+    const emptyDeviceSelection = formData.people.find((p) => p.deviceTokenIds !== null && p.deviceTokenIds.length === 0);
+    if (emptyDeviceSelection) {
+      toast.error(`${emptyDeviceSelection.name} has no devices selected — pick at least one or remove them`);
       return;
     }
     if (formData.delivery === 'schedule' && !formData.scheduledFor) {
@@ -170,6 +213,11 @@ export default function BroadcastNotifications() {
 
     setFormLoading(true);
     try {
+      const deviceTokenFilter = {};
+      formData.people.forEach((p) => {
+        if (p.deviceTokenIds !== null) deviceTokenFilter[`${p.type}:${p.id}`] = p.deviceTokenIds;
+      });
+
       const payload = {
         title: formData.title,
         body: formData.body,
@@ -177,6 +225,7 @@ export default function BroadcastNotifications() {
         audienceType: formData.audienceType,
         customerIds: formData.people.filter((p) => p.type === 'customer').map((p) => p.id),
         adminIds: formData.people.filter((p) => p.type === 'admin').map((p) => p.id),
+        deviceTokenFilter,
         scheduledFor: formData.delivery === 'schedule' ? new Date(formData.scheduledFor).toISOString() : undefined,
       };
       const data = await broadcastAPI.create(payload);
@@ -326,14 +375,18 @@ export default function BroadcastNotifications() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={uploading}
-                  className="w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:text-primary file:px-3 file:py-1.5 file:text-sm file:font-medium"
-                />
-                {uploading && <p className="text-xs text-muted-foreground mt-1">Uploading...</p>}
+                <div className="flex items-center gap-2">
+                  <input
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData((p) => ({ ...p, imageUrl: e.target.value }))}
+                    placeholder="Paste an image URL, or upload one"
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <label className={`shrink-0 rounded-md border border-input px-3 py-2 text-sm font-medium cursor-pointer hover:bg-muted/60 ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+                    {uploading ? 'Uploading...' : 'Upload'}
+                    <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploading} className="hidden" />
+                  </label>
+                </div>
                 {formData.imageUrl && (
                   <img
                     src={formData.imageUrl}
@@ -401,18 +454,64 @@ export default function BroadcastNotifications() {
                     )}
 
                     {formData.people.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {formData.people.map((person) => (
-                          <span
-                            key={`${person.type}-${person.id}`}
-                            className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 text-xs px-2 py-1 rounded-full"
-                          >
-                            {person.name}
-                            <button type="button" onClick={() => removePerson(person)} className="hover:text-primary/70">
-                              <X className="size-3" />
-                            </button>
-                          </span>
-                        ))}
+                      <div className="mt-3 space-y-2">
+                        {formData.people.map((person) => {
+                          const key = `${person.type}:${person.id}`;
+                          const devState = personDevices[key];
+                          const isExpanded = expandedPerson === key;
+                          const selectedCount = person.deviceTokenIds === null ? null : person.deviceTokenIds.length;
+
+                          return (
+                            <div key={key} className="rounded-md border border-border overflow-hidden">
+                              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/30">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{person.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{person.email}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Badge variant="outline" className="capitalize">{person.type}</Badge>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDevicePicker(person)}
+                                    className="text-xs text-primary hover:underline whitespace-nowrap"
+                                  >
+                                    {selectedCount === null ? 'All devices' : `${selectedCount} device${selectedCount === 1 ? '' : 's'}`}
+                                  </button>
+                                  <button type="button" onClick={() => removePerson(person)} className="text-muted-foreground hover:text-destructive">
+                                    <X className="size-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="px-3 py-2 border-t border-border space-y-1.5">
+                                  {devState?.loading ? (
+                                    <p className="text-xs text-muted-foreground">Loading devices...</p>
+                                  ) : !devState || devState.tokens.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground">No registered devices — they haven't enabled push yet.</p>
+                                  ) : (
+                                    devState.tokens.map((t) => {
+                                      const allIds = devState.tokens.map((x) => x.id);
+                                      const checked = person.deviceTokenIds === null || person.deviceTokenIds.includes(t.id);
+                                      return (
+                                        <label key={t.id} className="flex items-center gap-2 text-xs cursor-pointer">
+                                          <input
+                                            type="checkbox"
+                                            checked={checked}
+                                            onChange={() => toggleDeviceToken(person, t.id, allIds)}
+                                            className="accent-primary"
+                                          />
+                                          <span className="font-medium text-foreground capitalize">{t.platform}</span>
+                                          <span className="text-muted-foreground">· last seen {formatDateTime(t.last_seen_at)}</span>
+                                        </label>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
