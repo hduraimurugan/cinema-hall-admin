@@ -1131,3 +1131,33 @@ export const notificationAPI = {
     return response.json()
   },
 };
+
+// Super Admin — manual broadcast notifications (compose, schedule/send, history).
+export const broadcastAPI = {
+  list: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  get: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast/${id}`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  create: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+};

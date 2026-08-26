@@ -1,4 +1,4 @@
-import { Film, Settings, LogOut, Sparkles, Building2 } from "lucide-react"
+import { Film, Settings, LogOut, Sparkles, Building2, Send } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,8 +26,9 @@ const navigationItems = inGroup("Operations")
 const promotionItems = inGroup("Promotions")
 const managementItems = [
   ...inGroup("Management"),
-  // Platform-level page with no org-scoped equivalent, so it is not in the catalog.
+  // Platform-level pages with no org-scoped equivalent, so they are not in the catalog.
   { title: "Hall Admins", url: "/admins", icon: Building2, permission: "team.manage", superAdminOnly: true },
+  { title: "Notifications", url: "/notifications/broadcast", icon: Send, superAdminOnly: true },
 ]
 
 const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]

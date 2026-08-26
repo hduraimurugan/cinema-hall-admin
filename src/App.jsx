@@ -44,6 +44,7 @@ import { HallGuard } from './routes/HallGuard.jsx'
 import { useHall } from './context/HallContext.jsx'
 import { Loader } from './components/Loader.jsx'
 import Notifications from './pages/Notifications.jsx'
+import BroadcastNotifications from './pages/BroadcastNotifications.jsx'
 
 /**
  * Permission gate for routes inside the authenticated shell.
@@ -149,6 +150,7 @@ function App() {
             <Route path="/offers/:id/edit" element={<AdminProtectedRoute permission="offers.update"><OfferFormPage /></AdminProtectedRoute>} />
             <Route path="/customers" element={<AdminProtectedRoute permission="customers.read" requireSuperAdmin={true}><UsersPage /></AdminProtectedRoute>} />
             <Route path="/admins" element={<AdminProtectedRoute permission="team.manage" requireSuperAdmin={true}><AdminsPage /></AdminProtectedRoute>} />
+            <Route path="/notifications/broadcast" element={<AdminProtectedRoute requireSuperAdmin={true}><BroadcastNotifications /></AdminProtectedRoute>} />
           </Route>
 
           {/* Catch-all route - redirect to home */}
