@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Send, Plus, Users, Building2, X, Clock, Zap, CheckCircle2, XCircle } from 'lucide-react';
+import { Send, Plus, Users, Building2, X, Clock, Zap, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { toast } from 'sonner';
 import { broadcastAPI, customersAPI, adminsAPI } from '../services/api';
@@ -72,6 +72,9 @@ export default function BroadcastNotifications() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const loadBroadcasts = async () => {
     setLoading(true);
@@ -257,6 +260,22 @@ export default function BroadcastNotifications() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await broadcastAPI.remove(deleteTarget.id);
+      toast.success('Notification deleted');
+      setDeleteTarget(null);
+      if (detailOpen && detail?.broadcast?.id === deleteTarget.id) setDetailOpen(false);
+      loadBroadcasts();
+    } catch (err) {
+      toast.error(err.error || err.message || 'Failed to delete notification');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
@@ -301,6 +320,7 @@ export default function BroadcastNotifications() {
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">Delivered / Failed</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">When</th>
                   <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap">By</th>
+                  <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3 whitespace-nowrap"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -334,6 +354,16 @@ export default function BroadcastNotifications() {
                       {b.status === 'scheduled' ? formatDateTime(b.scheduled_for) : formatDateTime(b.sent_at || b.created_at)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{b.created_by_name || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(b); }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -619,8 +649,38 @@ export default function BroadcastNotifications() {
                   </tbody>
                 </table>
               </div>
+              <div className="flex justify-end pt-2 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
+                  onClick={() => setDeleteTarget(detail.broadcast)}
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </Button>
+              </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Delete Notification</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mt-1">
+            Are you sure you want to delete <strong className="text-foreground">"{deleteTarget?.title}"</strong>?
+            This removes it from every recipient's in-app notification feed and cancels any pending scheduled send.
+          </p>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteLoading}>
+              {deleteLoading ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

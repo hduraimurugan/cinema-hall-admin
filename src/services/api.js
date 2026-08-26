@@ -1168,4 +1168,13 @@ export const broadcastAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+
+  remove: async (id) => {
+    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
 };
