@@ -88,6 +88,10 @@ export const USER_DEFAULTS = {
     show_reminder: { email: true, sms: false, whatsapp: false, push: true },
     daily_report: { email: false, sms: false, whatsapp: false, push: false },
     security_alert: { email: true, sms: true, whatsapp: false, push: true },
+    refund_failed: { email: true, sms: false, whatsapp: false, push: true },
+    team_role_changed: { email: false, sms: false, whatsapp: false, push: true },
+    team_removed: { email: true, sms: false, whatsapp: false, push: true },
+    team_invite_accepted: { email: false, sms: false, whatsapp: false, push: true },
   },
   analytics: {
     default_dashboard_widgets: ["revenue", "bookings", "occupancy"],
