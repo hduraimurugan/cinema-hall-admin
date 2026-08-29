@@ -328,7 +328,7 @@ const CinemaScreenDesigner = () => {
 
       {/* View Screen Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="md:min-w-[100vh] max-h-[90vh] overflow-auto" style={{ scrollBarWidth: "none" }}>
+        <DialogContent className="w-[95vw] sm:max-w-[1600px] max-h-[90vh] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Monitor className="h-5 w-5 text-primary" />
@@ -338,120 +338,123 @@ const CinemaScreenDesigner = () => {
           </DialogHeader>
           {viewingScreen && (
             <div className="space-y-6 py-4">
-              {/* Screen Display */}
-              {viewingScreen.layout.screenPosition === "top" && (
-                <div className="flex flex-col items-center select-none my-2">
-                  <div className="w-72 sm:w-80 h-4 border-t-2 border-primary/50 dark:border-primary/70 rounded-[50%/10px_10px_0_0] relative shadow-[0_-8px_24px_-4px_var(--color-primary)]">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-24 bg-gradient-to-b from-primary/12 via-primary/3 to-transparent blur-md pointer-events-none rounded-[50%/0_0_20px_20px]" />
+              {/* Auditorium: screen indicator + seating grid share one solid, guaranteed-opaque surface */}
+              <Card className="p-6 sm:p-8 gap-0">
+                {/* Screen Display Top */}
+                {viewingScreen.layout.screenPosition === "top" && (
+                  <div className="flex flex-col items-center select-none mb-6 shrink-0">
+                    <div className="w-72 sm:w-80 h-4 border-t-2 border-primary/50 dark:border-primary/70 rounded-[50%/10px_10px_0_0] relative shadow-[0_-8px_24px_-4px_var(--color-primary)]">
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-24 bg-gradient-to-b from-primary/12 via-primary/3 to-transparent blur-md pointer-events-none rounded-[50%/0_0_20px_20px]" />
+                    </div>
+                    <p className="text-center text-[9px] font-bold tracking-[0.4em] text-primary uppercase mt-3">Screen</p>
                   </div>
-                  <p className="text-center text-[9px] font-bold tracking-[0.4em] text-primary uppercase mt-3">Screen</p>
-                </div>
-              )}
+                )}
 
-              {/* Seating Layout */}
-              <div className="bg-card/50 border border-border/40 p-8 rounded-xl">
-                <div className="flex justify-center">
-                  <div className="inline-block">
-                    {/* Column numbers */}
-                    <div className="flex items-center gap-1 mb-4 ml-8">
-                      {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
-                        const colNumber = colIndex + 1
-                        const hasAisle = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
+                {/* Seating grid — scrolls independently so the screen indicator/legend never get pushed off-center */}
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex justify-center min-w-max mx-auto">
+                    <div className="inline-block">
+                      {/* Column numbers */}
+                      <div className="flex items-center gap-1 mb-4 ml-8">
+                        {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
+                          const colNumber = colIndex + 1
+                          const hasAisle = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
+                          return (
+                            <React.Fragment key={colIndex}>
+                              <div className="w-9 text-center text-xs font-medium text-muted-foreground">
+                                {colNumber}
+                              </div>
+                              {hasAisle && colIndex < viewingScreen.layout.columns - 1 && (
+                                <div className="w-4" />
+                              )}
+                            </React.Fragment>
+                          )
+                        })}
+                      </div>
+
+                      {/* Rows with seats */}
+                      {Array.from({ length: viewingScreen.layout.rows }, (_, rowIndex) => {
+                        const rowLabel = String.fromCharCode(65 + rowIndex)
+                        const hasAisleAfterRow = (viewingScreen.layout.aisleAfterRows || []).includes(rowLabel)
+                        const rowSeats = viewingScreen.layout.seats.filter((seat) => seat.id.startsWith(`${rowIndex}-`))
+                        const hasValidSeats = rowSeats.some((seat) => !seat.isBlocked && seat.type !== "entrance" && seat.type !== "door")
+
+                        if (!hasValidSeats) return null
+
                         return (
-                          <React.Fragment key={colIndex}>
-                            <div className="w-9 text-center text-xs font-medium text-gray-500">
-                              {colNumber}
+                          <React.Fragment key={rowIndex}>
+                            <div className="flex items-center gap-1 mb-2">
+                              {/* Row label */}
+                              <div className="w-6 text-center font-bold text-lg text-foreground">
+                                {rowLabel}
+                              </div>
+
+                              {/* Seats with column aisle spacers */}
+                              {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
+                                const colNumber = colIndex + 1
+                                const hasAisleAfterCol = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
+                                const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
+
+                                const seatEl = !seat || seat.isBlocked || seat.type === "entrance" || seat.type === "door"
+                                  ? <div key={colIndex} className="w-9 h-9" />
+                                  : (() => {
+                                      const seatColor =
+                                        seat.type === "premium"
+                                          ? "bg-seat-premium/90 border-seat-premium text-seat-premium-foreground shadow-md hover:shadow-lg hover:bg-seat-premium"
+                                          : seat.type === "gold"
+                                            ? "bg-seat-gold/90 border-seat-gold text-seat-gold-foreground shadow-md hover:shadow-lg hover:bg-seat-gold"
+                                            : "bg-seat-silver/90 border-seat-silver text-seat-silver-foreground shadow-sm hover:shadow-md hover:bg-seat-silver"
+                                      return (
+                                        <button
+                                          className={`w-9 h-9 rounded-t-md rounded-b-[3px] border-2 border-b-4 transition-all duration-200 hover:scale-110 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
+                                          title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - Rs.${seat.price}`}
+                                        >
+                                          {seat.column}
+                                        </button>
+                                      )
+                                    })()
+
+                                return (
+                                  <React.Fragment key={colIndex}>
+                                    {seatEl}
+                                    {hasAisleAfterCol && colIndex < viewingScreen.layout.columns - 1 && (
+                                      <div className="w-4 flex items-center justify-center opacity-40">
+                                        <div className="w-0.5 h-7 bg-muted-foreground/40 rounded" />
+                                      </div>
+                                    )}
+                                  </React.Fragment>
+                                )
+                              })}
+
+                              {/* Row label (right side) */}
+                              <div className="w-6 text-center font-bold text-lg text-foreground">
+                                {rowLabel}
+                              </div>
                             </div>
-                            {hasAisle && colIndex < viewingScreen.layout.columns - 1 && (
-                              <div className="w-4" />
+
+                            {/* Horizontal aisle spacer */}
+                            {hasAisleAfterRow && (
+                              <div className="flex items-center gap-1 my-1 ml-8">
+                                <div className="flex-1 h-0.5 bg-border rounded opacity-70" />
+                              </div>
                             )}
                           </React.Fragment>
                         )
                       })}
                     </div>
-
-                    {/* Rows with seats */}
-                    {Array.from({ length: viewingScreen.layout.rows }, (_, rowIndex) => {
-                      const rowLabel = String.fromCharCode(65 + rowIndex)
-                      const hasAisleAfterRow = (viewingScreen.layout.aisleAfterRows || []).includes(rowLabel)
-                      const rowSeats = viewingScreen.layout.seats.filter((seat) => seat.id.startsWith(`${rowIndex}-`))
-                      const hasValidSeats = rowSeats.some((seat) => !seat.isBlocked && seat.type !== "entrance" && seat.type !== "door")
-
-                      if (!hasValidSeats) return null
-
-                      return (
-                        <React.Fragment key={rowIndex}>
-                          <div className="flex items-center gap-1 mb-2">
-                            {/* Row label */}
-                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
-                              {rowLabel}
-                            </div>
-
-                            {/* Seats with column aisle spacers */}
-                            {Array.from({ length: viewingScreen.layout.columns }, (_, colIndex) => {
-                              const colNumber = colIndex + 1
-                              const hasAisleAfterCol = (viewingScreen.layout.aisleAfterColumns || []).includes(colNumber)
-                              const seat = viewingScreen.layout.seats.find((s) => s.id === `${rowIndex}-${colIndex}`)
-
-                              const seatEl = !seat || seat.isBlocked || seat.type === "entrance" || seat.type === "door"
-                                ? <div key={colIndex} className="w-9 h-9" />
-                                : (() => {
-                                    const seatColor =
-                                      seat.type === "premium"
-                                        ? "bg-seat-premium/90 border-seat-premium text-seat-premium-foreground shadow-md hover:shadow-lg hover:bg-seat-premium"
-                                        : seat.type === "gold"
-                                          ? "bg-seat-gold/90 border-seat-gold text-seat-gold-foreground shadow-md hover:shadow-lg hover:bg-seat-gold"
-                                          : "bg-seat-silver/90 border-seat-silver text-seat-silver-foreground shadow-sm hover:shadow-md hover:bg-seat-silver"
-                                    return (
-                                      <button
-                                        className={`w-9 h-9 rounded-t-md rounded-b-[3px] border-2 border-b-4 transition-all duration-200 hover:scale-110 active:scale-95 font-bold text-sm ${seatColor} cursor-pointer`}
-                                        title={`Seat ${seat.row}${seat.column} - ${seat.type.toUpperCase()} - Rs.${seat.price}`}
-                                      >
-                                        {seat.column}
-                                      </button>
-                                    )
-                                  })()
-
-                              return (
-                                <React.Fragment key={colIndex}>
-                                  {seatEl}
-                                  {hasAisleAfterCol && colIndex < viewingScreen.layout.columns - 1 && (
-                                    <div className="w-4 flex items-center justify-center opacity-40">
-                                      <div className="w-0.5 h-7 bg-muted-foreground/40 rounded" />
-                                    </div>
-                                  )}
-                                </React.Fragment>
-                              )
-                            })}
-
-                            {/* Row label (right side) */}
-                            <div className="w-6 text-center font-bold text-lg text-gray-700 dark:text-gray-300">
-                              {rowLabel}
-                            </div>
-                          </div>
-
-                          {/* Horizontal aisle spacer */}
-                          {hasAisleAfterRow && (
-                            <div className="flex items-center gap-1 my-1 ml-8">
-                              <div className="flex-1 h-0.5 bg-border rounded opacity-70" />
-                            </div>
-                          )}
-                        </React.Fragment>
-                      )
-                    })}
                   </div>
                 </div>
-              </div>
 
-              {/* Screen Display Bottom */}
-              {viewingScreen.layout.screenPosition === "bottom" && (
-                <div className="flex flex-col items-center select-none my-2">
-                  <p className="text-center text-[9px] font-bold tracking-[0.4em] text-primary uppercase mb-3">Screen</p>
-                  <div className="w-72 sm:w-80 h-4 border-b-2 border-primary/50 dark:border-primary/70 rounded-[50%/0_0_10px_10px] relative shadow-[0_8px_24px_-4px_var(--color-primary)]">
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-24 bg-gradient-to-t from-primary/12 via-primary/3 to-transparent blur-md pointer-events-none rounded-[50%/20px_20px_0_0]" />
+                {/* Screen Display Bottom */}
+                {viewingScreen.layout.screenPosition === "bottom" && (
+                  <div className="flex flex-col items-center select-none mt-6 shrink-0">
+                    <p className="text-center text-[9px] font-bold tracking-[0.4em] text-primary uppercase mb-3">Screen</p>
+                    <div className="w-72 sm:w-80 h-4 border-b-2 border-primary/50 dark:border-primary/70 rounded-[50%/0_0_10px_10px] relative shadow-[0_8px_24px_-4px_var(--color-primary)]">
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 sm:w-56 h-24 bg-gradient-to-t from-primary/12 via-primary/3 to-transparent blur-md pointer-events-none rounded-[50%/20px_20px_0_0]" />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </Card>
 
               {/* Legend and Pricing */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

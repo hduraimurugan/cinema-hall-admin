@@ -86,7 +86,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   ArrowLeft, Save, Monitor, DoorOpen, RotateCcw,
-  MousePointer, Square, Loader2, Eye, Undo2, Redo2,
+  MousePointer, Square, Loader2, Eye, Undo2, Redo2, Hand,
 } from 'lucide-react'
 import { screensAPI } from "../services/api.js"
 
@@ -136,12 +136,14 @@ const ScreenDesignerPage = () => {
   const [undoStack, setUndoStack] = useState([])
   const [redoStack, setRedoStack] = useState([])
   const [historyLog, setHistoryLog] = useState([])
+  const [isPanMode, setIsPanMode] = useState(false)
 
   // ── Refs ──
   const layoutRef = useRef(layout)
   const gridContainerRef = useRef(null)
   const rowsTimerRef = useRef(null)
   const colsTimerRef = useRef(null)
+  const panRef = useRef({ active: false, startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 })
 
   // Keep layoutRef in sync
   useEffect(() => { layoutRef.current = layout }, [layout])
@@ -387,6 +389,29 @@ const ScreenDesignerPage = () => {
     setZoom(Math.max(20, fitZoom))
   }
 
+  // ── Pan tool: drag the canvas to scroll it ──
+  const handlePanPointerDown = useCallback((e) => {
+    if (!isPanMode || !gridContainerRef.current) return
+    panRef.current = {
+      active: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      scrollLeft: gridContainerRef.current.scrollLeft,
+      scrollTop: gridContainerRef.current.scrollTop,
+    }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }, [isPanMode])
+
+  const handlePanPointerMove = useCallback((e) => {
+    if (!panRef.current.active || !gridContainerRef.current) return
+    gridContainerRef.current.scrollLeft = panRef.current.scrollLeft - (e.clientX - panRef.current.startX)
+    gridContainerRef.current.scrollTop = panRef.current.scrollTop - (e.clientY - panRef.current.startY)
+  }, [])
+
+  const handlePanPointerUp = useCallback(() => {
+    panRef.current.active = false
+  }, [])
+
   // ── Seat summary ──
   const seatSummary = useMemo(() => ({
     total:    layout.seats.filter(s => !s.isBlocked).length,
@@ -410,6 +435,9 @@ const ScreenDesignerPage = () => {
       if (ctrl && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
       if (ctrl && e.shiftKey && e.key === 'z') { e.preventDefault(); redo() }
       if (ctrl && e.key === 'a') { e.preventDefault(); selectAll() }
+      if (!ctrl && !e.shiftKey && e.key.toLowerCase() === 'h' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault(); setIsPanMode(p => !p)
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -507,7 +535,7 @@ const ScreenDesignerPage = () => {
                     : "bg-secondary/50 hover:bg-secondary"
                 }`}
                 onClick={() => {
-                  if (readOnly) return
+                  if (readOnly || isPanMode) return
                   selectedTool === "aisle" ? toggleAisleAfterColumn(colNumber) : selectFullColumn(colIndex)
                 }}
                 title={readOnly ? String(colNumber) : selectedTool === "aisle" ? `${hasAisle ? 'Remove' : 'Add'} aisle after col ${colNumber}` : `Select column ${colNumber}`}
@@ -542,7 +570,7 @@ const ScreenDesignerPage = () => {
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                   onClick={() => {
-                    if (readOnly) return
+                    if (readOnly || isPanMode) return
                     selectedTool === "aisle" ? toggleAisleAfterRow(rowLabel) : selectFullRow(rowIndex)
                   }}
                   title={readOnly ? rowLabel : selectedTool === "aisle" ? `${hasAisleAfterRow ? 'Remove' : 'Add'} aisle after row ${rowLabel}` : `Select row ${rowLabel}`}
@@ -563,7 +591,7 @@ const ScreenDesignerPage = () => {
                     {seat ? (
                       <button
                         className={`w-10 h-10 rounded-lg text-xs font-bold ${getSeatColor(seat)} ${readOnly ? "cursor-default" : "hover:scale-105 active:scale-95"}`}
-                        onClick={(e) => !readOnly && handleSeatClick(seat, e)}
+                        onClick={(e) => !readOnly && !isPanMode && handleSeatClick(seat, e)}
                         title={`${seat.row}${seat.column} — ${seat.type}${seat.price ? ` — ₹${seat.price}` : ""}`}
                       >
                         {seat.type === "entrance" || seat.type === "door"
@@ -792,6 +820,16 @@ const ScreenDesignerPage = () => {
             <Button variant="outline" size="icon" className="h-6 w-6 text-xs" onClick={zoomIn}>+</Button>
             <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={zoomFit}>Fit</Button>
             <Separator orientation="vertical" className="h-4 mx-1" />
+            <Button
+              variant={isPanMode ? "default" : "outline"}
+              size="icon"
+              className="h-6 w-6 text-xs"
+              onClick={() => setIsPanMode(p => !p)}
+              title="Pan tool — drag the canvas to move around"
+            >
+              <Hand className="h-3.5 w-3.5" />
+            </Button>
+            <Separator orientation="vertical" className="h-4 mx-1" />
             <Button variant="ghost" size="sm" className="h-6 text-xs px-2 gap-1" onClick={undo} disabled={undoStack.length === 0}>
               <Undo2 className="h-3 w-3" /> Undo
             </Button>
@@ -805,7 +843,14 @@ const ScreenDesignerPage = () => {
           </div>
 
           {/* CANVAS */}
-          <div ref={gridContainerRef} className="flex-1 overflow-auto p-6 flex justify-center">
+          <div
+            ref={gridContainerRef}
+            className={`flex-1 overflow-auto p-6 flex justify-center ${isPanMode ? "cursor-grab active:cursor-grabbing select-none" : ""}`}
+            onPointerDown={handlePanPointerDown}
+            onPointerMove={handlePanPointerMove}
+            onPointerUp={handlePanPointerUp}
+            onPointerLeave={handlePanPointerUp}
+          >
             <div
               style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center', transition: 'transform 0.15s ease' }}
               className="inline-block"
@@ -956,6 +1001,7 @@ const ScreenDesignerPage = () => {
                 ['Select All',   '⌘A'],
                 ['Multi-select', '⌘+Click'],
                 ['Row select',   '⇧+Click'],
+                ['Pan tool',     'H'],
               ].map(([action, key]) => (
                 <div key={action} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">{action}</span>
