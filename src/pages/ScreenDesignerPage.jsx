@@ -845,7 +845,7 @@ const ScreenDesignerPage = () => {
           {/* CANVAS */}
           <div
             ref={gridContainerRef}
-            className={`flex-1 overflow-auto p-6 flex justify-center ${isPanMode ? "cursor-grab active:cursor-grabbing select-none" : ""}`}
+            className={`flex-1 overflow-auto p-6 ${isPanMode ? "cursor-grab active:cursor-grabbing select-none" : ""}`}
             onPointerDown={handlePanPointerDown}
             onPointerMove={handlePanPointerMove}
             onPointerUp={handlePanPointerUp}
@@ -853,7 +853,7 @@ const ScreenDesignerPage = () => {
           >
             <div
               style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center', transition: 'transform 0.15s ease' }}
-              className="inline-block"
+              className="block w-max mx-auto"
             >
               {/* Screen top */}
               {layout.screenPosition === "top" && (
