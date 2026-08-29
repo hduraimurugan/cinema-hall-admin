@@ -464,26 +464,26 @@ const ScreenDesignerPage = () => {
   const getSeatColor = (seat) => {
     const isSelected = selectedSeats.has(seat.id)
     const base = "transition-all duration-150 border-2"
-    if (isSelected) return `${base} border-blue-500 ring-2 ring-blue-300 scale-105 bg-blue-100`
-    if (seat.isBlocked) return `${base} bg-red-500 border-red-600 text-white`
+    if (isSelected) return `${base} border-primary ring-2 ring-primary/30 scale-105 bg-primary/15`
+    if (seat.isBlocked) return `${base} bg-destructive border-destructive text-destructive-foreground`
     switch (seat.type) {
-      case "premium": return `${base} bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-600 hover:from-yellow-500 hover:to-yellow-600 text-yellow-900`
-      case "gold":    return `${base} bg-gradient-to-br from-violet-400 to-violet-500 border-violet-600 hover:from-violet-500 hover:to-violet-600 text-violet-900`
-      case "silver":  return `${base} bg-gradient-to-br from-slate-300 to-slate-400 border-slate-500 hover:from-slate-400 hover:to-slate-500 text-slate-800`
+      case "premium": return `${base} bg-seat-premium/90 border-seat-premium hover:bg-seat-premium text-seat-premium-foreground`
+      case "gold":    return `${base} bg-seat-gold/90 border-seat-gold hover:bg-seat-gold text-seat-gold-foreground`
+      case "silver":  return `${base} bg-seat-silver/90 border-seat-silver hover:bg-seat-silver text-seat-silver-foreground`
       case "entrance":return `${base} bg-gradient-to-br from-green-400 to-green-500 border-green-600 text-green-900`
       case "door":    return `${base} bg-gradient-to-br from-orange-400 to-orange-500 border-orange-600 text-orange-900`
-      default:        return `${base} bg-slate-300 border-slate-400`
+      default:        return `${base} bg-muted border-border`
     }
   }
 
   const tools = [
-    { id: "premium",  label: "Premium",      icon: "💎", color: "bg-gradient-to-r from-yellow-400 to-yellow-500" },
-    { id: "gold",     label: "Gold",          icon: "🥇", color: "bg-gradient-to-r from-violet-400 to-violet-500" },
-    { id: "silver",   label: "Silver",        icon: "🥈", color: "bg-gradient-to-r from-slate-300 to-slate-400" },
-    { id: "aisle",    label: "Aisle",         icon: "↔",  color: "border-2 border-dashed border-purple-400 bg-purple-50" },
+    { id: "premium",  label: "Premium",      icon: "💎", color: "bg-seat-premium" },
+    { id: "gold",     label: "Gold",          icon: "🥇", color: "bg-seat-gold" },
+    { id: "silver",   label: "Silver",        icon: "🥈", color: "bg-seat-silver" },
+    { id: "aisle",    label: "Aisle",         icon: "↔",  color: "border-2 border-dashed border-primary/40 bg-primary/5" },
     { id: "entrance", label: "Entrance",      icon: "🚪", color: "bg-gradient-to-r from-green-400 to-green-500" },
     { id: "door",     label: "Door",          icon: "🔓", color: "bg-gradient-to-r from-orange-400 to-orange-500" },
-    { id: "block",    label: "Block/Unblock", icon: "❌", color: "bg-gradient-to-r from-red-500 to-red-600" },
+    { id: "block",    label: "Block/Unblock", icon: "❌", color: "bg-destructive" },
   ]
 
   // ── Seat grid (reused in both main canvas and preview) ──
@@ -502,8 +502,8 @@ const ScreenDesignerPage = () => {
                   readOnly ? "bg-secondary/50 cursor-default" :
                   selectedTool === "aisle"
                     ? hasAisle
-                      ? "bg-purple-300 border border-purple-500 text-purple-900 dark:bg-purple-700 dark:text-purple-100"
-                      : "bg-purple-100 hover:bg-purple-200 border border-dashed border-purple-300 text-purple-700"
+                      ? "bg-primary/20 border border-primary/50 text-primary dark:bg-primary/30"
+                      : "bg-primary/5 hover:bg-primary/10 border border-dashed border-primary/30 text-primary/80"
                     : "bg-secondary/50 hover:bg-secondary"
                 }`}
                 onClick={() => {
@@ -516,7 +516,7 @@ const ScreenDesignerPage = () => {
               </button>
               {hasAisle && colIndex < layout.columns - 1 && (
                 <div className="w-5 flex items-center justify-center opacity-50">
-                  <div className="w-0.5 h-4 bg-purple-400 rounded" />
+                  <div className="w-0.5 h-4 bg-primary/50 rounded" />
                 </div>
               )}
             </React.Fragment>
@@ -537,8 +537,8 @@ const ScreenDesignerPage = () => {
                     readOnly ? "bg-secondary/50 cursor-default" :
                     selectedTool === "aisle"
                       ? hasAisleAfterRow
-                        ? "bg-purple-300 border border-purple-500 text-purple-900"
-                        : "bg-purple-100 hover:bg-purple-200 border border-dashed border-purple-300 text-purple-700"
+                        ? "bg-primary/20 border border-primary/50 text-primary"
+                        : "bg-primary/5 hover:bg-primary/10 border border-dashed border-primary/30 text-primary/80"
                       : "bg-secondary/50 hover:bg-secondary"
                   }`}
                   onClick={() => {
@@ -549,7 +549,7 @@ const ScreenDesignerPage = () => {
                 >
                   ⬌
                 </button>
-                <div className={`w-4 text-center font-bold text-sm ${hasAisleAfterRow ? "text-purple-600" : ""}`}>
+                <div className={`w-4 text-center font-bold text-sm ${hasAisleAfterRow ? "text-primary" : ""}`}>
                   {rowLabel}
                 </div>
               </div>
@@ -575,7 +575,7 @@ const ScreenDesignerPage = () => {
                     )}
                     {hasAisleAfterCol && colIndex < layout.columns - 1 && (
                       <div className="w-5 flex items-center justify-center opacity-50">
-                        <div className="w-0.5 h-8 bg-purple-400 rounded" />
+                        <div className="w-0.5 h-8 bg-primary/50 rounded" />
                       </div>
                     )}
                   </React.Fragment>
@@ -585,7 +585,7 @@ const ScreenDesignerPage = () => {
             {hasAisleAfterRow && (
               <div className="flex items-center gap-1 my-1">
                 <div className="w-12" />
-                <div className="flex-1 h-0.5 bg-purple-300 rounded opacity-60" />
+                <div className="flex-1 h-0.5 bg-primary/40 rounded opacity-70" />
               </div>
             )}
           </React.Fragment>
@@ -697,11 +697,11 @@ const ScreenDesignerPage = () => {
             <div className="grid grid-cols-3 gap-1.5">
               {[
                 { label: 'TOTAL',    value: seatSummary.total,    cls: 'text-foreground' },
-                { label: 'PREMIUM',  value: seatSummary.premium,  cls: 'text-yellow-600' },
-                { label: 'GOLD',     value: seatSummary.gold,     cls: 'text-violet-600' },
-                { label: 'SILVER',   value: seatSummary.silver,   cls: 'text-slate-600' },
-                { label: 'BLOCKED',  value: seatSummary.blocked,  cls: 'text-red-600' },
-                { label: 'SELECTED', value: seatSummary.selected, cls: 'text-blue-600' },
+                { label: 'PREMIUM',  value: seatSummary.premium,  cls: 'text-seat-premium' },
+                { label: 'GOLD',     value: seatSummary.gold,     cls: 'text-seat-gold' },
+                { label: 'SILVER',   value: seatSummary.silver,   cls: 'text-seat-silver' },
+                { label: 'BLOCKED',  value: seatSummary.blocked,  cls: 'text-destructive' },
+                { label: 'SELECTED', value: seatSummary.selected, cls: 'text-primary' },
               ].map(({ label, value, cls }) => (
                 <div key={label} className="flex flex-col items-center justify-center rounded-md border p-1.5 text-center">
                   <span className={`text-base font-bold leading-none ${cls}`}>{value}</span>
@@ -812,20 +812,21 @@ const ScreenDesignerPage = () => {
             >
               {/* Screen top */}
               {layout.screenPosition === "top" && (
-                <div className="flex justify-center mb-6">
-                  <div className="bg-gradient-to-b from-gray-700 to-gray-900 text-white px-16 py-2 rounded-t-2xl shadow-lg flex flex-col items-center gap-1 w-64">
+                <div className="flex flex-col items-center mb-6">
+                  <div className="bg-gradient-to-b from-gray-700 to-gray-900 text-white px-16 py-2 rounded-t-2xl shadow-lg flex flex-col items-center gap-1 w-64 relative z-10">
                     <span className="text-[10px] text-gray-400 tracking-widest">▲ SCREEN / STAGE</span>
                     <div className="flex items-center gap-2">
                       <Monitor className="h-4 w-4 text-gray-300" />
                       <span className="text-sm font-bold tracking-widest text-gray-100">SCREEN</span>
                     </div>
                   </div>
+                  <div className="w-64 h-3 bg-gradient-to-b from-primary/25 to-transparent blur-md -mt-1 rounded-b-full" />
                 </div>
               )}
 
               {/* Aisle hint */}
               {selectedTool === "aisle" && (
-                <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-purple-50 dark:bg-purple-950 border border-dashed border-purple-300 text-purple-700 dark:text-purple-300 text-xs mb-4">
+                <div className="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg bg-primary/5 dark:bg-primary/10 border border-dashed border-primary/30 text-primary text-xs mb-4">
                   <span>↔</span>
                   <span>Click a <strong>column number</strong> to toggle a vertical aisle. Click <strong>⬌</strong> to toggle a horizontal aisle.</span>
                 </div>
@@ -838,8 +839,9 @@ const ScreenDesignerPage = () => {
 
               {/* Screen bottom */}
               {layout.screenPosition === "bottom" && (
-                <div className="flex justify-center mt-6">
-                  <div className="bg-gradient-to-t from-gray-700 to-gray-900 text-white px-16 py-2 rounded-b-2xl shadow-lg flex flex-col items-center gap-1 w-64">
+                <div className="flex flex-col items-center mt-6">
+                  <div className="w-64 h-3 bg-gradient-to-t from-primary/25 to-transparent blur-md -mb-1 rounded-t-full" />
+                  <div className="bg-gradient-to-t from-gray-700 to-gray-900 text-white px-16 py-2 rounded-b-2xl shadow-lg flex flex-col items-center gap-1 w-64 relative z-10">
                     <div className="flex items-center gap-2">
                       <Monitor className="h-4 w-4 text-gray-300" />
                       <span className="text-sm font-bold tracking-widest text-gray-100">SCREEN</span>
@@ -893,7 +895,7 @@ const ScreenDesignerPage = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Blocked</span>
-                  <span className={inspectedSeat.isBlocked ? 'text-red-500 font-semibold' : 'text-green-600 font-semibold'}>
+                  <span className={inspectedSeat.isBlocked ? 'text-destructive font-semibold' : 'text-green-600 font-semibold'}>
                     {inspectedSeat.isBlocked ? 'Yes' : 'No'}
                   </span>
                 </div>
@@ -1005,17 +1007,19 @@ const ScreenDesignerPage = () => {
           <div className="overflow-auto py-4">
             <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }} className="inline-block min-w-full">
               {layout.screenPosition === "top" && (
-                <div className="flex justify-center mb-6">
-                  <div className="bg-gradient-to-b from-gray-700 to-gray-900 text-white px-16 py-2 rounded-t-2xl flex items-center gap-2 w-64 justify-center">
+                <div className="flex flex-col items-center mb-6">
+                  <div className="bg-gradient-to-b from-gray-700 to-gray-900 text-white px-16 py-2 rounded-t-2xl flex items-center gap-2 w-64 justify-center relative z-10">
                     <Monitor className="h-4 w-4 text-gray-300" />
                     <span className="text-sm font-bold tracking-widest text-gray-100">SCREEN</span>
                   </div>
+                  <div className="w-64 h-3 bg-gradient-to-b from-primary/25 to-transparent blur-md -mt-1 rounded-b-full" />
                 </div>
               )}
               {renderGrid(true)}
               {layout.screenPosition === "bottom" && (
-                <div className="flex justify-center mt-6">
-                  <div className="bg-gradient-to-t from-gray-700 to-gray-900 text-white px-16 py-2 rounded-b-2xl flex items-center gap-2 w-64 justify-center">
+                <div className="flex flex-col items-center mt-6">
+                  <div className="w-64 h-3 bg-gradient-to-t from-primary/25 to-transparent blur-md -mb-1 rounded-t-full" />
+                  <div className="bg-gradient-to-t from-gray-700 to-gray-900 text-white px-16 py-2 rounded-b-2xl flex items-center gap-2 w-64 justify-center relative z-10">
                     <Monitor className="h-4 w-4 text-gray-300" />
                     <span className="text-sm font-bold tracking-widest text-gray-100">SCREEN</span>
                   </div>
