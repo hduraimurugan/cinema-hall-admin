@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Lock, ChevronRight, RefreshCw, MailCheck, ShieldAlert, Clock } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ChevronRight, RefreshCw, MailCheck, ShieldAlert, Clock } from 'lucide-react';
 import { toast } from "sonner";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState(null);
   const [lockedUntil, setLockedUntil] = useState(null);
@@ -221,14 +222,22 @@ export const LoginForm = () => {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="pl-10 h-11 focus-visible:ring-primary/50"
+              className="pl-10 pr-11 h-11 focus-visible:ring-primary/50"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={isLoading}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
           </div>
         </div>
 
