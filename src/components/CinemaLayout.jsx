@@ -31,7 +31,7 @@ import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
 import { useHall } from "../context/HallContext"
 import { HallSwitcher } from "./HallSwitcher"
-import { formatRole, getDisplayRole } from "../utils/utils";
+import { formatRole, getDisplayRole, getRoleBadgeClass } from "../utils/utils";
 import SearchMovies from "./SearchMovies";
 import { notificationAPI } from "../services/api";
 
@@ -289,7 +289,11 @@ export function CinemaLayout() {
                                     <div className="flex flex-col space-y-1">
                                         <p className="text-sm font-medium">{user.name}</p>
                                         <p className="text-xs text-muted-foreground">{user.email}</p>
-                                        <p className="text-xs text-primary font-medium">{formatRole(getDisplayRole(user))}</p>
+                                        <span
+                                            className={`inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${getRoleBadgeClass(getDisplayRole(user))}`}
+                                        >
+                                            {formatRole(getDisplayRole(user))}
+                                        </span>
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />

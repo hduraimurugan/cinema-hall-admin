@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "../context/AuthContext"
 import { usePermissions } from "@/context/PermissionContext"
 import { Button } from "@/components/ui/button"
-import { formatRole, getDisplayRole } from "../utils/utils"
+import { formatRole, getDisplayRole, getRoleBadgeClass } from "../utils/utils"
 import { PAGE_PERMISSIONS } from "@/config/pagePermissions"
 
 // Nav is derived from the shared page/permission catalog so the sidebar, the
@@ -127,10 +127,7 @@ export function AppSidebar({ collapsed = false }) {
   }
 
   const displayRole = getDisplayRole(user)
-  const roleBadgeClass =
-    displayRole === "owner" || displayRole === "superAdmin"
-      ? "bg-primary/10 text-primary"
-      : "bg-amber-500/10 text-amber-500"
+  const roleBadgeClass = getRoleBadgeClass(displayRole)
 
   return (
     <TooltipProvider delayDuration={0}>

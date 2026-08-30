@@ -18,6 +18,12 @@ export const getDisplayRole = (user) => {
   return user.roleKey || user.role
 }
 
+export const getRoleBadgeClass = (displayRole) => {
+  return displayRole === "owner" || displayRole === "superAdmin"
+    ? "bg-primary/10 text-primary"
+    : "bg-amber-500/10 text-amber-500"
+}
+
 export const formatStatus = (status) => {
   if (!status) return ""
   return status
