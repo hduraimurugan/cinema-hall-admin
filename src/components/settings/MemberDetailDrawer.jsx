@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
@@ -20,7 +20,30 @@ import { Loader } from "@/components/Loader"
 import { toast } from "sonner"
 import { teamService } from "@/services/settings/teamService"
 import { useHall } from "@/context/HallContext"
-import { X, Trash2, Plus } from "lucide-react"
+import {
+  X,
+  Trash2,
+  Plus,
+  Mail,
+  Phone,
+  Crown,
+  ShieldCheck,
+  CircleDot,
+  Building2,
+  Clock,
+  CalendarDays,
+  Lock,
+  AlertTriangle,
+} from "lucide-react"
+
+function formatDate(value) {
+  if (!value) return "—"
+  try {
+    return new Date(value).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+  } catch {
+    return "—"
+  }
+}
 
 export function MemberDetailDrawer({ memberId, open, onOpenChange, onSuccess, roles }) {
   const { halls } = useHall()
@@ -35,7 +58,6 @@ export function MemberDetailDrawer({ memberId, open, onOpenChange, onSuccess, ro
   const [newHallId, setNewHallId] = useState("")
   const [newHallScope, setNewHallScope] = useState("full")
   const [localRoles, setLocalRoles] = useState(roles || [])
-  // const [rolesLoading, setRolesLoading] = useState(false)
 
   useEffect(() => {
     if (!memberId || !open) return
@@ -139,90 +161,139 @@ export function MemberDetailDrawer({ memberId, open, onOpenChange, onSuccess, ro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto bg-background">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader />
           </div>
         ) : member ? (
           <>
-            <SheetHeader className="mb-6">
+            <SheetHeader>
               <SheetTitle>Member Details</SheetTitle>
+              <SheetDescription>Manage this teammate's role, status, and hall access.</SheetDescription>
             </SheetHeader>
 
-            <div className="px-4 pb-4">
-              <div className="flex items-center gap-4 mb-6">
-                <Avatar className="h-14 w-14 rounded-full border-2 border-primary/30">
-                  {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-lg font-bold">
-                    {member.name?.charAt(0)?.toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold">{member.name}</h3>
-                    {member.is_owner && (
-                      <Badge className="text-[10px] bg-primary/10 text-primary border-primary/30">
-                        Owner
-                      </Badge>
-                    )}
+            <div className="px-4 pb-6 space-y-4">
+              {/* Profile card */}
+              <Card className="py-5 gap-4">
+                <CardContent className="px-5">
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-16 w-16 rounded-full border-2 border-primary/30 shadow-sm">
+                      {member.avatar && <AvatarImage src={member.avatar} alt={member.name} />}
+                      <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xl font-bold">
+                        {member.name?.charAt(0)?.toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold truncate">{member.name}</h3>
+                        {member.is_owner && (
+                          <Badge className="gap-1 text-[10px] bg-primary/10 text-primary border-primary/30">
+                            <Crown className="h-3 w-3" />
+                            Owner
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{member.email}</span>
+                      </div>
+                      {member.phone && (
+                        <div className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          <span>{member.phone}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
-                </div>
-              </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/50 pt-4">
+                    <div className="flex items-center gap-2 text-xs">
+                      <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <div>
+                        <div className="text-muted-foreground">Joined</div>
+                        <div className="font-medium">{formatDate(member.joined_at || member.created_at)}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <div>
+                        <div className="text-muted-foreground">Last login</div>
+                        <div className="font-medium">{formatDate(member.last_login_at)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {member.is_owner && (
-                <div className="mb-6 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-xs text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
                   Owners are locked: role, status, hall access, and removal can't be changed here. Transfer ownership first.
                 </div>
               )}
 
-              <Separator className="mb-6" />
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Role</label>
-                  <Select value={selectedRole} onValueChange={handleRoleChange} disabled={saving || member.is_owner}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {localRoles.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.label || r.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Status</label>
-                  <div className="flex gap-2">
-                    <Button
-                      variant={status === "active" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handleStatusChange("active")}
-                      disabled={saving || member.is_owner}
-                    >
-                      Active
-                    </Button>
-                    <Button
-                      variant={status === "suspended" ? "destructive" : "outline"}
-                      size="sm"
-                      onClick={() => handleStatusChange("suspended")}
-                      disabled={saving || member.is_owner}
-                    >
-                      Suspended
-                    </Button>
+              {/* Role & status card */}
+              <Card className="py-5 gap-4">
+                <CardHeader className="px-5">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    Role &amp; Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-5 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Role</label>
+                    <Select value={selectedRole} onValueChange={handleRoleChange} disabled={saving || member.is_owner}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {localRoles.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.label || r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
 
-                <Separator />
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Status</label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={status === "active" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1 gap-1.5"
+                        onClick={() => handleStatusChange("active")}
+                        disabled={saving || member.is_owner}
+                      >
+                        <CircleDot className="h-3.5 w-3.5" />
+                        Active
+                      </Button>
+                      <Button
+                        variant={status === "suspended" ? "destructive" : "outline"}
+                        size="sm"
+                        className="flex-1 gap-1.5"
+                        onClick={() => handleStatusChange("suspended")}
+                        disabled={saving || member.is_owner}
+                      >
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        Suspended
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="space-y-3">
+              {/* Hall access card */}
+              <Card className="py-5 gap-4">
+                <CardHeader className="px-5">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Hall Access</label>
+                    <CardTitle className="flex items-center gap-2 text-sm">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Hall Access
+                    </CardTitle>
                     {!member.is_owner && availableHalls.length > 0 && !addHallOpen && (
                       <Button variant="outline" size="sm" className="gap-1" onClick={() => setAddHallOpen(true)}>
                         <Plus className="h-3.5 w-3.5" />
@@ -230,9 +301,10 @@ export function MemberDetailDrawer({ memberId, open, onOpenChange, onSuccess, ro
                       </Button>
                     )}
                   </div>
-
+                </CardHeader>
+                <CardContent className="px-5 space-y-3">
                   {addHallOpen && (
-                    <div className="flex items-center gap-2 rounded-lg border border-border/50 p-3">
+                    <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 p-3">
                       <Select value={newHallId} onValueChange={setNewHallId}>
                         <SelectTrigger className="flex-1">
                           <SelectValue placeholder="Select hall" />
@@ -261,65 +333,81 @@ export function MemberDetailDrawer({ memberId, open, onOpenChange, onSuccess, ro
 
                   <div className="space-y-2">
                     {memberHalls.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No hall access assigned</p>
+                      <p className="text-sm text-muted-foreground text-center py-4">No hall access assigned</p>
                     ) : (
-                      memberHalls.map((mh) => {
-                        return (
-                          <div key={mh.hall_id} className="flex items-center justify-between rounded-lg border border-border/50 p-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">{getHallName(mh)}</span>
-                              <Badge variant="outline" className="text-[10px]">
+                      memberHalls.map((mh) => (
+                        <div
+                          key={mh.hall_id}
+                          className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 p-3"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+                              <Building2 className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium">{getHallName(mh)}</div>
+                              <Badge variant="outline" className="mt-0.5 text-[10px]">
                                 {mh.scope === "read_only" ? "Read Only" : "Full Access"}
                               </Badge>
                             </div>
-                            {!member.is_owner && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={() => handleRemoveHall(mh.hall_id)}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
                           </div>
-                        )
-                      })
+                          {!member.is_owner && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleRemoveHall(mh.hall_id)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))
                     )}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Danger zone */}
+              {member.is_owner ? (
+                <div className="flex items-center justify-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  Owners can't be removed from the organization
                 </div>
-
-                <Separator />
-
-                {member.is_owner ? (
-                  <div className="flex w-full items-center justify-center rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
-                    Owners can't be removed from the organization
-                  </div>
-                ) : (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" className="w-full gap-2">
-                        <Trash2 className="h-4 w-4" />
-                        Remove from Organization
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove member?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently remove {member.name} from your organization. Their access to all halls will be revoked. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRemoveMember} disabled={removing}>
-                          {removing ? "Removing..." : "Remove"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
+              ) : (
+                <Card className="py-5 gap-3 border-destructive/30 bg-destructive/[0.03]">
+                  <CardHeader className="px-5">
+                    <CardTitle className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      Danger Zone
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-5">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full gap-2">
+                          <Trash2 className="h-4 w-4" />
+                          Remove from Organization
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove {member.name} from your organization. Their access to all halls will be revoked. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleRemoveMember} disabled={removing}>
+                            {removing ? "Removing..." : "Remove"}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </>
         ) : null}
