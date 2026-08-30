@@ -31,7 +31,7 @@ import { useTheme } from "../context/ThemeContext"
 import { useAuth } from "../context/AuthContext"
 import { useHall } from "../context/HallContext"
 import { HallSwitcher } from "./HallSwitcher"
-import { formatRole } from "../utils/utils";
+import { formatRole, getDisplayRole } from "../utils/utils";
 import SearchMovies from "./SearchMovies";
 import { notificationAPI } from "../services/api";
 
@@ -289,7 +289,7 @@ export function CinemaLayout() {
                                     <div className="flex flex-col space-y-1">
                                         <p className="text-sm font-medium">{user.name}</p>
                                         <p className="text-xs text-muted-foreground">{user.email}</p>
-                                        <p className="text-xs text-primary font-medium">{formatRole(user?.role)}</p>
+                                        <p className="text-xs text-primary font-medium">{formatRole(getDisplayRole(user))}</p>
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />

@@ -8,6 +8,16 @@ export const formatRole = (role) => {
     .replace(/^./, str => str.toUpperCase()) // capitalize first letter
 }
 
+// Platform superAdmins should always read as "Super Admin", regardless of
+// their team roleKey (e.g. seeded as "owner" on a hall membership row).
+// Everyone else shows their actual assigned role (roleKey), not the
+// account-level `role` field, so it matches what's shown in the sidebar.
+export const getDisplayRole = (user) => {
+  if (!user) return ""
+  if (user.role === 'superAdmin') return 'superAdmin'
+  return user.roleKey || user.role
+}
+
 export const formatStatus = (status) => {
   if (!status) return ""
   return status

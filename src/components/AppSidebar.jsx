@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from "../context/AuthContext"
 import { usePermissions } from "@/context/PermissionContext"
 import { Button } from "@/components/ui/button"
-import { formatRole } from "../utils/utils"
+import { formatRole, getDisplayRole } from "../utils/utils"
 import { PAGE_PERMISSIONS } from "@/config/pagePermissions"
 
 // Nav is derived from the shared page/permission catalog so the sidebar, the
@@ -36,7 +36,7 @@ const systemItems = [{ title: "Settings", url: "/settings", icon: Settings }]
 export function AppSidebar({ collapsed = false }) {
   const location = useLocation()
   const { user, logout } = useAuth()
-  const { can, roleKey } = usePermissions()
+  const { can } = usePermissions()
 
   const isActive = (url) =>
     url === "/" ? location.pathname === "/" : location.pathname.startsWith(url)
@@ -126,7 +126,7 @@ export function AppSidebar({ collapsed = false }) {
     )
   }
 
-  const displayRole = roleKey || user?.role
+  const displayRole = getDisplayRole(user)
   const roleBadgeClass =
     displayRole === "owner" || displayRole === "superAdmin"
       ? "bg-primary/10 text-primary"
