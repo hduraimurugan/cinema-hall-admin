@@ -25,7 +25,7 @@ export function GeneralSettingsPage() {
 
   if (orgSettings.error) {
     return (
-      <div className="space-y-4 max-w-2xl">
+      <div className="space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{orgSettings.error}</AlertDescription>
         </Alert>
@@ -34,7 +34,7 @@ export function GeneralSettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="space-y-6">
       <SettingsPageHeader
         icon={Settings}
         title="General Settings"

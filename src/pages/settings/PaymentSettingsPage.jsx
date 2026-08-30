@@ -27,7 +27,7 @@ export function PaymentSettingsPage() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="space-y-6">
         <SettingsPageHeader
           icon={CreditCard}
           title="Payment Settings"
@@ -60,7 +60,7 @@ export function PaymentSettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="space-y-6">
       <SettingsPageHeader
         icon={CreditCard}
         title="Payment Settings"
