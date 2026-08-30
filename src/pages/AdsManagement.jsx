@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { adsAPI } from '../services/api';
+import NotifyBlock, { EMPTY_NOTIFY, notifyPayload } from '@/components/notifications/NotifyBlock';
 
 const EMPTY_FORM = {
   title: '',
@@ -63,6 +64,12 @@ export default function AdsManagement() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Notify (create sheet) + Announce (existing ad) state
+  const [notify, setNotify] = useState(EMPTY_NOTIFY);
+  const [announceTarget, setAnnounceTarget] = useState(null);
+  const [announceForm, setAnnounceForm] = useState(EMPTY_NOTIFY);
+  const [announcing, setAnnouncing] = useState(false);
+
   const loadAds = async () => {
     setLoading(true);
     try {
@@ -82,7 +89,28 @@ export default function AdsManagement() {
   const openCreate = () => {
     setEditingAd(null);
     setFormData(EMPTY_FORM);
+    setNotify(EMPTY_NOTIFY);
     setFormOpen(true);
+  };
+
+  const openAnnounce = (ad) => {
+    setAnnounceTarget(ad);
+    setAnnounceForm({ ...EMPTY_NOTIFY, enabled: true });
+  };
+
+  const handleAnnounce = async () => {
+    if (!announceTarget) return;
+    try {
+      setAnnouncing(true);
+      const data = await adsAPI.announce(announceTarget.id, notifyPayload(announceForm));
+      const b = data.broadcast;
+      toast.success(b.status === 'sent' ? `Sent — ${b.sent_count} delivered, ${b.failed_count} failed` : `Scheduled for ${b.scheduled_for}`);
+      setAnnounceTarget(null);
+    } catch (err) {
+      toast.error(err.error || err.message || 'Failed to announce ad');
+    } finally {
+      setAnnouncing(false);
+    }
   };
 
   const openEdit = (ad) => {
@@ -112,8 +140,8 @@ export default function AdsManagement() {
         await adsAPI.update(editingAd.id, formData);
         toast.success('Ad updated');
       } else {
-        await adsAPI.create(formData);
-        toast.success('Ad created');
+        const data = await adsAPI.create({ ...formData, notify: notifyPayload(notify) });
+        toast.success(data.announced ? 'Ad created and customers notified' : 'Ad created');
       }
       setFormOpen(false);
       loadAds();
@@ -285,6 +313,14 @@ export default function AdsManagement() {
                       <Button
                         variant="outline"
                         size="sm"
+                        title="Announce"
+                        onClick={() => openAnnounce(ad)}
+                      >
+                        <Megaphone className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
                         onClick={() => setDeleteTarget(ad)}
                       >
@@ -431,6 +467,15 @@ export default function AdsManagement() {
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-8 px-2.5"
+                              title="Announce"
+                              onClick={() => openAnnounce(ad)}
+                            >
+                              <Megaphone className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
                               className="h-8 px-2.5 text-destructive hover:bg-destructive hover:text-destructive-foreground border-destructive/30"
                               onClick={() => setDeleteTarget(ad)}
                             >
@@ -557,6 +602,18 @@ export default function AdsManagement() {
               </label>
             </div>
 
+            {!editingAd && (
+              <div className="pt-2 border-t border-border">
+                <NotifyBlock
+                  value={notify}
+                  onChange={setNotify}
+                  audienceLabel="All customers"
+                  titlePlaceholder={formData.title || 'Auto-generated from the ad'}
+                  className="pt-4"
+                />
+              </div>
+            )}
+
             </form>
           </div>
           <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
@@ -649,6 +706,32 @@ export default function AdsManagement() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Announce */}
+      <Sheet open={!!announceTarget} onOpenChange={(open) => !open && setAnnounceTarget(null)}>
+        <SheetContent side="right" className="sm:max-w-md overflow-hidden flex flex-col p-0">
+          <SheetHeader className="px-6 py-4 border-b shrink-0">
+            <SheetTitle>Announce ad</SheetTitle>
+            <SheetDescription>
+              Notify customers about <strong>{announceTarget?.title}</strong>.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="overflow-y-auto flex-1 px-6 py-4">
+            <NotifyBlock
+              value={announceForm}
+              onChange={setAnnounceForm}
+              audienceLabel="All customers"
+              titlePlaceholder={announceTarget?.title}
+            />
+          </div>
+          <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setAnnounceTarget(null)}>Cancel</Button>
+            <Button onClick={handleAnnounce} disabled={announcing}>
+              {announcing ? 'Sending...' : 'Send announcement'}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

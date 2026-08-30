@@ -92,6 +92,7 @@ export const USER_DEFAULTS = {
     team_role_changed: { email: false, sms: false, whatsapp: false, push: true },
     team_removed: { email: true, sms: false, whatsapp: false, push: true },
     team_invite_accepted: { email: false, sms: false, whatsapp: false, push: true },
+    admin_broadcast: { email: true, sms: false, whatsapp: false, push: true },
   },
   analytics: {
     default_dashboard_widgets: ["revenue", "bookings", "occupancy"],

@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import {
     Tag, Plus, Search, ChevronLeft, ChevronRight,
-    SlidersHorizontal, X, Pencil, Trash2,
+    SlidersHorizontal, X, Pencil, Trash2, Megaphone,
     RefreshCw, AlertCircle, BadgePercent, Ticket
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ import { toast } from "sonner"
 import { offersAPI } from "../services/api"
 import { ExportButton } from "@/components/ExportButton"
 import { useAuth } from "../context/AuthContext"
+import NotifyBlock, { EMPTY_NOTIFY, notifyPayload } from "@/components/notifications/NotifyBlock"
 
 function debounce(fn, delay) {
     let t
@@ -65,6 +67,11 @@ const OffersManagement = () => {
     // Delete state
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [deleting, setDeleting] = useState(false)
+
+    // Announce state
+    const [announceTarget, setAnnounceTarget] = useState(null)
+    const [announceForm, setAnnounceForm] = useState(EMPTY_NOTIFY)
+    const [announcing, setAnnouncing] = useState(false)
 
     const totalPages = Math.max(1, Math.ceil(total / 50))
     const hasFilters = search || scopeFilter !== "all" || statusFilter !== "all"
@@ -123,6 +130,26 @@ const OffersManagement = () => {
             toast.error(err?.error || "Failed to delete offer.")
         } finally {
             setDeleting(false)
+        }
+    }
+
+    const openAnnounce = (offer) => {
+        setAnnounceTarget(offer)
+        setAnnounceForm({ ...EMPTY_NOTIFY, enabled: true })
+    }
+
+    const handleAnnounce = async () => {
+        if (!announceTarget) return
+        try {
+            setAnnouncing(true)
+            const data = await offersAPI.announce(announceTarget.id, notifyPayload(announceForm))
+            const b = data.broadcast
+            toast.success(b.status === 'sent' ? `Sent — ${b.sent_count} delivered, ${b.failed_count} failed` : `Scheduled for ${b.scheduled_for}`)
+            setAnnounceTarget(null)
+        } catch (err) {
+            toast.error(err?.error || "Failed to announce offer.")
+        } finally {
+            setAnnouncing(false)
         }
     }
 
@@ -409,6 +436,9 @@ const OffersManagement = () => {
                                             <TableCell className="pr-5 text-right">
                                                 {(isSuperAdmin || offer.created_by === user?.id) ? (
                                                     <div className="flex items-center justify-end gap-1">
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Announce" onClick={() => openAnnounce(offer)}>
+                                                            <Megaphone className="w-3.5 h-3.5" />
+                                                        </Button>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/offers/${offer.id}/edit`)}>
                                                             <Pencil className="w-3.5 h-3.5" />
                                                         </Button>
@@ -460,6 +490,34 @@ const OffersManagement = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Announce */}
+            <Sheet open={!!announceTarget} onOpenChange={(open) => !open && setAnnounceTarget(null)}>
+                <SheetContent side="right" className="sm:max-w-md overflow-hidden flex flex-col p-0">
+                    <SheetHeader className="px-6 py-4 border-b shrink-0">
+                        <SheetTitle>Announce offer</SheetTitle>
+                        <SheetDescription>
+                            Notify customers about <strong>{announceTarget?.code}</strong>.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="overflow-y-auto flex-1 px-6 py-4">
+                        <NotifyBlock
+                            value={announceForm}
+                            onChange={setAnnounceForm}
+                            audienceLabel={announceTarget?.scope === 'hall'
+                                ? `Customers who booked at ${announceTarget?.cinema_hall_name || 'this hall'}`
+                                : 'All customers'}
+                            titlePlaceholder={announceTarget?.title}
+                        />
+                    </div>
+                    <div className="shrink-0 border-t px-6 py-4 flex justify-end gap-3">
+                        <Button type="button" variant="outline" onClick={() => setAnnounceTarget(null)}>Cancel</Button>
+                        <Button onClick={handleAnnounce} disabled={announcing}>
+                            {announcing ? 'Sending...' : 'Send announcement'}
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
         </div>
     )
 }

@@ -16,6 +16,7 @@ import dayjs from "dayjs"
 import { toast } from "sonner"
 import { offersAPI } from "../services/api"
 import { useAuth } from "../context/AuthContext"
+import NotifyBlock, { EMPTY_NOTIFY, notifyPayload } from "@/components/notifications/NotifyBlock"
 
 const EMPTY_FORM = {
     code: "",
@@ -45,6 +46,7 @@ const OfferFormPage = () => {
     const [halls, setHalls] = useState([])
     const [saving, setSaving] = useState(false)
     const [loadingOffer, setLoadingOffer] = useState(isEdit)
+    const [notify, setNotify] = useState(EMPTY_NOTIFY)
 
     const [validUntilPickerOpen, setValidUntilPickerOpen] = useState(false)
     const [joinedAfterPickerOpen, setJoinedAfterPickerOpen] = useState(false)
@@ -121,8 +123,8 @@ const OfferFormPage = () => {
                 await offersAPI.update(id, payload)
                 toast.success("Offer updated.")
             } else {
-                await offersAPI.create(payload)
-                toast.success("Offer created.")
+                const data = await offersAPI.create({ ...payload, notify: notifyPayload(notify) })
+                toast.success(data.announced ? "Offer created and customers notified." : "Offer created.")
             }
             navigate("/offers")
         } catch (err) {
@@ -351,6 +353,25 @@ const OfferFormPage = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Announce (create only — re-announce an existing offer from the Offers list) */}
+            {!isEdit && (
+                <Card>
+                    <CardHeader className="pb-2 pt-5 px-6">
+                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Announce</CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-6 pb-6">
+                        <NotifyBlock
+                            value={notify}
+                            onChange={setNotify}
+                            audienceLabel={form.scope === "hall"
+                                ? `Customers who booked at ${halls.find(h => h.id === form.cinema_hall_id)?.name || "this hall"}`
+                                : "All customers"}
+                            titlePlaceholder={form.title || "Auto-generated from the offer details"}
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-2">

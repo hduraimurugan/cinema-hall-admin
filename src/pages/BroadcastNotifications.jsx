@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Send, Plus, Users, Building2, X, Clock, Zap, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
+import { Send, Plus, Users, Building2, X, Clock, Zap, CheckCircle2, XCircle, Trash2, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { broadcastAPI, customersAPI, adminsAPI } from '../services/api';
 import { uploadImageToCloudinary } from '../services/cloudinary';
+import ChannelPicker from '@/components/notifications/ChannelPicker';
+import NotificationActivityTab from '@/components/notifications/NotificationActivityTab';
 
 function debounce(fn, delay) {
   let timer;
@@ -23,6 +26,7 @@ const EMPTY_FORM = {
   imageUrl: '',
   audienceType: 'all_customers',
   people: [],
+  channels: ['push', 'email'],
   delivery: 'now',
   scheduledFor: '',
 };
@@ -79,7 +83,9 @@ export default function BroadcastNotifications() {
   const loadBroadcasts = async () => {
     setLoading(true);
     try {
-      const data = await broadcastAPI.list();
+      // 'manual' excludes the auto rows an Offer/Ad announcement generates —
+      // those live in the Auto tab (NotificationActivityTab).
+      const data = await broadcastAPI.list({ source: 'manual' });
       setBroadcasts(data.broadcasts);
     } catch (err) {
       toast.error(err.error || err.message || 'Failed to load notifications');
@@ -229,6 +235,7 @@ export default function BroadcastNotifications() {
         customerIds: formData.people.filter((p) => p.type === 'customer').map((p) => p.id),
         adminIds: formData.people.filter((p) => p.type === 'admin').map((p) => p.id),
         deviceTokenFilter,
+        channels: formData.channels,
         scheduledFor: formData.delivery === 'schedule' ? new Date(formData.scheduledFor).toISOString() : undefined,
       };
       const data = await broadcastAPI.create(payload);
@@ -279,14 +286,14 @@ export default function BroadcastNotifications() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Send className="size-7 text-primary" />
             Notifications
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Compose and send push notifications to customers and admins
+            Compose and send notifications, and see what the system sent on its own
           </p>
         </div>
         <Button onClick={openCreate} className="gap-2">
@@ -295,6 +302,19 @@ export default function BroadcastNotifications() {
         </Button>
       </div>
 
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="manual" className="gap-2">
+            <Send className="size-4" />
+            Manual
+          </TabsTrigger>
+          <TabsTrigger value="auto" className="gap-2">
+            <Radio className="size-4" />
+            Auto
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="manual">
       {/* History table */}
       {loading ? (
         <div className="rounded-xl border border-border bg-card overflow-hidden animate-pulse">
@@ -371,6 +391,12 @@ export default function BroadcastNotifications() {
           </div>
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="auto">
+          <NotificationActivityTab />
+        </TabsContent>
+      </Tabs>
 
       {/* Create Sheet */}
       <Sheet open={formOpen} onOpenChange={setFormOpen}>
@@ -425,6 +451,11 @@ export default function BroadcastNotifications() {
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Channels *</label>
+                <ChannelPicker value={formData.channels} onChange={(channels) => setFormData((p) => ({ ...p, channels }))} />
               </div>
 
               <div>

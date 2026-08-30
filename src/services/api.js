@@ -771,6 +771,17 @@ export const adsAPI = {
     if (!response.ok) throw await response.json()
     return response.json()
   },
+
+  announce: async (id, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/ads/${id}/announce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
 }
 
 export const settingsAPI = {
@@ -850,6 +861,17 @@ export const offersAPI = {
     const response = await fetch(`${API_BASE_URL}/api/offers/delete/${id}`, {
       method: 'DELETE',
       credentials: 'include',
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  announce: async (id, data) => {
+    const response = await fetch(`${API_BASE_URL}/api/offers/${id}/announce`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data),
     })
     if (!response.ok) throw await response.json()
     return response.json()
@@ -1134,8 +1156,25 @@ export const notificationAPI = {
 
 // Super Admin — manual broadcast notifications (compose, schedule/send, history).
 export const broadcastAPI = {
-  list: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast`, {
+  list: async ({ source } = {}) => {
+    const params = new URLSearchParams()
+    if (source) params.set('source', source)
+    const response = await fetch(`${API_BASE_URL}/api/notifications/broadcast?${params}`, {
+      credentials: "include",
+    })
+    if (!response.ok) throw await response.json()
+    return response.json()
+  },
+
+  // Powers the Notifications page's Auto tab — offer/ad announcements plus
+  // individual event notifications (booking_confirmed, show_reminder, ...).
+  activity: async ({ source, event, status, page = 1 } = {}) => {
+    const params = new URLSearchParams()
+    if (source) params.set('source', source)
+    if (event) params.set('event', event)
+    if (status) params.set('status', status)
+    params.set('page', page)
+    const response = await fetch(`${API_BASE_URL}/api/notifications/activity?${params}`, {
       credentials: "include",
     })
     if (!response.ok) throw await response.json()
