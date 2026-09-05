@@ -15,7 +15,7 @@ const EXPIRY_OPTIONS = [
   { value: "365", label: "1 year" },
 ]
 
-export function CreateApiKeyDialog({ open, onOpenChange, onSuccess }) {
+export function CreateApiKeyDialog({ open, onOpenChange, onSuccess, mcpServerUrl }) {
   const [name, setName] = useState("")
   const [expiresInDays, setExpiresInDays] = useState("never")
   const [sending, setSending] = useState(false)
@@ -92,8 +92,21 @@ export function CreateApiKeyDialog({ open, onOpenChange, onSuccess }) {
                 </div>
               </div>
 
+              {mcpServerUrl && (
+                <div className="space-y-2">
+                  <Label>Connect a remote AI assistant (Claude, ChatGPT, etc.)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Add this as a custom connector using the server URL below, with this key sent as an <code className="font-mono">x-api-key</code> header.
+                  </p>
+                  <pre className="overflow-x-auto rounded-lg border border-border/60 bg-muted/40 p-3 text-[11px] font-mono leading-relaxed">
+{`URL:     ${mcpServerUrl}
+Header:  x-api-key: ${createdKey.token}`}
+                  </pre>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label>Use it with the Cinemax MCP server</Label>
+                <Label>Connect a local client (Claude Desktop, Cursor, Cline)</Label>
                 <p className="text-xs text-muted-foreground">
                   Paste this into your local client config (e.g. <code className="font-mono">claude_desktop_config.json</code>), or set it as the <code className="font-mono">CINEMAX_MCP_API_KEY</code> environment variable.
                 </p>
