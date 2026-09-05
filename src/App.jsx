@@ -14,6 +14,7 @@ import { PaymentSettingsPage } from './pages/settings/PaymentSettingsPage'
 import { TeamManagementPage } from './pages/settings/TeamManagementPage'
 import { RolesPermissionsPage } from './pages/settings/RolesPermissionsPage'
 import { AuditLogPage } from './pages/settings/AuditLogPage'
+import { ApiKeysPage } from './pages/settings/ApiKeysPage'
 import HomePage from './pages/HomePage.jsx'
 import ShowsManagement from './pages/ShowsManagement.jsx';
 import Bookings from './pages/Bookings.jsx';
@@ -116,6 +117,8 @@ function App() {
               <Route path="team" element={<Gate p="team.manage"><TeamManagementPage /></Gate>} />
               <Route path="roles" element={<Gate p="roles.read"><RolesPermissionsPage /></Gate>} />
               <Route path="audit-log" element={<Gate p="audit.view"><AuditLogPage /></Gate>} />
+              {/* No permission gate — self-service, any logged-in admin manages their own keys. */}
+              <Route path="api-keys" element={<Gate><ApiKeysPage /></Gate>} />
             </Route>
             <Route path="/halls" element={<Gate p="halls.read"><HallsManagement /></Gate>} />
 

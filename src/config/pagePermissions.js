@@ -16,7 +16,7 @@
 
 import {
   Home, Building2, Monitor, Film, Calendar, Ticket, RefreshCw,
-  CreditCard, ScanLine, Tag, Megaphone, Users, Settings, Shield, History,
+  CreditCard, ScanLine, Tag, Megaphone, Users, Settings, Shield, History, KeyRound,
 } from "lucide-react"
 
 export const PAGE_PERMISSIONS = [
@@ -52,6 +52,10 @@ export const PAGE_PERMISSIONS = [
   { group: "Settings", page: "Team",           path: "/settings/team",           icon: Users,      scope: "org",  view: "team.manage",        extra: ["team.invite", "team.revoke"] },
   { group: "Settings", page: "Roles",          path: "/settings/roles",          icon: Shield,     scope: "org",  view: "roles.read",         edit: "roles.manage" },
   { group: "Settings", page: "Activity Log",   path: "/settings/audit-log",      icon: History,    scope: "org",  view: "audit.view" },
+  // No `view` key — self-service, same posture as changing your own password.
+  // Every logged-in admin (any role) manages their own personal API keys for
+  // machine clients (e.g. the cinemax MCP server); there's nothing to gate.
+  { group: "Settings", page: "API Keys",       path: "/settings/api-keys",       icon: KeyRound,   scope: "user" },
 ]
 
 /** Permissions with no page of their own — rendered as a flat "Advanced" group. */

@@ -22,8 +22,9 @@ const settingsSections = PAGE_PERMISSIONS
     icon: p.icon,
     scope: p.scope,
     permission: p.view,
-    // Team, Roles and Activity Log are org administration; the rest configure the cinema.
-    section: (p.page === "Team" || p.page === "Roles" || p.page === "Activity Log")
+    // Team, Roles, Activity Log and API Keys are org/account administration;
+    // the rest configure the cinema.
+    section: (p.page === "Team" || p.page === "Roles" || p.page === "Activity Log" || p.page === "API Keys")
       ? "Management"
       : p.scope === "org" ? "Organization" : "Cinema Branch",
     disabled: DISABLED_PATHS.has(p.path.replace("/settings/", "")),
